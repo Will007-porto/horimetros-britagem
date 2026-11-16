@@ -481,7 +481,7 @@ svg.ch rect.gb:hover{stroke:var(--orange);stroke-width:2}
       <div class="cwrap"><div class="cinner"><div class="boxb">
         <div class="eqtools"><span class="note" style="margin:0" id="eCount"></span><button class="btn1" id="eNovo">+ Novo usuário</button></div>
         <div class="scrollx"><table class="tb" id="tE"></table></div>
-        <p class="note" id="nE">Papéis: <b>Operador</b> justifica as paradas do seu setor no turno · <b>Manutenção</b> confirma ou contesta paradas de manutenção · <b>Supervisor</b> justifica qualquer data, corrige, valida e cadastra usuários. Desativar tira o acesso na hora, sem apagar o histórico.</p>
+        <p class="note" id="nE">Papéis: <b>Operador</b> justifica as paradas do seu setor no turno · <b>Manutenção</b> confirma ou contesta paradas de manutenção · <b>Supervisor</b> justifica qualquer data, corrige, valida e cadastra usuários. Desativar tira o acesso na hora e dá para reativar depois; <b>Apagar</b> remove o login de vez (o histórico de paradas é mantido).</p>
       </div></div></div></div>
   </section>
 
@@ -1167,7 +1167,7 @@ let EQ={rows:null,err:null};
 const AREAS_OP=[['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack']];
 const areaOpts=(papel,v)=>[...AREAS_OP,...(papel!=='operador'?[['AMBOS','Todas (Ambos)']]:[])].map(([k,n])=>`<option value="${k}" ${v===k?'selected':''}>${n}</option>`).join('');
 const papelOpts=v=>Object.entries(PAPEL_N).map(([k,n])=>`<option value="${k}" ${v===k?'selected':''}>${n}</option>`).join('');
-const ERR_EQ={nao_autorizado:'Só o supervisor pode alterar a equipe.',nome_invalido:'Nome precisa ter de 2 a 80 letras.',area_obrigatoria:'Escolha a área do operador.',operador_uma_area:'Operador fica em uma área só (Primário, Secundário ou Lokotrack).',nao_pode_rebaixar_a_si_mesmo:'Você não pode tirar o seu próprio acesso de supervisor.',papel_invalido:'Papel inválido.',area_invalida:'Área inválida.',login_existe:'Já existe um usuário com esse nome. Use outro (por exemplo, com sobrenome).',pin_invalido:'O PIN precisa ter 6 números.',pin_recusado:'O servidor recusou esse PIN. Tente outro.',usuario_nao_encontrado:'Usuário não encontrado.',sessao_invalida:'Sua sessão expirou. Entre de novo.',sem_login:'Sua sessão expirou. Entre de novo.'};
+const ERR_EQ={nao_autorizado:'Só o supervisor pode alterar a equipe.',nome_invalido:'Nome precisa ter de 2 a 80 letras.',area_obrigatoria:'Escolha a área do operador.',operador_uma_area:'Operador fica em uma área só (Primário, Secundário ou Lokotrack).',nao_pode_rebaixar_a_si_mesmo:'Você não pode tirar o seu próprio acesso de supervisor.',papel_invalido:'Papel inválido.',area_invalida:'Área inválida.',login_existe:'Já existe um usuário com esse nome. Use outro (por exemplo, com sobrenome).',pin_invalido:'O PIN precisa ter 6 números.',pin_recusado:'O servidor recusou esse PIN. Tente outro.',usuario_nao_encontrado:'Usuário não encontrado.',usuario_invalido:'Usuário inválido.',nao_pode_apagar_a_si_mesmo:'Você não pode apagar o seu próprio usuário.',ultimo_supervisor:'Esse é o único supervisor ativo: cadastre ou ative outro supervisor antes de apagar.',falha_apagar:'Não foi possível apagar. Tente novamente.',sessao_invalida:'Sua sessão expirou. Entre de novo.',sem_login:'Sua sessão expirou. Entre de novo.'};
 const errEq=m=>{const k=Object.keys(ERR_EQ).find(k=>String(m).includes(k));return k?ERR_EQ[k]:null};
 async function adminUsuarios(body){
   const {data,error}=await sb.functions.invoke('admin-usuarios',{body});
@@ -1189,7 +1189,7 @@ function renderEqu(){
       <td><select class="tin" data-f="area">${areaOpts(papel,area)}</select></td>
       <td><input type="checkbox" data-f="ativo" ${u.liberado?(u.ativo?'checked':''):'checked'} ${u.eu?'disabled':''} aria-label="Ativo"></td>
       <td class="hm" style="white-space:nowrap">${u.ultimo_acesso?dtFmt.format(Date.parse(u.ultimo_acesso)):'nunca'}</td>
-      <td class="n" style="white-space:nowrap"><button class="act ${u.liberado?'':'pri'}" data-esave>${u.liberado?'Salvar':'Liberar'}</button><button class="act" data-epin>Trocar PIN</button></td></tr>`});
+      <td class="n" style="white-space:nowrap"><button class="act ${u.liberado?'':'pri'}" data-esave>${u.liberado?'Salvar':'Liberar'}</button><button class="act" data-epin>Trocar PIN</button>${u.eu?'':'<button class="act" data-edel style="color:var(--red)">Apagar</button>'}</td></tr>`});
   if(!EQ.rows.length)h+=`<tr><td colspan="6"><div class="pempty"><b>Nenhum usuário</b>Use “Novo usuário” para cadastrar.</div></td></tr>`;
   $('#tE').innerHTML=h+'</tbody>';
 }
@@ -1199,6 +1199,13 @@ $('#tE').addEventListener('click',async e=>{
   if(e.target.closest('[data-esave]')){const b=e.target.closest('[data-esave]');const v=f=>tr.querySelector(`[data-f="${f}"]`);
     const body={p_user_id:u.user_id,p_nome:v('nome').value.trim(),p_papel:v('papel').value,p_area:v('area').value,p_ativo:v('ativo').checked};
     b.disabled=true;try{await rpc('app_supervisor_salvar',body);toast(u.liberado?'Usuário salvo.':`${body.p_nome} liberado.`);equLoad()}catch(er){b.disabled=false;toast(errEq(er.message)||errApp(er))}return}
+  if(e.target.closest('[data-edel]')){gOpen({k:'Equipe',t:`Apagar ${u.nome||u.login}?`,ok:'Apagar de vez',
+    body:`<div class="warnb"><b>Não dá para desfazer.</b> O login <b>${esc(u.login)}</b> deixa de existir: a pessoa não entra mais no app nem no site.</div>
+      <p class="fhint" style="margin:0">As paradas, justificativas e o histórico feitos por essa pessoa <b>continuam guardados</b> com o nome dela.</p>
+      <p class="fhint" style="margin:0">Se a pessoa pode voltar (férias, afastamento), prefira <b>desmarcar “Ativo”</b> e salvar: o acesso é cortado na hora e dá para reativar depois.</p>
+      <div class="fs"><h4>Para confirmar, digite o login: <b>${esc(u.login)}</b></h4><input class="tin" id="gConf" type="text" autocomplete="off" spellcheck="false"></div>`,
+    onOk:async()=>{if(($('#gConf').value||'').trim().toLowerCase()!==String(u.login).toLowerCase())throw falha('Digite o login exatamente como aparece para confirmar.');
+      const r=await adminUsuarios({acao:'apagar',user_id:u.user_id});toast(`${r.nome||u.nome} apagado.`);equLoad()}});return}
   if(e.target.closest('[data-epin]')){gOpen({k:'Equipe',t:`Trocar PIN de ${u.nome||u.login}`,ok:'Trocar PIN',
     body:`<div class="fs"><h4>Novo PIN (6 números) <b>*</b></h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div><div class="fs"><h4>Repita o PIN <b>*</b></h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div><p class="fhint">Passe o PIN novo para a pessoa pessoalmente. Ele passa a valer no próximo login no app e no site.</p>`,
     onOk:async()=>{const p=$('#gPin').value,p2=$('#gPin2').value;if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');await adminUsuarios({acao:'pin',user_id:u.user_id,pin:p});toast('PIN trocado.')}})}

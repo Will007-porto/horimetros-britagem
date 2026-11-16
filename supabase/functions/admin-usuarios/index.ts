@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// admin-usuarios: cadastro de usuário e troca de PIN feitos pelo supervisor no site.
+// admin-usuarios: cadastro, troca de PIN e exclusão de usuário feitos pelo supervisor no site.
 // - Exige login (verify_jwt) e confere no banco que quem chama é supervisor ativo.
 // - A chave de serviço fica só aqui no servidor; o site nunca a vê.
 // - Login no padrão do app: <nome normalizado>@operador.paradas-britagem.app + PIN de 6 dígitos.
@@ -37,16 +37,24 @@ function normalizarNomeLogin(nome: string): string {
     .replace(/^\.+|\.+$/g, '');
 }
 
+// Chave pública do projeto (a mesma do site/app). Usada só para perguntar ao banco "quem sou eu"
+// com o token de quem chamou: o banco confere a assinatura do token; token falso é recusado.
+const PUBLISHABLE_KEY = 'sb_publishable_RS4gBYcvKEkBZKOXj-bHcQ_bo2aaQvY';
+
 async function supervisorDaRequisicao(req: Request): Promise<{ id: string; nome: string } | Response> {
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-  if (!token) return erro('sem_login', 401);
-  const { data: u, error } = await admin.auth.getUser(token);
-  if (error || !u?.user) return erro('sessao_invalida', 401);
-  const { data: p, error: e2 } = await admin
-    .from('usuarios_painel').select('nome, papel, ativo').eq('user_id', u.user.id).maybeSingle();
-  if (e2) return erro('falha_banco', 500);
-  if (!p || !p.ativo || p.papel !== 'supervisor') return erro('nao_autorizado', 403);
-  return { id: u.user.id, nome: p.nome };
+  if (!token || token.split('.').length !== 3) return erro('sem_login', 401);
+  const comoUsuario = createClient(supabaseUrl, PUBLISHABLE_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: eu, error } = await comoUsuario.rpc('painel_eu');
+  if (error || !eu?.uid) {
+    if (error) console.warn('painel_eu:', error.message);
+    return erro('sessao_invalida', 401);
+  }
+  if (!eu.autorizado || eu.papel !== 'supervisor') return erro('nao_autorizado', 403);
+  return { id: eu.uid, nome: eu.nome };
 }
 
 async function criarUsuario(body: Record<string, unknown>, quem: { id: string; nome: string }): Promise<Response> {
@@ -106,6 +114,33 @@ async function trocarPin(body: Record<string, unknown>, quem: { id: string; nome
   return json({ ok: true });
 }
 
+// Apaga o login de vez. Paradas, justificativas e histórico NÃO são apagados (guardam o nome em texto).
+async function apagarUsuario(body: Record<string, unknown>, quem: { id: string; nome: string }): Promise<Response> {
+  const userId = typeof body.user_id === 'string' ? body.user_id : '';
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) return erro('usuario_invalido', 400);
+  if (userId === quem.id) return erro('nao_pode_apagar_a_si_mesmo', 400);
+
+  const { data: alvo, error: e1 } = await admin.auth.admin.getUserById(userId);
+  if (e1 || !alvo?.user) return erro('usuario_nao_encontrado', 404);
+  const { data: perfil } = await admin.from('usuarios_painel').select('nome, papel, ativo').eq('user_id', userId).maybeSingle();
+  if (!(alvo.user.email ?? '').endsWith(`@${DOMINIO_LOGIN}`) && !perfil) return erro('usuario_fora_do_app', 400);
+
+  // Nunca deixar a planta sem supervisor ativo
+  if (perfil?.papel === 'supervisor' && perfil.ativo) {
+    const { count } = await admin.from('usuarios_painel')
+      .select('user_id', { count: 'exact', head: true }).eq('papel', 'supervisor').eq('ativo', true);
+    if ((count ?? 0) <= 1) return erro('ultimo_supervisor', 400);
+  }
+
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) {
+    console.error('deleteUser:', error);
+    return erro('falha_apagar', 500);
+  }
+  console.log(`usuario apagado: ${alvo.user.email} (${perfil?.nome ?? 'sem cadastro'}) por ${quem.nome}`);
+  return json({ ok: true, nome: perfil?.nome ?? alvo.user.email });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return erro('method_not_allowed', 405);
@@ -124,5 +159,6 @@ Deno.serve(async (req: Request) => {
 
   if (body.acao === 'criar') return criarUsuario(body, quem);
   if (body.acao === 'pin') return trocarPin(body, quem);
+  if (body.acao === 'apagar') return apagarUsuario(body, quem);
   return erro('acao_invalida', 400);
 });

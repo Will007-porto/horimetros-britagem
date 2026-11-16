@@ -22,7 +22,7 @@ Site (Vercel, exige login) ── leitura: painel_* ─────────�
 - **Login obrigatório**, o mesmo do aplicativo: **nome + PIN de 6 dígitos** (por baixo, `nome@operador.paradas-britagem.app`). Sem login, ou sem liberação do supervisor (`usuarios_painel`), o site não mostra nenhum dado.
 - **Paradas:** justifica qualquer data (supervisor), em lote, com os **mesmos motivos do app** (`motivos_parada`, filtrados por setor e equipamento). Corrigir uma parada já justificada exige observação e fica no histórico.
 - **Validar** (manutenção e supervisor): paradas de manutenção (classe A) esperando confirmação; a manutenção confirma ou contesta, o supervisor mantém ou corrige.
-- **Equipe** (supervisor): cadastrar usuário, trocar PIN, liberar, mudar papel/área, desativar. Cadastro e PIN passam pela Edge Function `admin-usuarios`, que confere no servidor se quem pede é supervisor (a chave de serviço nunca vai para o navegador).
+- **Equipe** (supervisor): cadastrar usuário, trocar PIN, liberar, mudar papel/área, desativar ou apagar (o histórico de paradas é mantido; não dá para apagar a si mesmo nem o último supervisor). Cadastro e PIN passam pela Edge Function `admin-usuarios`, que confere no servidor se quem pede é supervisor (a chave de serviço nunca vai para o navegador).
 - **Histórico:** toda mudança de justificativa (app, site ou sistema) fica em `eventos_parada_historico`, que não pode ser apagado nem editado.
 - A placa só fala com o banco pela `bright-api` (v7): aceita dados só da placa e dos motores cadastrados; as rotas antigas do app de teste estão desativadas. Nenhuma tabela aceita escrita pela chave pública.
 
