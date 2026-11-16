@@ -294,6 +294,18 @@ svg.ch rect.gb:hover{stroke:var(--orange);stroke-width:2}
 @media(max-width:1100px){.kpis{grid-template-columns:1fr 1fr}.two,.hero{grid-template-columns:1fr}.reads{grid-template-columns:1fr}.rd{border-right:0;border-bottom:1px solid var(--line)}}
 @media(max-width:980px){.fbar{gap:6px}.dd{flex:1 1 auto}.ddb{width:100%}.fcount{margin-left:0;flex-basis:100%}#popPer{width:min(540px,calc(100vw - 32px));flex-direction:column}.pres{border-right:0;border-bottom:1px solid var(--line);flex-direction:row;flex-wrap:wrap}.pres button span{display:none}#popAt{width:min(290px,calc(100vw - 32px))}#ddAt .pop{left:auto;right:0}.fempty{margin-left:16px;margin-right:16px}.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px}.navlbl,.sidefoot,.legside,.brandtile .bsub{display:none}.brandtile{padding:9px 12px}.brandtile img{width:110px}.nav{flex-direction:row;flex-wrap:wrap}.pane,.topbar,.appfoot{padding-left:16px;padding-right:16px}.state{margin-left:16px;margin-right:16px}.topbar{flex-direction:column;align-items:flex-start;position:static}.stamp{text-align:left}}
 @media(max-width:980px){#tuSeg,#stSeg{flex:1 1 auto}#tuSeg button,#stSeg button{flex:1}}
+[hidden]{display:none!important}
+/* painel do supervisor: validar, equipe, histórico */
+.nav a.hidn{display:none}
+.pill.cont{background:#FBE4E4;color:#A12C2C}.pill.conf{background:#E3F4EC;color:#1E7A50}.pill.man{background:#EEE8F7;color:#53388A}
+.tb .tin{height:32px;padding:0 8px;border:1px solid var(--grid);border-radius:7px;font:12.5px var(--sans);color:var(--ink);background:var(--card);max-width:100%}
+.tb input.tin[type=text]{width:150px}
+.tb tr.novo td{background:#FFF8EA}
+.eqtools{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+.hist{display:flex;flex-direction:column;gap:12px;border-left:3px solid var(--grid);padding-left:12px}
+.hist div{font-size:12.5px;color:var(--ink2);line-height:1.5}.hist b{color:var(--ink)}.hist small{display:block;color:var(--muted);font-family:var(--mono);font-size:10.5px}
+.clsb{font-size:12px;color:var(--ink2);background:var(--soft2);border:1px solid var(--grid);border-radius:8px;padding:8px 10px}
+.act+.act{margin-left:4px}
 @media(max-width:560px){.cgrid{grid-template-columns:1fr}.bulk{flex-wrap:wrap}.bulk #bulkTxt{flex-basis:100%}.hcard .big{font-size:44px}.tb .hm{display:none}.k b{font-size:28px}.kpis{gap:8px}}
 </style>
 </head>
@@ -309,6 +321,8 @@ svg.ch rect.gb:hover{stroke:var(--orange);stroke-width:2}
     <a data-p="hor"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>Horímetros<span class="dot"></span></a>
     <a data-p="gan"><svg viewBox="0 0 24 24"><path d="M3 5h18M3 19h18"/><rect x="4" y="8" width="8" height="3" rx="1"/><rect x="9" y="13" width="10" height="3" rx="1"/></svg>Gantt diário<span class="dot"></span></a>
     <a data-p="par"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>Paradas<span class="badge" id="navBadge" hidden></span><span class="dot"></span></a>
+    <a data-p="val" class="hidn"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Validar<span class="badge" id="navVal" hidden></span><span class="dot"></span></a>
+    <a data-p="equ" class="hidn"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.5 5.2"/></svg>Equipe<span class="dot"></span></a>
   </nav>
   <div class="navlbl">Legenda</div>
   <div class="legside"><div><i style="background:var(--green)"></i>Ligado agora</div><div><i style="background:var(--off)"></i>Desligado</div><div><i style="background:var(--orange)"></i>Sem sinal há +24h</div></div>
@@ -450,6 +464,27 @@ svg.ch rect.gb:hover{stroke:var(--orange);stroke-width:2}
     </div>
   </section>
 
+  <!-- VALIDAR (manutenção e supervisor) -->
+  <section class="pane" id="p-val">
+    <div class="phead"><img src="assets/logo-azul.png" alt="Tripoloni"><div class="pt">Paradas · Validação</div><div class="pk pfil"></div></div>
+    <div class="box rv"><button class="boxh"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div><div><div class="tt">Justificativas para validar</div><div class="kk" id="vSub">Manutenção confirma ou contesta · supervisor decide</div></div><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <div class="cwrap"><div class="cinner"><div class="boxb">
+        <div class="scrollx"><table class="tb ptb" id="tV"></table></div>
+        <p class="note" id="nV"></p>
+      </div></div></div></div>
+  </section>
+
+  <!-- EQUIPE (supervisor) -->
+  <section class="pane" id="p-equ">
+    <div class="phead"><img src="assets/logo-azul.png" alt="Tripoloni"><div class="pt">Equipe · usuários do app e do painel</div><div class="pk pfil"></div></div>
+    <div class="box rv"><button class="boxh"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5"/></svg></div><div><div class="tt">Usuários</div><div class="kk">Mesmo login do aplicativo: nome + PIN de 6 dígitos</div></div><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></button>
+      <div class="cwrap"><div class="cinner"><div class="boxb">
+        <div class="eqtools"><span class="note" style="margin:0" id="eCount"></span><button class="btn1" id="eNovo">+ Novo usuário</button></div>
+        <div class="scrollx"><table class="tb" id="tE"></table></div>
+        <p class="note" id="nE">Papéis: <b>Operador</b> justifica as paradas do seu setor no turno · <b>Manutenção</b> confirma ou contesta paradas de manutenção · <b>Supervisor</b> justifica qualquer data, corrige, valida e cadastra usuários. Desativar tira o acesso na hora, sem apagar o histórico.</p>
+      </div></div></div></div>
+  </section>
+
   <div class="appfoot"><span>Tripoloni Construtora · Britagem</span><span id="footsrc">Fonte: Supabase · HORIMETROS BRITAGEM</span></div>
 </main>
 </div>
@@ -464,18 +499,24 @@ svg.ch rect.gb:hover{stroke:var(--orange);stroke-width:2}
   <aside class="drwp" role="dialog" aria-modal="true" aria-labelledby="lgT" style="width:min(420px,100vw)">
     <header><div><div class="pgk">Acesso</div><h3 id="lgT">Entrar</h3></div><button class="xbtn" data-lclose aria-label="Fechar">×</button></header>
     <form class="drwb" id="lgForm" autocomplete="on">
-      <p class="fhint" style="margin:0" id="lgInfo">Para justificar paradas é preciso entrar. Ver o painel não exige login.</p>
-      <div class="fs"><h4>E-mail</h4><input class="tin" id="lgEmail" type="email" autocomplete="username" required></div>
-      <div class="fs"><h4>Senha</h4><input class="tin" id="lgPass" type="password" autocomplete="current-password" required></div>
+      <p class="fhint" style="margin:0" id="lgInfo">Use o mesmo nome e PIN do aplicativo Paradas Britagem.</p>
+      <div class="fs"><h4>Nome</h4><input class="tin" id="lgUser" type="text" autocomplete="username" autocapitalize="words" placeholder="Ex.: Willian" required></div>
+      <div class="fs"><h4>PIN (6 dígitos)</h4><input class="tin" id="lgPin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="current-password" required></div>
       <div class="derr" id="lgErr"></div>
       <button class="btn1" type="submit" id="lgBtn" style="height:40px">Entrar</button>
-      <p class="fhint">Não tem acesso? Peça ao responsável pelo painel para criar seu usuário.</p>
+      <p class="fhint">Não tem acesso ou esqueceu o PIN? Fale com o supervisor.</p>
     </form>
     <div class="drwb" id="lgOut" hidden>
       <p style="margin:0;font-size:14px">Você está conectado como <b id="lgNome"></b>.</p>
       <p class="fhint" id="lgAuth"></p>
       <button class="btn2" id="lgSair" style="height:40px">Sair</button>
     </div>
+  </aside></div>
+<div class="drw" id="gdrw" aria-hidden="true"><div class="drwbg" data-gclose></div>
+  <aside class="drwp" role="dialog" aria-modal="true" aria-labelledby="gT" style="width:min(460px,100vw)">
+    <header><div><div class="pgk" id="gK"></div><h3 id="gT"></h3></div><button class="xbtn" data-gclose aria-label="Fechar">×</button></header>
+    <div class="drwb" id="gB"></div>
+    <footer><div class="derr" id="gErr"></div><button class="btn2" data-gclose>Fechar</button><button class="btn1" id="gOk"></button></footer>
   </aside></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -528,12 +569,13 @@ async function load(force){
     hideState();prog(100);renderAll();
   }catch(e){
     prog(100);
+    if(/permission denied|JWT|not authorized|nao_autorizado/i.test((e&&e.message)||'')){gate();return}
     const keep=D?' Os números abaixo são da última leitura bem-sucedida.':'';
     const off=!navigator.onLine||/fetch|network/i.test((e&&e.message)||'');
     showState('err',off?'Sem conexão':'Não foi possível carregar',off?'Verifique a internet e tente de novo.'+keep:esc((e&&(e.message||e.code))||String(e))+keep,'Tentar de novo');
   }finally{busy=false;$('#btnRef').classList.remove('spin')}
 }
-setInterval(()=>{if(document.visibilityState==='visible'&&D&&!$('#drw').classList.contains('open'))load(false)},120000);
+setInterval(()=>{if(document.visibilityState==='visible'&&D&&EU.autorizado&&!$('#drw').classList.contains('open')&&!$('#gdrw').classList.contains('open')){load(false);if(PANE==='val')valLoad()}},120000);
 
 /* ---------- model ---------- */
 let M=[],MALL=[],DAYS=[],HD={},PT={},HJ={},AV={},JW=[];
@@ -677,21 +719,43 @@ function renderHor(){
 }
 
 /* ---------- PARADAS (eventos_parada + justificativa) ---------- */
-let PQ={key:null,rows:null,arv:null,busy:false,err:null},PTAB='todas',PSEL=new Set(),PLIM=60,PSORT={k:'ini',d:-1},PMODE=false;
+let PQ={key:null,rows:null,busy:false,err:null},PTAB='todas',PSEL=new Set(),PLIM=60,PSORT={k:'ini',d:-1},PMODE=false;
 const SEP=' › ';
-const areaOf=r=>{const e=(r.est||'').toLowerCase();if(e.startsWith('prim'))return 'PRIMARIO';if(e.startsWith('sec'))return 'SECUNDARIO';return /^(AV|BM)/.test(r.mo)?'PRIMARIO':'SECUNDARIO'};
-const AREA_N={PRIMARIO:'Primário',SECUNDARIO:'Secundário'};
-function normRow(a){const [id,mo,est,ini,fim,st,tp,cat,txt,por,em]=a;const iniMs=Date.parse(ini),fimMs=fim?Date.parse(fim):null;
+const areaOf=r=>{const e=(r.est||'').toLowerCase();if(e.startsWith('prim'))return 'PRIMARIO';if(e.startsWith('sec'))return 'SECUNDARIO';if(e.startsWith('lok'))return 'LOKOTRACK';return /^(AV|BM)/.test(r.mo||'')?'PRIMARIO':'SECUNDARIO'};
+const AREA_N={PRIMARIO:'Primário',SECUNDARIO:'Secundário',LOKOTRACK:'Lokotrack'};
+function normRow(a){const [id,mo,est,ini,fim,st,tp,cat,txt,por,em,cod,eqc,cls,conf,cpor,cobs]=a;const iniMs=Date.parse(ini),fimMs=fim?Date.parse(fim):null;
   const s=st==='justificado'?(por==='Sistema (histórico)'?'hi':'ok'):(st==='pendente'&&!fim?'ab':'ag');
-  return {id,mo,est,ini,fim,iniMs,fimMs,s,tp,cat,txt,por,em,min:fimMs?Math.max(0,(fimMs-iniMs)/6e4):null}}
+  return {id,mo,est,ini,fim,iniMs,fimMs,s,tp,cat,txt,por,em,cod:cod||null,eqc:eqc||null,cls:cls||null,conf:conf||null,cpor:cpor||null,cobs:cobs||null,min:fimMs?Math.max(0,(fimMs-iniMs)/6e4):null}}
+
+/* ---- catálogo de motivos (o mesmo do aplicativo) ---- */
+const GRUPOS=[['TRAVOU','Travou / Entupiu'],['QUEBROU','Quebrou (mecânica)'],['CORREIA','Correia'],['ELETRICA','Elétrica / Gerador'],['MATERIAL','Falta de material'],['CHUVA','Chuva / Detonação / Segurança'],['MANUT','Manutenção programada'],['TURNO','Início / fim de turno'],['REFEICAO','Refeição / DDS'],['OPERACAO','Operação']];
+const GN=Object.fromEntries(GRUPOS);
+const CLS_TXT={A:'Classe A · falha de equipamento: conta na disponibilidade física e vai para a manutenção confirmar',B:'Classe B · manutenção programada: conta na disponibilidade física',C:'Classe C · operação/processo: conta na utilização',D:'Classe D · logística/material: conta na utilização',E:'Classe E · externa (chuva, detonação, segurança): conta na utilização',F:'Classe F · parada programada: não conta como perda'};
+let CAT={mot:[],eqp:[],ok:false};
+async function ensureCat(force){
+  if(CAT.ok&&!force)return;
+  const [m,e]=await Promise.all([
+    sb.from('motivos_parada').select('codigo,nome_operador,grupo,classe,aplica_a,confirma,areas,ordem').eq('ativo',true).order('ordem'),
+    sb.from('equipamentos_britagem').select('tag,nome,visao,ordem').eq('ativo',true).order('ordem')]);
+  if(m.error)throw m.error;if(e.error)throw e.error;
+  CAT={ok:true,mot:(m.data||[]).map(x=>({c:x.codigo,n:x.nome_operador,g:x.grupo,k:x.classe,a:x.aplica_a,cf:x.confirma,ar:x.areas})),eqp:(e.data||[]).map(x=>({t:x.tag,n:x.nome,v:x.visao}))};
+}
+const motOf=c=>CAT.mot.find(x=>x.c===c)||null;
+const motNome=c=>{const m=motOf(c);return m?m.n:c};
+const eqNome=t=>{const e=CAT.eqp.find(x=>x.t===t);return e?e.n:t};
+const motAplicaEq=(m,tag)=>!m.a||m.a.some(x=>x===tag||(x==='TC'&&tag.startsWith('TC')));
+const eqsDaArea=area=>area==='LOKOTRACK'?CAT.eqp.filter(e=>e.v==='LOKOTRACK'):CAT.eqp.filter(e=>e.v===area||e.v==='GERAL');
+const motsDaArea=area=>{const eqs=eqsDaArea(area);return CAT.mot.filter(m=>(!m.ar||m.ar.includes(area))&&(!m.a||eqs.some(e=>motAplicaEq(m,e.t))))};
+const ERR_APP={nao_autorizado:'Seu usuário não tem permissão para isso.',sem_permissao:'Seu usuário não tem permissão para isso.',sem_area:'Seu usuário ainda não tem setor definido.',fora_da_sua_area:'Essa parada não é do seu setor.',fora_do_turno:'Essa parada é de um turno que já fechou: só o supervisor pode justificar.',ja_justificada:'Essa parada já foi justificada por outra pessoa.',motivo_invalido:'Motivo inválido.',motivo_fora_da_area:'Esse motivo não vale para este setor.',motivo_nao_se_aplica:'Esse motivo não vale para esse equipamento.',equipamento_fora_da_area:'Esse equipamento não é deste setor.',equipamento_invalido:'Escolha o equipamento.',obs_obrigatoria:'Escreva na observação o motivo da correção (mínimo 3 letras).',texto_longo:'Texto muito longo (máx. 500).',nao_justificada:'Essa parada não está justificada.',parada_nao_encontrada:'Essa parada não existe mais.',nao_aguarda_confirmacao:'Essa parada já foi validada por outra pessoa.',acao_invalida:'Ação inválida.'};
+function errApp(e){const m=(e&&(e.message||e.code))||String(e);const k=Object.keys(ERR_APP).find(k=>m.includes(k));if(k)return ERR_APP[k];if(/JWT|auth|permission denied/i.test(m))return 'Sua sessão expirou. Entre de novo.';if(/fetch|network/i.test(m))return 'Sem resposta do servidor. Confira a internet e tente de novo.';return 'Erro: '+m}
 async function parLoad(force){
   if(!D)return;
   const key=PMODE?'pend':`${F.from}|${F.to}`;
   if(PQ.key===key&&PQ.rows&&!force){renderPar();return}
   if(!isDay(F.from)||!isDay(F.to))return;
   PQ.busy=true;PQ.err=null;if(PQ.key!==key){PQ.rows=null;PSEL.clear();PLIM=60}PQ.key=key;renderPar();
-  try{const d=await rpc('painel_paradas',{p_desde:F.from,p_ate:F.to,p_pendentes:PMODE});
-    if(PQ.key!==key)return;PQ.rows=(d.rows||[]).map(normRow);PQ.arv=d.arv||[];
+  try{const [d]=await Promise.all([rpc('painel_paradas',{p_desde:F.from,p_ate:F.to,p_pendentes:PMODE}),ensureCat()]);
+    if(PQ.key!==key)return;PQ.rows=(d.rows||[]).map(normRow);
     const ids=new Set(PQ.rows.map(r=>r.id));[...PSEL].forEach(i=>{if(!ids.has(i))PSEL.delete(i)});
   }catch(e){if(PQ.key===key)PQ.err=e}
   finally{if(PQ.key===key){PQ.busy=false;renderPar()}}
@@ -722,7 +786,7 @@ function renderPar(){
     return {label:eqn[e]?`${e} · ${eqn[e]}`:e,v,txt:f1(v)+'h',parts:[{v:s('ag'),c:C.ag},{v:s('ok'),c:C.ok},{v:s('hi'),c:C.hi}],tip:`<div class='m'>${e}</div><b>${all.filter(x=>x.mo===e).length} paradas · ${hm(v)}</b><div class='tl'><span>Sem justificativa</span><b>${hm(s('ag'))}</b></div><div class='tl'><span>Justificadas</span><b>${hm(s('ok'))}</b></div>${s('hi')?`<div class='tl'><span>Histórico sem motivo</span><b>${hm(s('hi'))}</b></div>`:''}`}}),{W:520,lw:150})
     +`<div class="leg"><span><i style="background:${C.ag}"></i>Aguardando</span><span><i style="background:${C.ok}"></i>Justificada</span>${cnt.hi?`<span><i style="background:${C.hi}"></i>Histórico (antes de 01/11)</span>`:''}</div>`:'<p class="note">Sem paradas neste filtro.</p>';
   // gráfico 2: por classificação
-  const g={};all.filter(r=>r.s==='ok').forEach(r=>{const c=(r.cat||'Sem categoria').split(SEP)[0];g[c]=g[c]||{h:0,n:0,m:{}};g[c].h+=(r.min||0)/60;g[c].n++;const mo=(r.cat||'').split(SEP)[1];if(mo)g[c].m[mo]=(g[c].m[mo]||0)+1});
+  const g={};all.filter(r=>r.s==='ok').forEach(r=>{const mm=r.cod?motOf(r.cod):null;const c=mm?GN[mm.g]||mm.g:(r.cat||'Sem categoria').split(SEP)[0];g[c]=g[c]||{h:0,n:0,m:{}};g[c].h+=(r.min||0)/60;g[c].n++;const mo=mm?mm.n:(r.cat||'').split(SEP)[1];if(mo)g[c].m[mo]=(g[c].m[mo]||0)+1});
   const gr=Object.entries(g).sort((a,b)=>b[1].h-a[1].h).slice(0,8);
   $('#cP2').innerHTML=gr.length?barsH(gr.map(([k,v])=>({label:k.length>26?k.slice(0,25)+'…':k,v:v.h,txt:f1(v.h)+'h',c:'var(--P)',tip:`<div class='m'>${esc(k)}</div><b>${v.n} paradas · ${hm(v.h)}</b>${Object.entries(v.m).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([m,n])=>`<div class='tl'><span>${esc(m)}</span><b>${n}</b></div>`).join('')}`})),{W:520,lw:180})
     :'<p class="note">Nenhuma parada justificada neste filtro ainda. Assim que justificar, as causas aparecem aqui.</p>';
@@ -736,17 +800,18 @@ function renderPar(){
   const th=(k,l,cls='')=>`<th class="so ${cls}" data-so="${k}">${l}${PSORT.k===k?`<i>${PSORT.d>0?'↑':'↓'}</i>`:''}</th>`;
   const SL={ag:['ag','Aguardando'],ab:['ab','Aberta'],ok:['ok','Justificada'],hi:['off','Histórico']};
   let h=`<thead><tr><th class="ck"><input type="checkbox" id="pAll" ${allSel?'checked':''} aria-label="Selecionar visíveis"></th>${th('mo','Equipamento')}${th('ini','Início')}<th class="hm">Turno</th><th class="n hm">Fim</th>${th('dur','Duração','n')}${th('s','Situação')}<th>Motivo</th><th class="hm">Por</th><th></th></tr></thead><tbody>`;
-  vis.forEach(r=>{const sl=SL[r.s];const [c1,c2]=(r.cat||'').split(SEP);
+  const VAL={AGUARDANDO:['man','Manutenção?','Aguardando a manutenção confirmar'],CONTESTADO:['cont','Contestada','Contestada pela manutenção: o supervisor decide'],CONFIRMADO:['conf','Validada','Validada']};
+  vis.forEach(r=>{const sl=SL[r.s];const [c1,c2]=r.cod?[r.cod+(r.eqc?' · '+r.eqc:''),motNome(r.cod)]:(r.cat||'').split(SEP);const vl=VAL[r.conf];
     h+=`<tr class="${PSEL.has(r.id)?'sel':''}"><td class="ck"><input type="checkbox" data-ck="${esc(r.id)}" ${PSEL.has(r.id)?'checked':''} aria-label="Selecionar"></td>
     <td class="m">${esc(r.mo)}<span class="sub">${AREA_N[areaOf(r)]}</span></td><td style="white-space:nowrap">${dtFmt.format(r.iniMs)}</td><td class="hm">${r.tu?`<span class="pill ${r.tu===1?'and':'ag'}" style="${r.tu===2?'background:#FDF1DC':''}">${r.tu}º</span>`:'<span style="color:var(--muted)">—</span>'}</td><td class="n hm">${r.fimMs?dtFmt.format(r.fimMs):'—'}</td>
-    <td class="n">${r.min!=null?hm(r.min/60):`<span style="color:var(--muted)">desde ${ago(Date.now()-r.iniMs)}</span>`}</td><td><span class="pill ${sl[0]}">${sl[1]}</span>${r.tp==='programada'?' <span class="pill off">Prog.</span>':''}</td>
+    <td class="n">${r.min!=null?hm(r.min/60):`<span style="color:var(--muted)">desde ${ago(Date.now()-r.iniMs)}</span>`}</td><td><span class="pill ${sl[0]}">${sl[1]}</span>${r.tp==='programada'?' <span class="pill off">Prog.</span>':''}${vl?` <span class="pill ${vl[0]}" title="${esc(vl[2]+(r.cpor?' · '+r.cpor:'')+(r.cobs?': '+r.cobs:''))}">${vl[1]}</span>`:''}</td>
     <td>${r.cat?`<span class="why">${esc(c2||c1)}</span><span class="wsub">${esc(c2?c1:'')}${r.txt&&r.txt!=='Sem observações.'?`${c2?' · ':''}${esc(r.txt)}`:''}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
     <td class="hm">${esc(r.por||'')}${r.em?`<span class="sub">${dtFmt.format(Date.parse(r.em))}</span>`:''}</td>
-    <td class="n"><button class="act ${r.s==='ok'?'':'pri'}" data-jus="${esc(r.id)}">${r.s==='ok'?'Editar':r.s==='hi'?'Justificar':'Justificar'}</button></td></tr>`});
+    <td class="n" style="white-space:nowrap">${r.s==='ok'||r.s==='hi'?`<button class="act" data-hist="${esc(r.id)}" title="Quem justificou, validou ou alterou">Histórico</button>`:''}<button class="act ${r.s==='ok'?'':'pri'}" data-jus="${esc(r.id)}">${r.s==='ok'?'Corrigir':'Justificar'}</button></td></tr>`});
   if(!vis.length)h+=`<tr><td colspan="10"><div class="pempty"><b>${PTAB==='ag'?'Nada aguardando justificativa':'Nenhuma parada aqui'}</b>${PTAB==='ag'&&cnt.ok?'Tudo justificado neste filtro.':(PMODE?'':`Período: ${esc(rLabel())}.`)}${!PMODE&&ps.pend?`<br><button class="btn1" data-pend>Ver todas as ${f0(ps.pend)} pendentes</button>`:''}</div></td></tr>`;
   $('#tP').innerHTML=h+'</tbody>';
   $('#pMore').innerHTML=rows.length>PLIM?`<button class="more btn2" style="margin-top:12px" id="pMoreB">Mostrar mais ${Math.min(60,rows.length-PLIM)} de ${rows.length-PLIM} restantes</button>`:'';
-  $('#nP').innerHTML=`Situações: <b>Aberta</b> = o equipamento ainda não voltou a ligar; <b>Aguardando</b> = parada encerrada sem motivo; <b>Justificada</b> = motivo registrado; <b>Histórico</b> = parada de antes de 01/11 sem motivo conhecido (não entra no % de justificadas, mas pode ser justificada se alguém lembrar). Os dados são os mesmos do aplicativo dos operadores: o que for justificado aqui aparece lá, e vice-versa. Para justificar é preciso entrar com seu usuário.${PQ.busy?' Atualizando…':''}`;
+  $('#nP').innerHTML=`Situações: <b>Aberta</b> = o equipamento ainda não voltou a ligar; <b>Aguardando</b> = parada encerrada sem motivo; <b>Justificada</b> = motivo registrado; <b>Histórico</b> = parada de antes de 01/11 sem motivo conhecido (não entra no % de justificadas, mas pode ser justificada se alguém lembrar). Os dados e os motivos são os mesmos do aplicativo dos operadores: o que for justificado aqui aparece lá, e vice-versa. O supervisor justifica qualquer data; corrigir uma parada já justificada exige observação e fica no histórico.${PQ.busy?' Atualizando…':''}`;
   renderBulk();
 }
 function renderBulk(){const n=PSEL.size;$('#bulk').classList.toggle('show',n>0);
@@ -762,82 +827,91 @@ document.addEventListener('click',e=>{
   const tb=e.target.closest('#pTabs button');if(tb){PTAB=tb.dataset.t;PLIM=60;renderPar();return}
   const so=e.target.closest('th[data-so]');if(so){const k=so.dataset.so;PSORT=PSORT.k===k?{k,d:-PSORT.d}:{k,d:k==='mo'||k==='s'?1:-1};renderPar();return}
   if(e.target.id==='pMoreB'){PLIM+=60;renderPar();return}
-  const j=e.target.closest('[data-jus]');if(j){openJus([j.dataset.jus]);return}
+  const j=e.target.closest('[data-jus]');if(j){openJus(rowsByIds([j.dataset.jus]));return}
+  const hi=e.target.closest('[data-hist]');if(hi){openHist(hi.dataset.hist);return}
   if(e.target.closest('[data-pend]')){PMODE=true;PTAB='ag';PSEL.clear();parLoad();return}
   if(e.target.closest('[data-dclose]')){closeJus();return}
 });
 $('#bulkClr').onclick=()=>{PSEL.clear();renderPar()};
-$('#bulkGo').onclick=()=>openJus([...PSEL]);
+$('#bulkGo').onclick=()=>openJus(rowsByIds([...PSEL]));
 
-/* ---- drawer de justificativa ---- */
-let JS={ids:[],area:null,cl:null,mo:null,tp:'nao_programada',busy:false};
-function arvOf(area){const a=(PQ.arv||[]).map(([id,par,ar,niv,nome,ord])=>({id,par,ar,niv,nome,ord}));
-  const cls=a.filter(x=>x.ar===area&&x.niv==='CLASSIFICACAO').sort((x,y)=>x.ord-y.ord);
-  return cls.map(c=>({...c,mot:a.filter(x=>x.par===c.id&&x.niv==='MOTIVO').sort((x,y)=>x.ord-y.ord)}))}
-function openJus(ids){
-  const rs=(PQ.rows||[]).filter(r=>ids.includes(r.id));if(!rs.length)return;
+/* ---- drawer de justificativa (motivos do aplicativo) ---- */
+let JS={rows:[],area:null,g:null,cod:null,eq:null,busy:false};
+const rowsByIds=ids=>(PQ.rows||[]).filter(r=>ids.includes(r.id));
+async function openJus(rs){
+  if(!rs||!rs.length)return;
+  if(!EU.autorizado){openLogin(EU.logado?'Seu usuário ainda não foi liberado. Fale com o supervisor.':'Entre com seu usuário para justificar paradas.');return}
+  try{await ensureCat()}catch(e){toast('Não foi possível carregar os motivos: '+errApp(e));return}
   const areas=[...new Set(rs.map(areaOf))];
-  JS={ids:rs.map(r=>r.id),area:areas.length===1?areas[0]:null,cl:null,mo:null,tp:'nao_programada',busy:false};
-  if(!EU.autorizado){openLogin(EU.logado?'Seu usuário ainda não tem permissão para justificar. Peça ao responsável para liberar.':'Entre com seu usuário para justificar paradas.');return}
-  let txt='',por=EU.nome||'';
-  if(rs.length===1&&rs[0].s==='ok'){const r=rs[0];JS.tp=r.tp==='programada'?'programada':'nao_programada';const [c1,c2]=(r.cat||'').split(SEP);JS.cl=c1||null;JS.mo=c2||null;txt=r.txt&&r.txt!=='Sem observações.'?r.txt:'';por=r.por||por}
+  JS={rows:rs,area:areas.length===1?areas[0]:null,g:null,cod:null,eq:null,busy:false};
+  const jaJ=rs.filter(r=>r.s==='ok'||r.s==='hi').length;
+  let txt='';
+  if(rs.length===1&&rs[0].cod){const m=motOf(rs[0].cod);if(m){JS.g=m.g;JS.cod=m.c;JS.eq=rs[0].eqc||null}}
   const tot=rs.reduce((a,r)=>a+(r.min||0),0);
-  $('#drwT').textContent=rs.length===1?(rs[0].s==='ok'?'Editar justificativa':'Justificar parada'):`Justificar ${rs.length} paradas`;
-  const list=rs.slice(0,5).map(r=>`<div><span><b>${esc(r.mo)}</b> · ${dtFmt.format(r.iniMs)}</span><span>${r.min!=null?hm(r.min/60):'aberta'}</span></div>`).join('')+(rs.length>5?`<div><span>e mais ${rs.length-5}…</span><span></span></div>`:'')+(rs.length>1?`<div class="tot"><span>Total</span><span>${hm(tot/60)}</span></div>`:'');
-  const jaOk=rs.filter(r=>r.s==='ok').length;
-  $('#drwB').innerHTML=`<div class="fs"><h4>Paradas</h4><div class="slist">${list}</div>${jaOk&&rs.length>1?`<div class="fhint">${jaOk} já ${jaOk===1?'estava justificada e será substituída':'estavam justificadas e serão substituídas'}.</div>`:''}</div>
-   ${JS.area?'':`<div class="warnb">A seleção mistura <b>Primário</b> e <b>Secundário</b>, que têm motivos diferentes. Justifique um grupo por vez: desmarque as paradas de um deles.</div>`}
-   <div class="fs"><h4>Tipo</h4><div class="seg" id="jTp"><button data-v="nao_programada">Não programada</button><button data-v="programada">Programada</button></div></div>
-   <div class="fs"><h4>Classificação <b>*</b></h4><div class="cgrid" id="jCl"></div></div>
+  $('#drwT').textContent=rs.length===1?(jaJ?'Corrigir justificativa':'Justificar parada'):`Justificar ${rs.length} paradas`;
+  const nomeEq=r=>r.mo||(r.eqc?eqNome(r.eqc):AREA_N[areaOf(r)]);
+  const list=rs.slice(0,5).map(r=>`<div><span><b>${esc(nomeEq(r))}</b> · ${dtFmt.format(r.iniMs)}</span><span>${r.min!=null?hm(r.min/60):'aberta'}</span></div>`).join('')+(rs.length>5?`<div><span>e mais ${rs.length-5}…</span><span></span></div>`:'')+(rs.length>1?`<div class="tot"><span>Total</span><span>${hm(tot/60)}</span></div>`:'');
+  const sup=EU.papel==='supervisor';
+  $('#drwB').innerHTML=`<div class="fs"><h4>Paradas</h4><div class="slist">${list}</div></div>
+   ${JS.area?'':`<div class="warnb">A seleção mistura setores (${areas.map(a=>AREA_N[a]).join(', ')}), que têm motivos diferentes. Justifique um setor por vez.</div>`}
+   ${jaJ?`<div class="warnb">${jaJ===rs.length?(rs.length===1?'Esta parada já tem justificativa':'Todas já têm justificativa'):`${jaJ} de ${rs.length} já ${jaJ===1?'tem':'têm'} justificativa`}: a troca fica registrada como <b>correção</b> no histórico${sup?' e precisa de observação.':'. <b>Só o supervisor pode corrigir.</b>'}</div>`:''}
+   <div class="fs"><h4>O que aconteceu? <b>*</b></h4><div class="cgrid" id="jG"></div></div>
    <div class="fs" id="jMoW"><h4>Motivo <b>*</b></h4><div class="mlist" id="jMo"></div></div>
-   <div class="fs"><h4>Observação <span id="jObsReq"></span></h4><textarea id="jTxt" rows="3" maxlength="500" placeholder="Detalhe o que aconteceu (opcional)">${esc(txt)}</textarea></div>
-   <div class="fs"><h4>Justificado por</h4><div class="tin" style="background:var(--soft2)">${esc(por)}</div><div class="fhint">Registrado automaticamente com o seu usuário.</div></div>`;
+   <div class="fs" id="jEqW"><h4>Equipamento <b>*</b></h4><div class="mlist" id="jEq"></div></div>
+   <div class="clsb" id="jCls" hidden></div>
+   <div class="fs"><h4>Observação <span id="jObsReq"></span></h4><textarea id="jTxt" rows="3" maxlength="500" placeholder="Detalhe o que aconteceu">${esc(txt)}</textarea></div>
+   <div class="fs"><h4>Justificado por</h4><div class="tin" style="background:var(--soft2)">${esc(EU.nome||'')}</div><div class="fhint">Registrado automaticamente com o seu usuário.</div></div>`;
   $('#drwErr').textContent='';$('#drwSave').disabled=false;$('#drwSave').textContent='Salvar justificativa';
   renderJus();$('#drw').classList.add('open');$('#drw').setAttribute('aria-hidden','false');
-  setTimeout(()=>{const b=$('#jCl button');(b||$('#jTxt')).focus()},50);
+  setTimeout(()=>{const b=$('#jG button');(b||$('#jTxt')).focus()},50);
 }
 function renderJus(){
-  $$('#jTp button').forEach(b=>b.classList.toggle('on',b.dataset.v===JS.tp));
-  const tree=JS.area?arvOf(JS.area):[];
-  if(JS.cl&&!tree.some(c=>c.nome===JS.cl))JS.cl=null;
-  $('#jCl').innerHTML=JS.area?(tree.length?tree.map(c=>`<button data-cl="${esc(c.nome)}" class="${JS.cl===c.nome?'on':''}">${esc(c.nome)}<small>${c.mot.length} motivos</small></button>`).join(''):'<div class="fhint">Árvore de motivos vazia para esta área.</div>'):'<div class="fhint">Escolha paradas de uma só área.</div>';
-  const c=tree.find(x=>x.nome===JS.cl);
-  if(JS.mo&&c&&!c.mot.some(m=>m.nome===JS.mo))JS.mo=null;
-  $('#jMoW').style.display=c?'':'none';
-  $('#jMo').innerHTML=c?c.mot.map(m=>`<label class="${JS.mo===m.nome?'on':''}"><input type="radio" name="jmo" value="${esc(m.nome)}" ${JS.mo===m.nome?'checked':''}>${esc(m.nome)}</label>`).join(''):'';
-  const need=/^(outro|não sei)$/i.test(JS.mo||'');$('#jObsReq').innerHTML=need?'<b>* obrigatória para “'+esc(JS.mo)+'”</b>':'';
+  const mots=JS.area?motsDaArea(JS.area):[];
+  const gs=GRUPOS.filter(([id])=>mots.some(m=>m.g===id));
+  if(JS.g&&!gs.some(([id])=>id===JS.g)){JS.g=null;JS.cod=null}
+  $('#jG').innerHTML=JS.area?gs.map(([id,n])=>`<button data-g="${id}" class="${JS.g===id?'on':''}">${esc(n)}<small>${mots.filter(m=>m.g===id).length} motivos</small></button>`).join(''):'<div class="fhint">Escolha paradas de um só setor.</div>';
+  const doG=mots.filter(m=>m.g===JS.g);
+  if(JS.cod&&!doG.some(m=>m.c===JS.cod))JS.cod=null;
+  $('#jMoW').style.display=JS.g?'':'none';
+  $('#jMo').innerHTML=doG.map(m=>`<label class="${JS.cod===m.c?'on':''}"><input type="radio" name="jmo" value="${esc(m.c)}" ${JS.cod===m.c?'checked':''}>${esc(m.n)}<small style="margin-left:auto;font:500 10.5px var(--mono);color:var(--muted)">${esc(m.c)}</small></label>`).join('');
+  const m=motOf(JS.cod);
+  const eqs=m&&m.a?eqsDaArea(JS.area).filter(e=>motAplicaEq(m,e.t)):[];
+  if(eqs.length===1)JS.eq=eqs[0].t;
+  if(JS.eq&&!eqs.some(e=>e.t===JS.eq))JS.eq=null;
+  $('#jEqW').style.display=eqs.length>1?'':'none';
+  $('#jEq').innerHTML=eqs.map(e=>`<label class="${JS.eq===e.t?'on':''}"><input type="radio" name="jeq" value="${esc(e.t)}" ${JS.eq===e.t?'checked':''}>${esc(e.t)} · ${esc(e.n)}</label>`).join('');
+  const c=$('#jCls');c.hidden=!m;if(m)c.innerHTML=esc(CLS_TXT[m.k]||('Classe '+m.k))+(eqs.length===1?` · equipamento: <b>${esc(eqs[0].t)}</b>`:'');
+  const corr=JS.rows.some(r=>r.s==='ok'||r.s==='hi');
+  $('#jObsReq').innerHTML=corr?'<b>* obrigatória na correção</b>':'';
 }
-$('#drwB').addEventListener('click',e=>{const t=e.target.closest('#jTp button');if(t){JS.tp=t.dataset.v;renderJus();return}
-  const c=e.target.closest('[data-cl]');if(c){if(JS.cl!==c.dataset.cl){JS.cl=c.dataset.cl;JS.mo=null}renderJus();setTimeout(()=>$('#jMoW').scrollIntoView({block:'nearest',behavior:'smooth'}),30)}});
-$('#drwB').addEventListener('change',e=>{if(e.target.name==='jmo'){JS.mo=e.target.value;renderJus()}});
+$('#drwB').addEventListener('click',e=>{const g=e.target.closest('[data-g]');if(g){if(JS.g!==g.dataset.g){JS.g=g.dataset.g;JS.cod=null;JS.eq=null}renderJus();setTimeout(()=>$('#jMoW').scrollIntoView({block:'nearest',behavior:'smooth'}),30)}});
+$('#drwB').addEventListener('change',e=>{if(e.target.name==='jmo'){JS.cod=e.target.value;JS.eq=null;renderJus()}if(e.target.name==='jeq'){JS.eq=e.target.value;renderJus()}});
 function closeJus(){if(JS.busy)return;$('#drw').classList.remove('open');$('#drw').setAttribute('aria-hidden','true')}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#drw').classList.contains('open'))closeJus()});
 $('#drwSave').onclick=async()=>{
   if(JS.busy)return;const err=m=>{$('#drwErr').textContent=m};
-  const por=EU.nome||'',txt=($('#jTxt').value||'').trim();
-  if(!JS.area)return err('Selecione paradas de uma só área.');
-  if(!JS.cl)return err('Escolha a classificação.');
-  if(!JS.mo)return err('Escolha o motivo.');
-  if(/^(outro|não sei)$/i.test(JS.mo)&&txt.length<3)return err('Descreva na observação.');
-  if(!JS.ids.length||JS.ids.length>500||!JS.ids.every(i=>/^[A-Za-z0-9._:|-]{1,120}$/.test(i)))return err('Seleção inválida.');
-  const tp=JS.tp==='programada'?'programada':'nao_programada';
-  const cat=`${JS.cl}${SEP}${JS.mo}`;
-  JS.busy=true;$('#drwSave').disabled=true;$('#drwSave').textContent='Salvando…';err('');
-  try{
-    const d=await rpc('painel_justificar',{p_ids:JS.ids,p_classificacao:JS.cl,p_motivo:JS.mo,p_tipo:tp,p_texto:txt||null});const n=+d.n||0;
-    (PQ.rows||[]).forEach(x=>{if(JS.ids.includes(x.id)){x.s='ok';x.cat=cat;x.tp=tp;x.txt=txt||'Sem observações.';x.por=d.por||por;x.em=d.em||new Date().toISOString()}});
-    JS.ids.forEach(i=>PSEL.delete(i));JS.busy=false;closeJus();
-    toast(n===JS.ids.length?`${n} ${n===1?'parada justificada':'paradas justificadas'}`:`${n} de ${JS.ids.length} gravadas: algumas não existem mais. Lista recarregada.`);
-    renderPar();load(true);parLoad(true);
-  }catch(e){
-    JS.busy=false;$('#drwSave').disabled=false;$('#drwSave').textContent='Salvar justificativa';const m=(e&&e.message)||'';
-    const MSG={nao_autorizado:'Seu usuário não tem permissão para justificar.',motivo_invalido:'Motivo inválido para esta classificação.',observacao_obrigatoria:'Descreva na observação.',selecao_invalida:'Seleção inválida.',texto_longo:'Observação muito longa (máx. 500).'};
-    const k=Object.keys(MSG).find(k=>m.includes(k));
-    if(k)err(MSG[k]);
-    else if(/JWT|auth|permission denied/i.test(m)){err('Sua sessão expirou. Entre de novo.');openLogin()}
-    else if(/fetch|network/i.test(m)){err('Sem resposta do banco: pode ter salvo ou não. Recarreguei a lista, confira antes de tentar de novo.');parLoad(true)}
-    else err('Não foi possível salvar: '+m);
+  const txt=($('#jTxt').value||'').trim();
+  if(!JS.area)return err('Selecione paradas de um só setor.');
+  const m=motOf(JS.cod);
+  if(!JS.g||!m)return err('Escolha o motivo.');
+  if(m.a&&!JS.eq)return err('Escolha o equipamento.');
+  const corr=JS.rows.filter(r=>r.s==='ok'||r.s==='hi');
+  if(corr.length&&EU.papel!=='supervisor')return err('Só o supervisor pode corrigir paradas já justificadas.');
+  if(corr.length&&txt.length<3)return err('Escreva na observação o motivo da correção.');
+  JS.busy=true;$('#drwSave').disabled=true;err('');
+  let ok=0;const falhas=[];const total=JS.rows.length;
+  for(const r of [...JS.rows]){
+    $('#drwSave').textContent=total>1?`Salvando ${ok+falhas.length+1} de ${total}…`:'Salvando…';
+    try{
+      if(r.s==='ok'||r.s==='hi')await rpc('app_corrigir_justificativa',{p_id:r.id,p_codigo:m.c,p_equipamento:m.a?JS.eq:null,p_obs:txt});
+      else await rpc('app_justificar',{p_id:r.id,p_codigo:m.c,p_equipamento:m.a?JS.eq:null,p_segundos:null,p_origem:null,p_texto:txt||null});
+      ok++;PSEL.delete(r.id);JS.rows=JS.rows.filter(x=>x.id!==r.id);
+    }catch(e){falhas.push(errApp(e))}
   }
+  JS.busy=false;$('#drwSave').disabled=false;$('#drwSave').textContent='Salvar justificativa';
+  if(!falhas.length){closeJus();toast(`${ok} ${ok===1?'parada justificada':'paradas justificadas'}`)}
+  else{err(`${ok} gravada(s), ${falhas.length} com erro: ${falhas[0]}`);if(ok)toast(`${ok} gravada(s); confira as que deram erro.`)}
+  load(true);parLoad(true);if(PANE==='val')valLoad();
 };
 let tT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3800)}
 
@@ -981,26 +1055,165 @@ $('#tuSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;F.tu
 $('#stSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;F.st=b.dataset.s;saveF();renderAll()};
 $('#fchips').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const k=b.dataset.rm;if(k==='per')setRange('30d');if(k==='at')F.sel=null;if(k==='st')F.st='all';if(k==='tu')F.tu='all';saveF();renderAll()};
 
-/* ---------- LOGIN ---------- */
-let EU={logado:false,nome:null,autorizado:false};
-async function refreshEU(){try{EU=await rpc('painel_eu')||EU}catch(e){EU={logado:false,nome:null,autorizado:false}}
-  $('#userLbl').textContent=EU.logado?(EU.nome||'Conectado'):'Entrar';$('#btnUser').classList.toggle('on',EU.logado)}
+/* ---------- LOGIN (mesmo do aplicativo: nome + PIN) ---------- */
+let EU={logado:false,nome:null,autorizado:false,papel:null,area:null};
+const DOMINIO_LOGIN='operador.paradas-britagem.app';
+const normLogin=n=>String(n||'').trim().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,'.').replace(/[^a-z0-9.-]/g,'').replace(/\.{2,}/g,'.').replace(/^\.+|\.+$/g,'');
+const PAPEL_N={operador:'Operador',manutencao:'Manutenção',supervisor:'Supervisor'};
+async function refreshEU(){try{EU=await rpc('painel_eu')||EU}catch(e){EU={logado:false,nome:null,autorizado:false,papel:null,area:null}}
+  $('#userLbl').textContent=EU.logado?(EU.nome||'Conectado'):'Entrar';$('#btnUser').classList.toggle('on',EU.logado);navVis()}
+function navVis(){
+  const sup=EU.autorizado&&EU.papel==='supervisor',val=EU.autorizado&&(sup||EU.papel==='manutencao');
+  $('#nav [data-p="val"]').classList.toggle('hidn',!val);$('#nav [data-p="equ"]').classList.toggle('hidn',!sup);
+  if((PANE==='val'&&!val)||(PANE==='equ'&&!sup))go('geral');
+}
+/* Sem login (ou sem liberação) o painel não mostra nada: os dados só saem para usuários liberados. */
+async function gate(){
+  await refreshEU();
+  if(EU.logado&&EU.autorizado){if(EU.papel==='supervisor'||EU.papel==='manutencao')valLoad();return true}
+  D=null;$$('.pane').forEach(s=>s.classList.remove('on'));
+  if(!EU.logado){showState('err','Entre para ver o painel','Use o mesmo <b>nome e PIN</b> do aplicativo Paradas Britagem.','Entrar');$('#stBtn').onclick=()=>openLogin();openLogin()}
+  else{showState('err','Acesso ainda não liberado','Você entrou como <b>'+esc(EU.nome||'usuário sem cadastro')+'</b>, mas seu acesso ainda não foi liberado pelo supervisor.','Sair');$('#stBtn').onclick=()=>sb.auth.signOut()}
+  return false;
+}
 function openLogin(info){const L=$('#login');$('#lgErr').textContent='';
   $('#lgForm').hidden=EU.logado;$('#lgOut').hidden=!EU.logado;
-  if(EU.logado){$('#lgNome').textContent=EU.nome||'(sem nome cadastrado)';$('#lgAuth').textContent=EU.autorizado?'Pode justificar paradas.':'Seu usuário ainda não foi liberado para justificar.';$('#lgT').textContent='Sua conta'}
-  else{$('#lgT').textContent='Entrar';$('#lgInfo').textContent=info||'Para justificar paradas é preciso entrar. Ver o painel não exige login.'}
-  L.classList.add('open');L.setAttribute('aria-hidden','false');setTimeout(()=>{(EU.logado?$('#lgSair'):$('#lgEmail')).focus()},50)}
+  if(EU.logado){$('#lgNome').textContent=EU.nome||'(sem nome cadastrado)';$('#lgAuth').textContent=EU.autorizado?`${PAPEL_N[EU.papel]||'Usuário'} · ${EU.area==='AMBOS'?'todas as áreas':(AREA_N[EU.area]||EU.area||'')}`:'Seu usuário ainda não foi liberado pelo supervisor.';$('#lgT').textContent='Sua conta'}
+  else{$('#lgT').textContent='Entrar';$('#lgInfo').textContent=info||'Use o mesmo nome e PIN do aplicativo Paradas Britagem.'}
+  L.classList.add('open');L.setAttribute('aria-hidden','false');setTimeout(()=>{(EU.logado?$('#lgSair'):$('#lgUser')).focus()},50)}
 function closeLogin(){$('#login').classList.remove('open');$('#login').setAttribute('aria-hidden','true')}
 $('#btnUser').onclick=()=>openLogin();
 $('#login').addEventListener('click',e=>{if(e.target.closest('[data-lclose]'))closeLogin()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#login').classList.contains('open'))closeLogin()});
-$('#lgForm').onsubmit=async e=>{e.preventDefault();const b=$('#lgBtn');b.disabled=true;b.textContent='Entrando…';$('#lgErr').textContent='';
-  const {error}=await sb.auth.signInWithPassword({email:$('#lgEmail').value.trim(),password:$('#lgPass').value});
+$('#lgForm').onsubmit=async e=>{e.preventDefault();const b=$('#lgBtn');
+  const u=$('#lgUser').value.trim(),pin=$('#lgPin').value;
+  if(!/^\d{6}$/.test(pin)){$('#lgErr').textContent='O PIN tem 6 números.';return}
+  const email=u.includes('@')?u:`${normLogin(u)}@${DOMINIO_LOGIN}`;
+  b.disabled=true;b.textContent='Entrando…';$('#lgErr').textContent='';
+  const {error}=await sb.auth.signInWithPassword({email,password:pin});
   b.disabled=false;b.textContent='Entrar';
-  if(error){$('#lgErr').textContent=/invalid/i.test(error.message)?'E-mail ou senha incorretos.':error.message;return}
-  $('#lgPass').value='';await refreshEU();closeLogin();toast(EU.autorizado?`Bem-vindo, ${EU.nome}`:'Conectado, mas ainda sem permissão para justificar.')};
-$('#lgSair').onclick=async()=>{await sb.auth.signOut();await refreshEU();closeLogin();toast('Você saiu.')};
-sb.auth.onAuthStateChange(()=>{refreshEU()});
+  if(error){$('#lgErr').textContent=/invalid/i.test(error.message)?'Nome ou PIN incorreto.':error.message;return}
+  $('#lgPin').value='';closeLogin();
+  if(await gate()){toast(`Bem-vindo, ${EU.nome}`);load(true)}};
+$('#lgSair').onclick=async()=>{await sb.auth.signOut();closeLogin();toast('Você saiu.')};
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){gate()}else if(ev==='TOKEN_REFRESHED'||ev==='USER_UPDATED'){refreshEU()}});
+
+/* ---------- janela genérica ---------- */
+let GO=null;
+function gOpen({k='',t,body,ok,onOk}){GO={onOk,busy:false};$('#gK').textContent=k;$('#gT').textContent=t;$('#gB').innerHTML=body;$('#gErr').textContent='';
+  const b=$('#gOk');b.hidden=!ok;b.textContent=ok||'';b.disabled=false;
+  $('#gdrw').classList.add('open');$('#gdrw').setAttribute('aria-hidden','false');setTimeout(()=>{const i=$('#gB input,#gB textarea,#gB select');if(i)i.focus()},50)}
+function gClose(){if(GO&&GO.busy)return;$('#gdrw').classList.remove('open');$('#gdrw').setAttribute('aria-hidden','true')}
+$('#gdrw').addEventListener('click',e=>{if(e.target.closest('[data-gclose]'))gClose()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#gdrw').classList.contains('open'))gClose()});
+$('#gOk').onclick=async()=>{if(!GO||!GO.onOk||GO.busy)return;GO.busy=true;const b=$('#gOk'),t=b.textContent;b.disabled=true;b.textContent='Salvando…';$('#gErr').textContent='';
+  try{const r=await GO.onOk();GO.busy=false;b.disabled=false;b.textContent=t;if(r!==false)gClose()}
+  catch(e){GO.busy=false;b.disabled=false;b.textContent=t;$('#gErr').textContent=e&&e.userMsg?e.userMsg:errApp(e)}};
+const falha=m=>{const e=new Error(m);e.userMsg=m;return e};
+
+/* ---------- histórico de uma parada ---------- */
+const ACAO_N={JUSTIFICOU:'Justificou',ALTEROU:'Alterou',CORRIGIU:'Corrigiu',CONFIRMOU:'Validou',CONTESTOU:'Contestou'};
+async function openHist(id){
+  gOpen({k:'Histórico',t:'Histórico da parada',body:'<div class="gmsg">Buscando…</div>'});
+  try{await ensureCat();const h=await rpc('app_historico_parada',{p_id:id});
+    const ev=h.eventos||[];
+    const linhas=ev.map(x=>{const mud=x.antes!==x.depois||x.eq_antes!==x.eq_depois;
+      return `<div><b>${esc(ACAO_N[x.acao]||x.acao)}</b> · ${esc(x.por)}<small>${dtFmt.format(Date.parse(x.em))}</small>${mud?`${x.antes?esc(motNome(x.antes))+(x.eq_antes?' ('+esc(x.eq_antes)+')':''):'sem motivo'} → <b>${x.depois?esc(motNome(x.depois))+(x.eq_depois?' ('+esc(x.eq_depois)+')':''):'sem motivo'}</b>`:(x.depois?esc(motNome(x.depois)):'')}${x.obs&&x.acao!=='JUSTIFICOU'?(x.acao==='ALTEROU'?`<small>${esc(x.obs)}</small>`:`<br>“${esc(x.obs)}”`):''}</div>`}).join('');
+    $('#gB').innerHTML=`<div class="fs"><h4>Justificativa original</h4><div style="font-size:13px">${h.justificado_por?`${esc(h.justificado_por)}${h.justificado_em?' · '+dtFmt.format(Date.parse(h.justificado_em)):''}`:'Ainda não justificada'}</div></div>
+      <div class="fs"><h4>Validações e alterações</h4>${linhas?`<div class="hist">${linhas}</div>`:'<div class="fhint">Nenhuma validação ou alteração registrada.</div>'}</div>
+      <p class="fhint">O histórico não pode ser apagado nem editado. Alterações feitas por qualquer caminho (app, site ou sistema) ficam registradas.</p>`;
+  }catch(e){$('#gB').innerHTML=`<div class="pempty"><b>Não foi possível carregar</b>${esc(errApp(e))}</div>`}
+}
+
+/* ---------- VALIDAR ---------- */
+let VQ={rows:null,busy:false,err:null};
+async function valLoad(){
+  if(!EU.autorizado)return;VQ.busy=true;VQ.err=null;renderVal();
+  try{const [r]=await Promise.all([rpc('app_fila_validacao'),ensureCat()]);
+    VQ.rows=(r||[]).map(x=>{const iniMs=Date.parse(x.inicio_parada),fimMs=x.fim_parada?Date.parse(x.fim_parada):null;
+      return {id:x.id,est:x.estagio,mo:'',iniMs,fimMs,min:x.duracao_minutos??(fimMs?(fimMs-iniMs)/6e4:null),s:'ok',cod:x.codigo_motivo,eqc:x.equipamento_causa,cls:x.classe,txt:x.justificativa_texto,por:x.justificado_por,em:x.justificado_em,conf:x.confirmacao_manutencao,cpor:x.confirmado_por,cobs:x.confirmacao_obs}});
+  }catch(e){VQ.err=e}finally{VQ.busy=false;renderVal()}
+}
+function renderVal(){
+  const b=$('#navVal');const n=VQ.rows?VQ.rows.length:0;b.hidden=!n;b.textContent=n;
+  const sup=EU.papel==='supervisor';
+  $('#vSub').textContent=sup?'Confirme, corrija ou decida as contestadas pela manutenção':'Confirme se a parada foi mesmo problema de manutenção';
+  if(!VQ.rows){$('#tV').innerHTML=`<tbody><tr><td>${VQ.err?`<div class="pempty"><b>Não foi possível carregar</b>${esc(errApp(VQ.err))}<br><button class="btn1" onclick="valLoad()">Tentar de novo</button></div>`:'<div class="gmsg">Buscando…</div>'}</td></tr></tbody>`;$('#nV').textContent='';return}
+  const cont=VQ.rows.filter(r=>r.conf==='CONTESTADO').length;
+  let h=`<thead><tr><th>Setor / equipamento</th><th>Início</th><th class="n">Duração</th><th>Motivo</th><th class="hm">Justificado por</th><th>Situação</th><th></th></tr></thead><tbody>`;
+  VQ.rows.forEach(r=>{const c=r.conf==='CONTESTADO';
+    h+=`<tr><td class="m">${esc(AREA_N[areaOf(r)])}<span class="sub">${r.eqc?esc(r.eqc+' · '+eqNome(r.eqc)):'área toda'}</span></td><td style="white-space:nowrap">${dtFmt.format(r.iniMs)}</td><td class="n">${r.min!=null?hm(r.min/60):'—'}</td>
+      <td><span class="why">${esc(motNome(r.cod))}</span><span class="wsub">${esc(r.cod||'')}${r.txt&&r.txt!=='Sem observações.'?' · '+esc(r.txt):''}</span></td>
+      <td class="hm">${esc(r.por||'')}${r.em?`<span class="sub">${dtFmt.format(Date.parse(r.em))}</span>`:''}</td>
+      <td>${c?`<span class="pill cont">Contestada</span><span class="wsub">${esc(r.cpor||'Manutenção')}: ${esc(r.cobs||'')}</span>`:'<span class="pill man">Aguardando</span>'}</td>
+      <td class="n" style="white-space:nowrap"><button class="act" data-vhist="${esc(r.id)}">Histórico</button>${!c||sup?`<button class="act pri" data-vok="${esc(r.id)}">${c?'Manter motivo':'Confirmar'}</button>`:''}${sup?`<button class="act" data-vcor="${esc(r.id)}">Corrigir</button>`:(!c?`<button class="act" data-vcont="${esc(r.id)}">Contestar</button>`:'')}</td></tr>`});
+  if(!VQ.rows.length)h+=`<tr><td colspan="7"><div class="pempty"><b>Nada para validar</b>Todas as justificativas de manutenção estão validadas.</div></td></tr>`;
+  $('#tV').innerHTML=h+'</tbody>';
+  $('#nV').innerHTML=`${VQ.rows.length} para validar${cont?` · <b>${cont} contestada(s)</b> esperando o supervisor`:''}. Paradas classe A (quebra, correia, elétrica, solda) vão para a manutenção confirmar. Se a manutenção contestar, o supervisor mantém o motivo ou corrige.${VQ.busy?' Atualizando…':''}`;
+}
+document.addEventListener('click',async e=>{
+  const ok=e.target.closest('[data-vok]');
+  if(ok){const id=ok.dataset.vok;ok.disabled=true;try{await rpc('app_confirmar_manutencao',{p_id:id,p_acao:'CONFIRMAR',p_obs:null});toast('Parada validada.');valLoad();if(PQ.rows)parLoad(true)}catch(er){ok.disabled=false;toast(errApp(er))}return}
+  const ct=e.target.closest('[data-vcont]');
+  if(ct){const id=ct.dataset.vcont;gOpen({k:'Validação',t:'Contestar justificativa',ok:'Enviar contestação',
+    body:`<p class="fhint" style="margin:0">A contestação vai para o supervisor decidir se mantém ou corrige o motivo.</p><div class="fs"><h4>Por que não foi manutenção? <b>*</b></h4><textarea id="gObs" rows="3" maxlength="500" placeholder="Ex.: foi pedra engasgada, o equipamento estava bom"></textarea></div>`,
+    onOk:async()=>{const obs=($('#gObs').value||'').trim();if(obs.length<3)throw falha('Escreva o motivo (mínimo 3 letras).');await rpc('app_confirmar_manutencao',{p_id:id,p_acao:'CONTESTAR',p_obs:obs});toast('Contestação enviada ao supervisor.');valLoad()}});return}
+  const co=e.target.closest('[data-vcor]');if(co){const r=(VQ.rows||[]).find(x=>x.id===co.dataset.vcor);if(r)openJus([r]);return}
+  const vh=e.target.closest('[data-vhist]');if(vh){openHist(vh.dataset.vhist);return}
+});
+
+/* ---------- EQUIPE ---------- */
+let EQ={rows:null,err:null};
+const AREAS_OP=[['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack']];
+const areaOpts=(papel,v)=>[...AREAS_OP,...(papel!=='operador'?[['AMBOS','Todas (Ambos)']]:[])].map(([k,n])=>`<option value="${k}" ${v===k?'selected':''}>${n}</option>`).join('');
+const papelOpts=v=>Object.entries(PAPEL_N).map(([k,n])=>`<option value="${k}" ${v===k?'selected':''}>${n}</option>`).join('');
+const ERR_EQ={nao_autorizado:'Só o supervisor pode alterar a equipe.',nome_invalido:'Nome precisa ter de 2 a 80 letras.',area_obrigatoria:'Escolha a área do operador.',operador_uma_area:'Operador fica em uma área só (Primário, Secundário ou Lokotrack).',nao_pode_rebaixar_a_si_mesmo:'Você não pode tirar o seu próprio acesso de supervisor.',papel_invalido:'Papel inválido.',area_invalida:'Área inválida.',login_existe:'Já existe um usuário com esse nome. Use outro (por exemplo, com sobrenome).',pin_invalido:'O PIN precisa ter 6 números.',pin_recusado:'O servidor recusou esse PIN. Tente outro.',usuario_nao_encontrado:'Usuário não encontrado.',sessao_invalida:'Sua sessão expirou. Entre de novo.',sem_login:'Sua sessão expirou. Entre de novo.'};
+const errEq=m=>{const k=Object.keys(ERR_EQ).find(k=>String(m).includes(k));return k?ERR_EQ[k]:null};
+async function adminUsuarios(body){
+  const {data,error}=await sb.functions.invoke('admin-usuarios',{body});
+  if(error){let code='';try{const j=await error.context.json();code=j.error||j.message||''}catch(_){code=error.message||''}throw falha(errEq(code)||('Não foi possível concluir: '+code))}
+  return data;
+}
+async function equLoad(){
+  if(EU.papel!=='supervisor')return;EQ.err=null;renderEqu();
+  try{EQ.rows=await rpc('app_supervisor_usuarios')||[]}catch(e){EQ.err=e}renderEqu();
+}
+function renderEqu(){
+  if(!EQ.rows){$('#tE').innerHTML=`<tbody><tr><td>${EQ.err?`<div class="pempty"><b>Não foi possível carregar</b>${esc(errEq(EQ.err.message)||errApp(EQ.err))}<br><button class="btn1" onclick="equLoad()">Tentar de novo</button></div>`:'<div class="gmsg">Buscando…</div>'}</td></tr></tbody>`;return}
+  const novos=EQ.rows.filter(u=>!u.liberado).length,at=EQ.rows.filter(u=>u.liberado&&u.ativo).length;
+  $('#eCount').innerHTML=`<b>${at}</b> ativo(s)${novos?` · <b style="color:var(--orange)">${novos} aguardando liberação</b>`:''}`;
+  let h=`<thead><tr><th>Nome</th><th>Papel</th><th>Área</th><th>Ativo</th><th class="hm">Último acesso</th><th></th></tr></thead><tbody>`;
+  EQ.rows.forEach(u=>{const papel=u.papel||'operador',area=u.area||(papel==='operador'?'PRIMARIO':'AMBOS');
+    h+=`<tr class="${u.liberado?'':'novo'}" data-uid="${esc(u.user_id)}"><td><input class="tin" type="text" data-f="nome" value="${esc(u.nome||'')}" maxlength="80" ${u.eu?'title="Você"':''}><span class="sub">login: ${esc(u.login)}${u.eu?' · você':''}${u.liberado?'':' · aguardando liberação'}</span></td>
+      <td><select class="tin" data-f="papel" ${u.eu?'disabled title="Você não pode mudar o seu próprio papel"':''}>${papelOpts(papel)}</select></td>
+      <td><select class="tin" data-f="area">${areaOpts(papel,area)}</select></td>
+      <td><input type="checkbox" data-f="ativo" ${u.liberado?(u.ativo?'checked':''):'checked'} ${u.eu?'disabled':''} aria-label="Ativo"></td>
+      <td class="hm" style="white-space:nowrap">${u.ultimo_acesso?dtFmt.format(Date.parse(u.ultimo_acesso)):'nunca'}</td>
+      <td class="n" style="white-space:nowrap"><button class="act ${u.liberado?'':'pri'}" data-esave>${u.liberado?'Salvar':'Liberar'}</button><button class="act" data-epin>Trocar PIN</button></td></tr>`});
+  if(!EQ.rows.length)h+=`<tr><td colspan="6"><div class="pempty"><b>Nenhum usuário</b>Use “Novo usuário” para cadastrar.</div></td></tr>`;
+  $('#tE').innerHTML=h+'</tbody>';
+}
+$('#tE').addEventListener('change',e=>{const s=e.target.closest('[data-f="papel"]');if(s){const tr=s.closest('tr'),a=tr.querySelector('[data-f="area"]');const cur=a.value;a.innerHTML=areaOpts(s.value,s.value==='operador'&&cur==='AMBOS'?'PRIMARIO':cur)}});
+$('#tE').addEventListener('click',async e=>{
+  const tr=e.target.closest('tr[data-uid]');if(!tr)return;const u=(EQ.rows||[]).find(x=>x.user_id===tr.dataset.uid);if(!u)return;
+  if(e.target.closest('[data-esave]')){const b=e.target.closest('[data-esave]');const v=f=>tr.querySelector(`[data-f="${f}"]`);
+    const body={p_user_id:u.user_id,p_nome:v('nome').value.trim(),p_papel:v('papel').value,p_area:v('area').value,p_ativo:v('ativo').checked};
+    b.disabled=true;try{await rpc('app_supervisor_salvar',body);toast(u.liberado?'Usuário salvo.':`${body.p_nome} liberado.`);equLoad()}catch(er){b.disabled=false;toast(errEq(er.message)||errApp(er))}return}
+  if(e.target.closest('[data-epin]')){gOpen({k:'Equipe',t:`Trocar PIN de ${u.nome||u.login}`,ok:'Trocar PIN',
+    body:`<div class="fs"><h4>Novo PIN (6 números) <b>*</b></h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div><div class="fs"><h4>Repita o PIN <b>*</b></h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div><p class="fhint">Passe o PIN novo para a pessoa pessoalmente. Ele passa a valer no próximo login no app e no site.</p>`,
+    onOk:async()=>{const p=$('#gPin').value,p2=$('#gPin2').value;if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');await adminUsuarios({acao:'pin',user_id:u.user_id,pin:p});toast('PIN trocado.')}})}
+});
+$('#eNovo').onclick=()=>gOpen({k:'Equipe',t:'Novo usuário',ok:'Cadastrar',
+  body:`<div class="fs"><h4>Nome <b>*</b></h4><input class="tin" id="gNome" type="text" maxlength="80" placeholder="Ex.: João Silva"><div class="fhint" id="gLogin">É o nome que a pessoa digita para entrar.</div></div>
+    <div class="fs"><h4>PIN (6 números) <b>*</b></h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+    <div class="fs"><h4>Repita o PIN <b>*</b></h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+    <div class="fs"><h4>Papel</h4><select class="tin" id="gPapel">${papelOpts('operador')}</select></div>
+    <div class="fs"><h4>Área</h4><select class="tin" id="gArea">${areaOpts('operador','PRIMARIO')}</select></div>`,
+  onOk:async()=>{const nome=$('#gNome').value.trim().replace(/\s+/g,' '),p=$('#gPin').value,p2=$('#gPin2').value,papel=$('#gPapel').value,area=$('#gArea').value;
+    if(nome.length<2)throw falha('Digite o nome.');if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');
+    const r=await adminUsuarios({acao:'criar',nome,pin:p,papel,area});toast(`${r.nome} cadastrado. Login: ${r.login}`);equLoad()}});
+document.addEventListener('input',e=>{if(e.target.id==='gNome'){const l=normLogin(e.target.value);$('#gLogin').textContent=l?`Login no app e no site: ${l}`:'É o nome que a pessoa digita para entrar.'}});
+document.addEventListener('change',e=>{if(e.target.id==='gPapel'){const a=$('#gArea');const cur=a.value;a.innerHTML=areaOpts(e.target.value,e.target.value==='operador'&&cur==='AMBOS'?'PRIMARIO':cur)}});
 
 /* ---------- render ---------- */
 function renderAll(){
@@ -1025,8 +1238,9 @@ function reveal(){
 }
 
 /* ---------- interactions ---------- */
-const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas'};
-function go(p){PANE=p;$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p&&!!D));$('#pgt').textContent=TITLES[p];if(p==='gan'&&D)ganEnsure();if(p==='par'&&D)parLoad();try{localStorage.setItem('hb_pane',p)}catch(e){}if(D)reveal();window.scrollTo({top:0})}
+const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',val:'Validar',equ:'Equipe'};
+function go(p){const mudou=PANE!==p;PANE=p;
+  if(D&&p==='val'&&(mudou||!VQ.rows))valLoad();if(D&&p==='equ'&&(mudou||!EQ.rows))equLoad();$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p&&!!D));$('#pgt').textContent=TITLES[p];if(p==='gan'&&D)ganEnsure();if(p==='par'&&D)parLoad();try{localStorage.setItem('hb_pane',p)}catch(e){}if(D)reveal();window.scrollTo({top:0})}
 $('#nav').onclick=e=>{const a=e.target.closest('a');if(a)go(a.dataset.p)};
 document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
@@ -1047,8 +1261,7 @@ try{const s=JSON.parse(localStorage.getItem('hb_f')||'null');if(s&&typeof s==='o
 try{  const pn=localStorage.getItem('hb_pane');if(pn&&TITLES[pn])PANE=pn}catch(e){}
 const _render=renderAll;renderAll=function(){_render();go(PANE)};
 go(PANE);
-refreshEU();
-load(false);
+(async()=>{if(await gate())load(false)})();
 </script>
 </body>
 </html>
