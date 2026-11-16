@@ -295,17 +295,39 @@ svg.ch rect.gb:hover{stroke:var(--orange);stroke-width:2}
 @media(max-width:980px){.fbar{gap:6px}.dd{flex:1 1 auto}.ddb{width:100%}.fcount{margin-left:0;flex-basis:100%}#popPer{width:min(540px,calc(100vw - 32px));flex-direction:column}.pres{border-right:0;border-bottom:1px solid var(--line);flex-direction:row;flex-wrap:wrap}.pres button span{display:none}#popAt{width:min(290px,calc(100vw - 32px))}#ddAt .pop{left:auto;right:0}.fempty{margin-left:16px;margin-right:16px}.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px}.navlbl,.sidefoot,.legside,.brandtile .bsub{display:none}.brandtile{padding:9px 12px}.brandtile img{width:110px}.nav{flex-direction:row;flex-wrap:wrap}.pane,.topbar,.appfoot{padding-left:16px;padding-right:16px}.state{margin-left:16px;margin-right:16px}.topbar{flex-direction:column;align-items:flex-start;position:static}.stamp{text-align:left}}
 @media(max-width:980px){#tuSeg,#stSeg{flex:1 1 auto}#tuSeg button,#stSeg button{flex:1}}
 [hidden]{display:none!important}
-/* painel do supervisor: validar, equipe, histórico */
+/* Painel do supervisor (Validar, Equipe, Histórico): só reaproveita os componentes do site */
 .nav a.hidn{display:none}
-.pill.cont{background:#FBE4E4;color:#A12C2C}.pill.conf{background:#E3F4EC;color:#1E7A50}.pill.man{background:#EEE8F7;color:#53388A}
-.tb .tin{height:32px;padding:0 8px;border:1px solid var(--grid);border-radius:7px;font:12.5px var(--sans);color:var(--ink);background:var(--card);max-width:100%}
-.tb input.tin[type=text]{width:150px}
-.tb tr.novo td{background:#FFF8EA}
-.eqtools{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
-.hist{display:flex;flex-direction:column;gap:12px;border-left:3px solid var(--grid);padding-left:12px}
-.hist div{font-size:12.5px;color:var(--ink2);line-height:1.5}.hist b{color:var(--ink)}.hist small{display:block;color:var(--muted);font-family:var(--mono);font-size:10.5px}
-.clsb{font-size:12px;color:var(--ink2);background:var(--soft2);border:1px solid var(--grid);border-radius:8px;padding:8px 10px}
+/* Período, ativos e turno não se aplicam às abas de gestão */
+body.semfiltro #fbar,body.semfiltro #fempty{display:none}
+/* Botão de linha: o mesmo da tabela de paradas, agora disponível em qualquer tabela e no painel lateral */
+.act{border:1px solid var(--grid);background:var(--card);border-radius:7px;padding:5px 10px;font:600 12px var(--sans);color:var(--P);cursor:pointer;white-space:nowrap;transition:background-color .2s ease-out,border-color .2s ease-out}
+.act:hover{background:var(--line)}
+.act.pri{background:var(--navy);border-color:var(--navy);color:#fff}.act.pri:hover{background:var(--navy2)}
+.act.danger{color:var(--red)}.act.danger:hover{background:rgba(214,69,69,.08);border-color:rgba(214,69,69,.4)}
+.act:disabled{opacity:.45;cursor:not-allowed}
+.btn1.danger{background:var(--red);border-color:var(--red)}.btn1.danger:hover{background:#B83636}
+.seg button:disabled{cursor:not-allowed;opacity:.6}
 .act+.act{margin-left:4px}
+/* Situação de validação e papel: mesmas pílulas do site */
+.pill.cont{background:#FBE4E4;color:#A12C2C}.pill.conf{background:#E3F4EC;color:#1E7A50}.pill.man{background:#EEE8F7;color:#53388A}
+.pill.role{background:var(--soft);color:var(--P)}
+.eqtools{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:12px}
+.eqtools .note{margin:0}
+#tE tr[data-uid]{cursor:pointer}#tE tr[data-uid]:hover td{background:var(--soft2)}
+/* Painel lateral de edição de usuário */
+.fs .seg button{white-space:nowrap}
+.fchk{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+.fchk input{width:16px;height:16px;accent-color:var(--navy2);margin:0}
+.dz{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:10px}
+.dz .acts{display:flex;gap:8px;flex-wrap:wrap}.dz .acts .act{margin-left:0;padding:8px 12px}
+/* Histórico da parada: linha do tempo simples */
+.hist{display:flex;flex-direction:column;gap:12px;border-left:2px solid var(--grid);padding-left:12px}
+.hist div{font-size:12.5px;color:var(--ink2);line-height:1.5}.hist b{color:var(--ink)}
+.hist small{display:block;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.06em}
+.clsb{font-size:12px;color:var(--ink2);background:var(--soft2);border:1px solid var(--grid);border-radius:9px;padding:9px 11px;line-height:1.45}
+/* Aviso legível também no modo escuro (antes ficava amarelo-claro sobre fundo escuro) */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .warnb{background:rgba(242,169,59,.10);border-color:rgba(242,169,59,.35);color:#F7C77A}}
+[data-theme="dark"] .warnb{background:rgba(242,169,59,.10);border-color:rgba(242,169,59,.35);color:#F7C77A}
 @media(max-width:560px){.cgrid{grid-template-columns:1fr}.bulk{flex-wrap:wrap}.bulk #bulkTxt{flex-basis:100%}.hcard .big{font-size:44px}.tb .hm{display:none}.k b{font-size:28px}.kpis{gap:8px}}
 </style>
 </head>
@@ -479,7 +501,7 @@ svg.ch rect.gb:hover{stroke:var(--orange);stroke-width:2}
     <div class="phead"><img src="assets/logo-azul.png" alt="Tripoloni"><div class="pt">Equipe · usuários do app e do painel</div><div class="pk pfil"></div></div>
     <div class="box rv"><button class="boxh"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5"/></svg></div><div><div class="tt">Usuários</div><div class="kk">Mesmo login do aplicativo: nome + PIN de 6 dígitos</div></div><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></button>
       <div class="cwrap"><div class="cinner"><div class="boxb">
-        <div class="eqtools"><span class="note" style="margin:0" id="eCount"></span><button class="btn1" id="eNovo">+ Novo usuário</button></div>
+        <div class="eqtools"><span class="note" id="eCount"></span><button class="btn1" type="button" id="eNovo">Novo usuário</button></div>
         <div class="scrollx"><table class="tb" id="tE"></table></div>
         <p class="note" id="nE">Papéis: <b>Operador</b> justifica as paradas do seu setor no turno · <b>Manutenção</b> confirma ou contesta paradas de manutenção · <b>Supervisor</b> justifica qualquer data, corrige, valida e cadastra usuários. Desativar tira o acesso na hora e dá para reativar depois; <b>Apagar</b> remove o login de vez (o histórico de paradas é mantido).</p>
       </div></div></div></div>
@@ -1101,7 +1123,7 @@ sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){gate()}else if(ev==='TOKEN_
 /* ---------- janela genérica ---------- */
 let GO=null;
 function gOpen({k='',t,body,ok,onOk}){GO={onOk,busy:false};$('#gK').textContent=k;$('#gT').textContent=t;$('#gB').innerHTML=body;$('#gErr').textContent='';
-  const b=$('#gOk');b.hidden=!ok;b.textContent=ok||'';b.disabled=false;
+  const b=$('#gOk');b.hidden=!ok;b.textContent=ok||'';b.disabled=false;b.classList.remove('danger');
   $('#gdrw').classList.add('open');$('#gdrw').setAttribute('aria-hidden','false');setTimeout(()=>{const i=$('#gB input,#gB textarea,#gB select');if(i)i.focus()},50)}
 function gClose(){if(GO&&GO.busy)return;$('#gdrw').classList.remove('open');$('#gdrw').setAttribute('aria-hidden','true')}
 $('#gdrw').addEventListener('click',e=>{if(e.target.closest('[data-gclose]'))gClose()});
@@ -1164,9 +1186,8 @@ document.addEventListener('click',async e=>{
 
 /* ---------- EQUIPE ---------- */
 let EQ={rows:null,err:null};
-const AREAS_OP=[['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack']];
-const areaOpts=(papel,v)=>[...AREAS_OP,...(papel!=='operador'?[['AMBOS','Todas (Ambos)']]:[])].map(([k,n])=>`<option value="${k}" ${v===k?'selected':''}>${n}</option>`).join('');
-const papelOpts=v=>Object.entries(PAPEL_N).map(([k,n])=>`<option value="${k}" ${v===k?'selected':''}>${n}</option>`).join('');
+const AREA_LISTA=[['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack'],['AMBOS','Todas']];
+const areasDoPapel=p=>AREA_LISTA.filter(([k])=>p!=='operador'||k!=='AMBOS');
 const ERR_EQ={nao_autorizado:'Só o supervisor pode alterar a equipe.',nome_invalido:'Nome precisa ter de 2 a 80 letras.',area_obrigatoria:'Escolha a área do operador.',operador_uma_area:'Operador fica em uma área só (Primário, Secundário ou Lokotrack).',nao_pode_rebaixar_a_si_mesmo:'Você não pode tirar o seu próprio acesso de supervisor.',papel_invalido:'Papel inválido.',area_invalida:'Área inválida.',login_existe:'Já existe um usuário com esse nome. Use outro (por exemplo, com sobrenome).',pin_invalido:'O PIN precisa ter 6 números.',pin_recusado:'O servidor recusou esse PIN. Tente outro.',usuario_nao_encontrado:'Usuário não encontrado.',usuario_invalido:'Usuário inválido.',nao_pode_apagar_a_si_mesmo:'Você não pode apagar o seu próprio usuário.',ultimo_supervisor:'Esse é o único supervisor ativo: cadastre ou ative outro supervisor antes de apagar.',falha_apagar:'Não foi possível apagar. Tente novamente.',sessao_invalida:'Sua sessão expirou. Entre de novo.',sem_login:'Sua sessão expirou. Entre de novo.'};
 const errEq=m=>{const k=Object.keys(ERR_EQ).find(k=>String(m).includes(k));return k?ERR_EQ[k]:null};
 async function adminUsuarios(body){
@@ -1178,49 +1199,78 @@ async function equLoad(){
   if(EU.papel!=='supervisor')return;EQ.err=null;renderEqu();
   try{EQ.rows=await rpc('app_supervisor_usuarios')||[]}catch(e){EQ.err=e}renderEqu();
 }
+const situacao=u=>!u.liberado?['ag','Aguardando liberação']:u.ativo?['on','Ativo']:['off','Inativo'];
 function renderEqu(){
-  if(!EQ.rows){$('#tE').innerHTML=`<tbody><tr><td>${EQ.err?`<div class="pempty"><b>Não foi possível carregar</b>${esc(errEq(EQ.err.message)||errApp(EQ.err))}<br><button class="btn1" onclick="equLoad()">Tentar de novo</button></div>`:'<div class="gmsg">Buscando…</div>'}</td></tr></tbody>`;return}
+  if(!EQ.rows){$('#tE').innerHTML=`<tbody><tr><td>${EQ.err?`<div class="pempty"><b>Não foi possível carregar</b>${esc(errEq(EQ.err.message)||errApp(EQ.err))}<br><button class="btn1" type="button" onclick="equLoad()">Tentar de novo</button></div>`:'<div class="gmsg">Buscando usuários…</div><div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div>'}</td></tr></tbody>`;return}
   const novos=EQ.rows.filter(u=>!u.liberado).length,at=EQ.rows.filter(u=>u.liberado&&u.ativo).length;
-  $('#eCount').innerHTML=`<b>${at}</b> ativo(s)${novos?` · <b style="color:var(--orange)">${novos} aguardando liberação</b>`:''}`;
-  let h=`<thead><tr><th>Nome</th><th>Papel</th><th>Área</th><th>Ativo</th><th class="hm">Último acesso</th><th></th></tr></thead><tbody>`;
-  EQ.rows.forEach(u=>{const papel=u.papel||'operador',area=u.area||(papel==='operador'?'PRIMARIO':'AMBOS');
-    h+=`<tr class="${u.liberado?'':'novo'}" data-uid="${esc(u.user_id)}"><td><input class="tin" type="text" data-f="nome" value="${esc(u.nome||'')}" maxlength="80" ${u.eu?'title="Você"':''}><span class="sub">login: ${esc(u.login)}${u.eu?' · você':''}${u.liberado?'':' · aguardando liberação'}</span></td>
-      <td><select class="tin" data-f="papel" ${u.eu?'disabled title="Você não pode mudar o seu próprio papel"':''}>${papelOpts(papel)}</select></td>
-      <td><select class="tin" data-f="area">${areaOpts(papel,area)}</select></td>
-      <td><input type="checkbox" data-f="ativo" ${u.liberado?(u.ativo?'checked':''):'checked'} ${u.eu?'disabled':''} aria-label="Ativo"></td>
-      <td class="hm" style="white-space:nowrap">${u.ultimo_acesso?dtFmt.format(Date.parse(u.ultimo_acesso)):'nunca'}</td>
-      <td class="n" style="white-space:nowrap"><button class="act ${u.liberado?'':'pri'}" data-esave>${u.liberado?'Salvar':'Liberar'}</button><button class="act" data-epin>Trocar PIN</button>${u.eu?'':'<button class="act" data-edel style="color:var(--red)">Apagar</button>'}</td></tr>`});
-  if(!EQ.rows.length)h+=`<tr><td colspan="6"><div class="pempty"><b>Nenhum usuário</b>Use “Novo usuário” para cadastrar.</div></td></tr>`;
+  $('#eCount').innerHTML=`<b>${at}</b> ${at===1?'usuário ativo':'usuários ativos'}${novos?` · <b style="color:var(--orange)">${novos} aguardando liberação</b>`:''}`;
+  let h=`<thead><tr><th>Nome</th><th>Papel</th><th class="hm">Área</th><th>Situação</th><th class="hm">Último acesso</th><th class="hm"></th></tr></thead><tbody>`;
+  EQ.rows.forEach(u=>{const [sc,st]=situacao(u);
+    h+=`<tr data-uid="${esc(u.user_id)}"><td class="m">${esc(u.nome||u.login)}<span class="sub">${esc(u.login)}${u.eu?' · você':''}</span></td>
+      <td>${u.papel?`<span class="pill role">${esc(PAPEL_N[u.papel]||u.papel)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td class="hm">${u.area?esc(u.area==='AMBOS'?'Todas':AREA_N[u.area]||u.area):'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="pill ${sc}">${st}</span></td>
+      <td class="hm" style="white-space:nowrap">${u.ultimo_acesso?dtFmt.format(Date.parse(u.ultimo_acesso)):'<span style="color:var(--muted)">nunca entrou</span>'}</td>
+      <td class="n hm"><button type="button" class="act ${u.liberado?'':'pri'}" data-eedit>${u.liberado?'Editar':'Liberar'}</button></td></tr>`});
+  if(!EQ.rows.length)h+=`<tr><td colspan="6"><div class="pempty"><b>Nenhum usuário</b>Use “Novo usuário” para cadastrar o primeiro.</div></td></tr>`;
   $('#tE').innerHTML=h+'</tbody>';
 }
-$('#tE').addEventListener('change',e=>{const s=e.target.closest('[data-f="papel"]');if(s){const tr=s.closest('tr'),a=tr.querySelector('[data-f="area"]');const cur=a.value;a.innerHTML=areaOpts(s.value,s.value==='operador'&&cur==='AMBOS'?'PRIMARIO':cur)}});
-$('#tE').addEventListener('click',async e=>{
-  const tr=e.target.closest('tr[data-uid]');if(!tr)return;const u=(EQ.rows||[]).find(x=>x.user_id===tr.dataset.uid);if(!u)return;
-  if(e.target.closest('[data-esave]')){const b=e.target.closest('[data-esave]');const v=f=>tr.querySelector(`[data-f="${f}"]`);
-    const body={p_user_id:u.user_id,p_nome:v('nome').value.trim(),p_papel:v('papel').value,p_area:v('area').value,p_ativo:v('ativo').checked};
-    b.disabled=true;try{await rpc('app_supervisor_salvar',body);toast(u.liberado?'Usuário salvo.':`${body.p_nome} liberado.`);equLoad()}catch(er){b.disabled=false;toast(errEq(er.message)||errApp(er))}return}
-  if(e.target.closest('[data-edel]')){gOpen({k:'Equipe',t:`Apagar ${u.nome||u.login}?`,ok:'Apagar de vez',
+/* Botões segmentados no painel (mesmo componente dos filtros do topo) */
+const segHtml=(id,ops,v,dis)=>`<div class="seg" id="${id}">${ops.map(([k,n])=>`<button type="button" data-v="${k}" class="${v===k?'on':''}" ${dis?'disabled':''}>${n}</button>`).join('')}</div>`;
+const segVal=id=>{const b=$(`#${id} button.on`);return b?b.dataset.v:null};
+function areaSeg(papel,v){const ops=areasDoPapel(papel);if(!ops.some(([k])=>k===v))v=papel==='operador'?'PRIMARIO':'AMBOS';return segHtml('gArea',ops,v)}
+$('#gB').addEventListener('click',e=>{const b=e.target.closest('.seg button');if(!b||b.disabled)return;const seg=b.parentElement;
+  seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  if(seg.id==='gPapel'){const w=$('#gAreaW');if(w)w.innerHTML=areaSeg(b.dataset.v,segVal('gArea'))}});
+
+function editarUsuario(u){
+  const papel=u.papel||'operador',area=u.area||(papel==='operador'?'PRIMARIO':'AMBOS');
+  gOpen({k:'Equipe',t:u.liberado?(u.nome||u.login):`Liberar ${u.nome||u.login}`,ok:u.liberado?'Salvar':'Liberar acesso',
+    body:`<div class="fs"><h4>Nome</h4><input class="tin" id="gNome" type="text" maxlength="80" value="${esc(u.nome||'')}"><div class="fhint">Login no app e no site: <b>${esc(u.login)}</b></div></div>
+      <div class="fs"><h4>Papel</h4>${segHtml('gPapel',Object.entries(PAPEL_N),papel,u.eu)}${u.eu?'<div class="fhint">Você não pode mudar o seu próprio papel.</div>':''}</div>
+      <div class="fs"><h4>Área</h4><div id="gAreaW">${areaSeg(papel,area)}</div></div>
+      ${u.eu?'':`<label class="fchk"><input type="checkbox" id="gAtivo" ${u.liberado?(u.ativo?'checked':''):'checked'}> Acesso ativo</label>`}
+      ${u.liberado?`<div class="dz"><div class="fs" style="margin:0"><h4>Acesso</h4></div><div class="acts"><button type="button" class="act" data-gpin>Trocar PIN</button>${u.eu?'':'<button type="button" class="act danger" data-gdel>Apagar usuário</button>'}</div>
+        <div class="fhint" style="margin:0">Para cortar o acesso temporariamente, desmarque “Acesso ativo”. Apagar é definitivo.</div></div>`:''}`,
+    onOk:async()=>{const nome=$('#gNome').value.trim().replace(/\s+/g,' ');if(nome.length<2)throw falha('Digite o nome.');
+      await rpc('app_supervisor_salvar',{p_user_id:u.user_id,p_nome:nome,p_papel:segVal('gPapel'),p_area:segVal('gArea'),p_ativo:u.eu?true:$('#gAtivo').checked})
+        .catch(er=>{throw falha(errEq(er.message)||errApp(er))});
+      toast(u.liberado?'Usuário salvo.':`${nome} liberado.`);equLoad()}});
+  GO.user=u;
+}
+function trocarPin(u){
+  gOpen({k:'Equipe',t:`Trocar PIN · ${u.nome||u.login}`,ok:'Trocar PIN',
+    body:`<div class="fs"><h4>Novo PIN (6 números)</h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+      <div class="fs"><h4>Repita o PIN</h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+      <p class="fhint" style="margin:0">Passe o PIN novo para a pessoa pessoalmente. Vale no próximo login, no app e no site.</p>`,
+    onOk:async()=>{const p=$('#gPin').value,p2=$('#gPin2').value;if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');
+      await adminUsuarios({acao:'pin',user_id:u.user_id,pin:p});toast('PIN trocado.')}});
+}
+function apagarUsuario(u){
+  gOpen({k:'Equipe',t:`Apagar ${u.nome||u.login}?`,ok:'Apagar de vez',
     body:`<div class="warnb"><b>Não dá para desfazer.</b> O login <b>${esc(u.login)}</b> deixa de existir: a pessoa não entra mais no app nem no site.</div>
-      <p class="fhint" style="margin:0">As paradas, justificativas e o histórico feitos por essa pessoa <b>continuam guardados</b> com o nome dela.</p>
-      <p class="fhint" style="margin:0">Se a pessoa pode voltar (férias, afastamento), prefira <b>desmarcar “Ativo”</b> e salvar: o acesso é cortado na hora e dá para reativar depois.</p>
-      <div class="fs"><h4>Para confirmar, digite o login: <b>${esc(u.login)}</b></h4><input class="tin" id="gConf" type="text" autocomplete="off" spellcheck="false"></div>`,
+      <p class="fhint" style="margin:0">As paradas, justificativas e o histórico feitos por essa pessoa continuam guardados com o nome dela. Se ela pode voltar (férias, afastamento), prefira desmarcar “Acesso ativo”.</p>
+      <div class="fs"><h4>Para confirmar, digite o login <b style="color:var(--ink)">${esc(u.login)}</b></h4><input class="tin" id="gConf" type="text" autocomplete="off" spellcheck="false"></div>`,
     onOk:async()=>{if(($('#gConf').value||'').trim().toLowerCase()!==String(u.login).toLowerCase())throw falha('Digite o login exatamente como aparece para confirmar.');
-      const r=await adminUsuarios({acao:'apagar',user_id:u.user_id});toast(`${r.nome||u.nome} apagado.`);equLoad()}});return}
-  if(e.target.closest('[data-epin]')){gOpen({k:'Equipe',t:`Trocar PIN de ${u.nome||u.login}`,ok:'Trocar PIN',
-    body:`<div class="fs"><h4>Novo PIN (6 números) <b>*</b></h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div><div class="fs"><h4>Repita o PIN <b>*</b></h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div><p class="fhint">Passe o PIN novo para a pessoa pessoalmente. Ele passa a valer no próximo login no app e no site.</p>`,
-    onOk:async()=>{const p=$('#gPin').value,p2=$('#gPin2').value;if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');await adminUsuarios({acao:'pin',user_id:u.user_id,pin:p});toast('PIN trocado.')}})}
-});
+      const r=await adminUsuarios({acao:'apagar',user_id:u.user_id});toast(`${r.nome||u.nome} apagado.`);equLoad()}});
+  $('#gOk').classList.add('danger');
+}
+$('#gB').addEventListener('click',e=>{const u=GO&&GO.user;if(!u)return;
+  if(e.target.closest('[data-gpin]'))trocarPin(u);
+  else if(e.target.closest('[data-gdel]'))apagarUsuario(u)});
+/* a linha inteira abre o painel (no celular o botão pode ficar fora da tela) */
+$('#tE').addEventListener('click',e=>{const tr=e.target.closest('tr[data-uid]');if(!tr)return;
+  const u=(EQ.rows||[]).find(x=>x.user_id===tr.dataset.uid);if(u)editarUsuario(u)});
 $('#eNovo').onclick=()=>gOpen({k:'Equipe',t:'Novo usuário',ok:'Cadastrar',
-  body:`<div class="fs"><h4>Nome <b>*</b></h4><input class="tin" id="gNome" type="text" maxlength="80" placeholder="Ex.: João Silva"><div class="fhint" id="gLogin">É o nome que a pessoa digita para entrar.</div></div>
-    <div class="fs"><h4>PIN (6 números) <b>*</b></h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
-    <div class="fs"><h4>Repita o PIN <b>*</b></h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
-    <div class="fs"><h4>Papel</h4><select class="tin" id="gPapel">${papelOpts('operador')}</select></div>
-    <div class="fs"><h4>Área</h4><select class="tin" id="gArea">${areaOpts('operador','PRIMARIO')}</select></div>`,
-  onOk:async()=>{const nome=$('#gNome').value.trim().replace(/\s+/g,' '),p=$('#gPin').value,p2=$('#gPin2').value,papel=$('#gPapel').value,area=$('#gArea').value;
+  body:`<div class="fs"><h4>Nome</h4><input class="tin" id="gNome" type="text" maxlength="80" placeholder="Ex.: João Silva"><div class="fhint" id="gLogin">É o nome que a pessoa digita para entrar.</div></div>
+    <div class="fs"><h4>PIN (6 números)</h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+    <div class="fs"><h4>Repita o PIN</h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+    <div class="fs"><h4>Papel</h4>${segHtml('gPapel',Object.entries(PAPEL_N),'operador')}</div>
+    <div class="fs"><h4>Área</h4><div id="gAreaW">${areaSeg('operador','PRIMARIO')}</div></div>`,
+  onOk:async()=>{const nome=$('#gNome').value.trim().replace(/\s+/g,' '),p=$('#gPin').value,p2=$('#gPin2').value;
     if(nome.length<2)throw falha('Digite o nome.');if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');
-    const r=await adminUsuarios({acao:'criar',nome,pin:p,papel,area});toast(`${r.nome} cadastrado. Login: ${r.login}`);equLoad()}});
-document.addEventListener('input',e=>{if(e.target.id==='gNome'){const l=normLogin(e.target.value);$('#gLogin').textContent=l?`Login no app e no site: ${l}`:'É o nome que a pessoa digita para entrar.'}});
-document.addEventListener('change',e=>{if(e.target.id==='gPapel'){const a=$('#gArea');const cur=a.value;a.innerHTML=areaOpts(e.target.value,e.target.value==='operador'&&cur==='AMBOS'?'PRIMARIO':cur)}});
+    const r=await adminUsuarios({acao:'criar',nome,pin:p,papel:segVal('gPapel'),area:segVal('gArea')});toast(`${r.nome} cadastrado · login ${r.login}`);equLoad()}});
+document.addEventListener('input',e=>{if(e.target.id==='gNome'&&$('#gLogin')){const l=normLogin(e.target.value);$('#gLogin').innerHTML=l?`Login no app e no site: <b>${esc(l)}</b>`:'É o nome que a pessoa digita para entrar.'}});
 
 /* ---------- render ---------- */
 function renderAll(){
@@ -1246,7 +1296,7 @@ function reveal(){
 
 /* ---------- interactions ---------- */
 const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',val:'Validar',equ:'Equipe'};
-function go(p){const mudou=PANE!==p;PANE=p;
+function go(p){const mudou=PANE!==p;PANE=p;document.body.classList.toggle('semfiltro',p==='val'||p==='equ');
   if(D&&p==='val'&&(mudou||!VQ.rows))valLoad();if(D&&p==='equ'&&(mudou||!EQ.rows))equLoad();$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p&&!!D));$('#pgt').textContent=TITLES[p];if(p==='gan'&&D)ganEnsure();if(p==='par'&&D)parLoad();try{localStorage.setItem('hb_pane',p)}catch(e){}if(D)reveal();window.scrollTo({top:0})}
 $('#nav').onclick=e=>{const a=e.target.closest('a');if(a)go(a.dataset.p)};
 document.addEventListener('click',e=>{
