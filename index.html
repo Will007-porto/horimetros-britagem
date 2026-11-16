@@ -768,7 +768,7 @@ const eqNome=t=>{const e=CAT.eqp.find(x=>x.t===t);return e?e.n:t};
 const motAplicaEq=(m,tag)=>!m.a||m.a.some(x=>x===tag||(x==='TC'&&tag.startsWith('TC')));
 const eqsDaArea=area=>area==='LOKOTRACK'?CAT.eqp.filter(e=>e.v==='LOKOTRACK'):CAT.eqp.filter(e=>e.v===area||e.v==='GERAL');
 const motsDaArea=area=>{const eqs=eqsDaArea(area);return CAT.mot.filter(m=>(!m.ar||m.ar.includes(area))&&(!m.a||eqs.some(e=>motAplicaEq(m,e.t))))};
-const ERR_APP={nao_autorizado:'Seu usuário não tem permissão para isso.',sem_permissao:'Seu usuário não tem permissão para isso.',sem_area:'Seu usuário ainda não tem setor definido.',fora_da_sua_area:'Essa parada não é do seu setor.',fora_do_turno:'Essa parada é de um turno que já fechou: só o supervisor pode justificar.',ja_justificada:'Essa parada já foi justificada por outra pessoa.',motivo_invalido:'Motivo inválido.',motivo_fora_da_area:'Esse motivo não vale para este setor.',motivo_nao_se_aplica:'Esse motivo não vale para esse equipamento.',equipamento_fora_da_area:'Esse equipamento não é deste setor.',equipamento_invalido:'Escolha o equipamento.',obs_obrigatoria:'Escreva na observação o motivo da correção (mínimo 3 letras).',texto_longo:'Texto muito longo (máx. 500).',nao_justificada:'Essa parada não está justificada.',parada_nao_encontrada:'Essa parada não existe mais.',nao_aguarda_confirmacao:'Essa parada já foi validada por outra pessoa.',acao_invalida:'Ação inválida.'};
+const ERR_APP={nao_autorizado:'Seu usuário não tem permissão para isso.',sem_permissao:'Seu usuário não tem permissão para isso.',sem_area:'Seu usuário ainda não tem setor definido.',fora_da_sua_area:'Essa parada não é do seu setor.',parada_de_outro_turno:'Essa parada é do outro turno: quem justifica é o operador daquele turno.',fora_do_turno:'Essa parada é de um turno que já fechou: só o supervisor pode justificar.',ja_justificada:'Essa parada já foi justificada por outra pessoa.',motivo_invalido:'Motivo inválido.',motivo_fora_da_area:'Esse motivo não vale para este setor.',motivo_nao_se_aplica:'Esse motivo não vale para esse equipamento.',equipamento_fora_da_area:'Esse equipamento não é deste setor.',equipamento_invalido:'Escolha o equipamento.',obs_obrigatoria:'Escreva na observação o motivo da correção (mínimo 3 letras).',texto_longo:'Texto muito longo (máx. 500).',nao_justificada:'Essa parada não está justificada.',parada_nao_encontrada:'Essa parada não existe mais.',nao_aguarda_confirmacao:'Essa parada já foi validada por outra pessoa.',acao_invalida:'Ação inválida.'};
 function errApp(e){const m=(e&&(e.message||e.code))||String(e);const k=Object.keys(ERR_APP).find(k=>m.includes(k));if(k)return ERR_APP[k];if(/JWT|auth|permission denied/i.test(m))return 'Sua sessão expirou. Entre de novo.';if(/fetch|network/i.test(m))return 'Sem resposta do servidor. Confira a internet e tente de novo.';return 'Erro: '+m}
 async function parLoad(force){
   if(!D)return;
@@ -1188,7 +1188,12 @@ document.addEventListener('click',async e=>{
 let EQ={rows:null,err:null};
 const AREA_LISTA=[['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack'],['AMBOS','Todas']];
 const areasDoPapel=p=>AREA_LISTA.filter(([k])=>p!=='operador'||k!=='AMBOS');
-const ERR_EQ={nao_autorizado:'Só o supervisor pode alterar a equipe.',nome_invalido:'Nome precisa ter de 2 a 80 letras.',area_obrigatoria:'Escolha a área do operador.',operador_uma_area:'Operador fica em uma área só (Primário, Secundário ou Lokotrack).',nao_pode_rebaixar_a_si_mesmo:'Você não pode tirar o seu próprio acesso de supervisor.',papel_invalido:'Papel inválido.',area_invalida:'Área inválida.',login_existe:'Já existe um usuário com esse nome. Use outro (por exemplo, com sobrenome).',pin_invalido:'O PIN precisa ter 6 números.',pin_recusado:'O servidor recusou esse PIN. Tente outro.',usuario_nao_encontrado:'Usuário não encontrado.',usuario_invalido:'Usuário inválido.',nao_pode_apagar_a_si_mesmo:'Você não pode apagar o seu próprio usuário.',ultimo_supervisor:'Esse é o único supervisor ativo: cadastre ou ative outro supervisor antes de apagar.',falha_apagar:'Não foi possível apagar. Tente novamente.',sessao_invalida:'Sua sessão expirou. Entre de novo.',sem_login:'Sua sessão expirou. Entre de novo.'};
+const TURNO_LISTA=[['1','1º turno'],['2','2º turno'],['0','Livre']];
+const TURNO_N={1:'1º turno',2:'2º turno'};
+/* Turno só vale para operador: é ele que trava quem justifica cada parada */
+const turnoHtml=(papel,v)=>papel!=='operador'?'':`<div class="fs"><h4>Turno</h4>${segHtml('gTurno',TURNO_LISTA,String(v??'0'))}<div class="fhint">O operador só justifica as paradas do próprio turno. “Livre” é para quem cobre os dois (folguista).</div></div>`;
+const turnoVal=()=>segVal('gPapel')==='operador'?Number(segVal('gTurno')||0):0;
+const ERR_EQ={nao_autorizado:'Só o supervisor pode alterar a equipe.',nome_invalido:'Nome precisa ter de 2 a 80 letras.',area_obrigatoria:'Escolha a área do operador.',operador_uma_area:'Operador fica em uma área só (Primário, Secundário ou Lokotrack).',nao_pode_rebaixar_a_si_mesmo:'Você não pode tirar o seu próprio acesso de supervisor.',papel_invalido:'Papel inválido.',area_invalida:'Área inválida.',turno_invalido:'Turno inválido.',login_existe:'Já existe um usuário com esse nome. Use outro (por exemplo, com sobrenome).',pin_invalido:'O PIN precisa ter 6 números.',pin_recusado:'O servidor recusou esse PIN. Tente outro.',usuario_nao_encontrado:'Usuário não encontrado.',usuario_invalido:'Usuário inválido.',nao_pode_apagar_a_si_mesmo:'Você não pode apagar o seu próprio usuário.',ultimo_supervisor:'Esse é o único supervisor ativo: cadastre ou ative outro supervisor antes de apagar.',falha_apagar:'Não foi possível apagar. Tente novamente.',sessao_invalida:'Sua sessão expirou. Entre de novo.',sem_login:'Sua sessão expirou. Entre de novo.'};
 const errEq=m=>{const k=Object.keys(ERR_EQ).find(k=>String(m).includes(k));return k?ERR_EQ[k]:null};
 async function adminUsuarios(body){
   const {data,error}=await sb.functions.invoke('admin-usuarios',{body});
@@ -1208,7 +1213,7 @@ function renderEqu(){
   EQ.rows.forEach(u=>{const [sc,st]=situacao(u);
     h+=`<tr data-uid="${esc(u.user_id)}"><td class="m">${esc(u.nome||u.login)}<span class="sub">${esc(u.login)}${u.eu?' · você':''}</span></td>
       <td>${u.papel?`<span class="pill role">${esc(PAPEL_N[u.papel]||u.papel)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
-      <td class="hm">${u.area?esc(u.area==='AMBOS'?'Todas':AREA_N[u.area]||u.area):'<span style="color:var(--muted)">—</span>'}</td>
+      <td class="hm">${u.area?esc(u.area==='AMBOS'?'Todas':AREA_N[u.area]||u.area):'<span style="color:var(--muted)">—</span>'}${u.papel==='operador'?`<span class="sub">${u.turno?TURNO_N[u.turno]:'Turno livre'}</span>`:''}</td>
       <td><span class="pill ${sc}">${st}</span></td>
       <td class="hm" style="white-space:nowrap">${u.ultimo_acesso?dtFmt.format(Date.parse(u.ultimo_acesso)):'<span style="color:var(--muted)">nunca entrou</span>'}</td>
       <td class="n hm"><button type="button" class="act ${u.liberado?'':'pri'}" data-eedit>${u.liberado?'Editar':'Liberar'}</button></td></tr>`});
@@ -1221,7 +1226,8 @@ const segVal=id=>{const b=$(`#${id} button.on`);return b?b.dataset.v:null};
 function areaSeg(papel,v){const ops=areasDoPapel(papel);if(!ops.some(([k])=>k===v))v=papel==='operador'?'PRIMARIO':'AMBOS';return segHtml('gArea',ops,v)}
 $('#gB').addEventListener('click',e=>{const b=e.target.closest('.seg button');if(!b||b.disabled)return;const seg=b.parentElement;
   seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
-  if(seg.id==='gPapel'){const w=$('#gAreaW');if(w)w.innerHTML=areaSeg(b.dataset.v,segVal('gArea'))}});
+  if(seg.id==='gPapel'){const w=$('#gAreaW');if(w)w.innerHTML=areaSeg(b.dataset.v,segVal('gArea'));
+    const t=$('#gTurnoW');if(t){if(segVal('gTurno'))t.dataset.ant=segVal('gTurno');t.innerHTML=turnoHtml(b.dataset.v,t.dataset.ant)}}});
 
 function editarUsuario(u){
   const papel=u.papel||'operador',area=u.area||(papel==='operador'?'PRIMARIO':'AMBOS');
@@ -1229,11 +1235,12 @@ function editarUsuario(u){
     body:`<div class="fs"><h4>Nome</h4><input class="tin" id="gNome" type="text" maxlength="80" value="${esc(u.nome||'')}"><div class="fhint">Login no app e no site: <b>${esc(u.login)}</b></div></div>
       <div class="fs"><h4>Papel</h4>${segHtml('gPapel',Object.entries(PAPEL_N),papel,u.eu)}${u.eu?'<div class="fhint">Você não pode mudar o seu próprio papel.</div>':''}</div>
       <div class="fs"><h4>Área</h4><div id="gAreaW">${areaSeg(papel,area)}</div></div>
+      <div id="gTurnoW">${turnoHtml(papel,u.turno)}</div>
       ${u.eu?'':`<label class="fchk"><input type="checkbox" id="gAtivo" ${u.liberado?(u.ativo?'checked':''):'checked'}> Acesso ativo</label>`}
       ${u.liberado?`<div class="dz"><div class="fs" style="margin:0"><h4>Acesso</h4></div><div class="acts"><button type="button" class="act" data-gpin>Trocar PIN</button>${u.eu?'':'<button type="button" class="act danger" data-gdel>Apagar usuário</button>'}</div>
         <div class="fhint" style="margin:0">Para cortar o acesso temporariamente, desmarque “Acesso ativo”. Apagar é definitivo.</div></div>`:''}`,
     onOk:async()=>{const nome=$('#gNome').value.trim().replace(/\s+/g,' ');if(nome.length<2)throw falha('Digite o nome.');
-      await rpc('app_supervisor_salvar',{p_user_id:u.user_id,p_nome:nome,p_papel:segVal('gPapel'),p_area:segVal('gArea'),p_ativo:u.eu?true:$('#gAtivo').checked})
+      await rpc('app_supervisor_salvar',{p_user_id:u.user_id,p_nome:nome,p_papel:segVal('gPapel'),p_area:segVal('gArea'),p_ativo:u.eu?true:$('#gAtivo').checked,p_turno:turnoVal()})
         .catch(er=>{throw falha(errEq(er.message)||errApp(er))});
       toast(u.liberado?'Usuário salvo.':`${nome} liberado.`);equLoad()}});
   GO.user=u;
@@ -1266,10 +1273,14 @@ $('#eNovo').onclick=()=>gOpen({k:'Equipe',t:'Novo usuário',ok:'Cadastrar',
     <div class="fs"><h4>PIN (6 números)</h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
     <div class="fs"><h4>Repita o PIN</h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
     <div class="fs"><h4>Papel</h4>${segHtml('gPapel',Object.entries(PAPEL_N),'operador')}</div>
-    <div class="fs"><h4>Área</h4><div id="gAreaW">${areaSeg('operador','PRIMARIO')}</div></div>`,
+    <div class="fs"><h4>Área</h4><div id="gAreaW">${areaSeg('operador','PRIMARIO')}</div></div>
+    <div id="gTurnoW">${turnoHtml('operador',1)}</div>`,
   onOk:async()=>{const nome=$('#gNome').value.trim().replace(/\s+/g,' '),p=$('#gPin').value,p2=$('#gPin2').value;
     if(nome.length<2)throw falha('Digite o nome.');if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');
-    const r=await adminUsuarios({acao:'criar',nome,pin:p,papel:segVal('gPapel'),area:segVal('gArea')});toast(`${r.nome} cadastrado · login ${r.login}`);equLoad()}});
+    const papel=segVal('gPapel'),area=segVal('gArea'),turno=turnoVal();
+    const r=await adminUsuarios({acao:'criar',nome,pin:p,papel,area});
+    if(turno)await rpc('app_supervisor_salvar',{p_user_id:r.user_id,p_nome:r.nome,p_papel:papel,p_area:area,p_ativo:true,p_turno:turno}).catch(()=>toast('Usuário criado, mas o turno não foi salvo: abra e salve de novo.'));
+    toast(`${r.nome} cadastrado · login ${r.login}`);equLoad()}});
 document.addEventListener('input',e=>{if(e.target.id==='gNome'&&$('#gLogin')){const l=normLogin(e.target.value);$('#gLogin').innerHTML=l?`Login no app e no site: <b>${esc(l)}</b>`:'É o nome que a pessoa digita para entrar.'}});
 
 /* ---------- render ---------- */
