@@ -58,6 +58,7 @@ Mesmo ligado, quem se cadastrar sozinho não vê nada (não está liberado em `u
 ```
 index.html                         site completo (HTML + CSS + JS)
 producao.js / producao.css         aba Produção (acompanhamento diário)
+producao-rel.js                    exportar relatório no modelo da planilha (PDF)
 assets/                            logos
 supabase/functions/bright-api/     Edge Function (placa, APK, scanner de paradas)
 supabase/migrations/               SQL das tabelas, funções e permissões
@@ -78,7 +79,7 @@ supabase/migrations/               SQL das tabelas, funções e permissões
 
 - **16/11/2026** — segurança (bright-api v7: só placa/motores cadastrados, rotas do app de teste desativadas; dados só para usuários liberados; auditoria imutável). Site virou o painel do supervisor: login com nome + PIN do app, justificativa com os motivos do app (por setor) e em lote, abas **Validar** e **Equipe** (cadastro e troca de PIN pela função `admin-usuarios`), histórico de cada parada. Ver `supabase/migrations/20261116_INDICE.md`.
 
-- **17/11/2026** — aba **Produção** (acompanhamento diário com metas, lançamento por turno, curva S e relatório do dia), substituindo a planilha; histórico de set–nov importado. Aba **App (teste)** para testar o app antes do APK.
+- **17/11/2026** — aba **Produção** (acompanhamento diário com metas, lançamento por turno, curva S e relatório do dia), substituindo a planilha; histórico de set–nov importado. Aba **App (teste)** para testar o app antes do APK. Botão de **tema claro/escuro** no topo; linha de tendência e exportação do relatório no modelo da planilha.
 
 ## Produção: acompanhamento diário
 
@@ -88,6 +89,8 @@ Aba **Produção** substitui a planilha `ACOMPANHAMENTO_DIÁRIO_DA_PRODUÇÃO_BR
 - **Lançar produção:** um dia por vez, toneladas por turno; rachão separado em BM10 e BMM05. Aceita contas como na planilha (`34*25`, `1934-1239+700`). Campo vazio = sem lançamento.
 - **Painel:** programado, realizado, aderência ao previsto, saldo, por material, produção do dia com as paradas do dia, ritmo (média feita × necessária), curva S, barras por dia, rachão por equipamento e comparativo dos meses.
 - **Relatório do dia:** botão na caixa "Produção do dia"; imprime em A4 (ou salva em PDF) com produção, acumulado do mês e as paradas do dia.
+- **Exportar relatório:** botão no topo da aba; gera as 5 páginas do modelo da planilha (A4 deitado: visão geral, ritmo + curvas S, memória diária, rachão por equipamento e evolução) até o dia escolhido. Na janela de impressão, escolha **Salvar como PDF**; o nome já vem `PRODUÇÃO dd.mm`.
+- **Linha de tendência:** botão na curva S; projeta o fim do mês mantendo o ritmo já feito (toneladas por dia programado, sábado com o peso dele). Também aparece no relatório exportado quando está ligada.
 - Meta do dia = meta do mês × peso do dia ÷ soma dos pesos. O calendário é um só para todos os materiais.
 - Banco: `supabase/migrations/20261117_producao_britagem.sql`. Setembro a novembro/2026 importados da planilha.
 

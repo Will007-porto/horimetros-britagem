@@ -20,7 +20,20 @@ const stAd=a=>a==null?'':a>=1?`<span class="st ok">▲ ${pc1(a)}</span>`:a>=.9?`
 const icoBox=p=>`<div class="ico"><svg viewBox="0 0 24 24">${p}</svg></div>`;
 const chevS='<span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>';
 
-let PR={mes:null,x:null,c:null,err:null,busy:false,dia:null,mat:'T',par:{},tab:false};
+let PR={mes:null,x:null,c:null,err:null,busy:false,dia:null,mat:'T',par:{},tab:false,tend:false};
+try{PR.tend=localStorage.getItem('hb_tend')==='1'}catch(e){}
+
+/* Tendência: mantém o ritmo já feito no mês (toneladas por dia programado, sábado com o peso dele)
+   e projeta nos dias programados que faltam. Devolve o acumulado projetado dia a dia. */
+function prdTend(c,mat){
+  if(!c.ref)return null;
+  const val=o=>mat==='T'?o.tot:o.real[mat];
+  let feito=0,wAte=0;c.days.forEach(o=>{if(o.d<=c.ref){feito+=val(o);wAte+=o.w}});
+  if(!wAte||c.ref>=c.days[c.days.length-1].d)return null;
+  const taxa=feito/wAte;let ac=feito;
+  const proj=c.days.map(o=>{if(o.d<c.ref)return null;if(o.d>c.ref)ac+=taxa*o.w;return ac});
+  return {taxa,proj,fim:ac,feito};
+}
 
 async function prdLoad(mes,force){
   if(!D)return;mes=mes||PR.mes||mesDe(D.hoje);
@@ -113,11 +126,11 @@ function renderPrd(anima){
       <div class="rs"><span>Média por dia necessária</span><b>${c.diasRest?f0(nec):'—'}<small>${c.diasRest?'t/dia':''}</small></b><em>${c.diasRest?`para bater a meta nos ${c.diasRest} dias programados que faltam`:'não há dias programados restantes'}</em></div>
       <div class="rs"><span>Diferença de ritmo</span><b>${c.diasRest?(gap>0?'+':'')+f0(gap):'—'}<small>${c.diasRest?'t/dia':''}</small></b><em>${!c.diasRest?(saldo>=0?'meta do mês superada':'mês encerrado abaixo da meta'):gap>=0?'<span class="st ok">▲ ritmo suficiente</span>':`<span class="st cr">▼ acelerar ${f0(-gap)} t/dia</span>`}</em></div>
       <div class="rs"><span>Material mais atrasado</span><b style="font-size:22px">${crit?esc(crit.n):'—'}</b><em>${crit?`menor aderência: ${stAd(crit.a)}`:'sem previsto até agora'}</em></div>
-    </div></div></div>`;
+    </div>${(()=>{const t=prdTend(c,'T');return t&&c.metaT?`<p class="note">Mantendo o ritmo feito até ${ddmm(ref)} (${f0(t.taxa)} t por dia programado), o mês fecha em cerca de <b>${f0(t.fim)} t</b>: ${stAd(t.fim/c.metaT)} da meta${t.fim<c.metaT?`, faltariam ${f0(c.metaT-t.fim)} t`:''}. Veja a linha de tendência na curva S.</p>`:''})()}</div></div>`;
 
   /* curva S */
   h+=`<div class="box rv"><button class="boxh">${icoBox('<path d="M3 20c6 0 6-16 18-16"/>')}<div><div class="tt">Curva S · previsto × realizado</div><div class="kk">Acumulado do mês</div></div>${chevS}</button>
-    <div class="cwrap"><div class="cinner"><div class="boxb"><div class="prdseg">${segHtml('prdMatSeg',[['T','Total'],...MATS.map(([k,n,col])=>[k,`<i style="background:${col}"></i>${n}`])],PR.mat)}</div><div id="prdCurva">${prdCurva(c,PR.mat)}</div></div></div></div></div>`;
+    <div class="cwrap"><div class="cinner"><div class="boxb"><div class="prdseg">${segHtml('prdMatSeg',[['T','Total'],...MATS.map(([k,n,col])=>[k,`<i style="background:${col}"></i>${n}`])],PR.mat)}<button type="button" class="pbtn tendb${PR.tend?' on':''}" data-prdtend aria-pressed="${PR.tend}" title="Projeta o fim do mês mantendo o ritmo já feito"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Linha de tendência</button></div><div id="prdCurva">${prdCurva(c,PR.mat)}</div></div></div></div></div>`;
 
   /* por dia */
   h+=`<div class="box rv"><button class="boxh">${icoBox('<path d="M5 20V10M10 20V4M15 20v-7M20 20v-4"/>')}<div><div class="tt">Produção por dia</div><div class="kk">Toneladas por material · traço = meta do dia</div></div>${chevS}</button>
@@ -202,8 +215,8 @@ function prdCurva(c,mat){
   const W=760,H=250,L=56,R=104,T=14,Bo=28,iw=W-L-R,ih=H-T-Bo,n=c.days.length;
   const col=mat==='T'?'var(--P)':MATC[mat];
   let pa=0,ra=0;const pts=c.days.map(o=>{pa+=mat==='T'?o.metaT:o.meta[mat];ra+=mat==='T'?o.tot:o.real[mat];return {d:o.d,p:pa,r:ra,ok:!!c.ref&&o.d<=c.ref}});
-  const metaM=mat==='T'?c.metaT:c.meta[mat];
-  const max=Math.max(1,metaM,...pts.map(p=>p.r)),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
+  const metaM=mat==='T'?c.metaT:c.meta[mat],tn=PR.tend?prdTend(c,mat):null;
+  const max=Math.max(1,metaM,...pts.map(p=>p.r),tn?tn.fim:0),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
   const X=i=>L+iw*(i+.5)/n,Y=v=>T+ih-ih*v/top;
   let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva S de ${esc(mat==='T'?'todos os materiais':MATN[mat])}">`;
   [0,.25,.5,.75,1].forEach(f=>{const y=Y(top*f);s+=`<line class="gl" x1="${L}" x2="${L+iw}" y1="${y}" y2="${y}"/><text class="ax" x="${L-8}" y="${y+3}" text-anchor="end">${f0(top*f)}</text>`});
@@ -213,10 +226,13 @@ function prdCurva(c,mat){
   const rr=pts.filter(p=>p.ok);
   if(rr.length){s+=`<path class="ln" d="${rr.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.r).toFixed(1)).join('')}" stroke="${col}"/>`;
     const li=rr.length-1;s+=`<circle cx="${X(li)}" cy="${Y(rr[li].r)}" r="4.5" fill="${col}" stroke="var(--card)" stroke-width="2"/><text class="vl" x="${X(li)+9}" y="${Y(rr[li].r)-6}" fill="var(--ink)">${f0(rr[li].r)}</text>`}
-  pts.forEach((p,i)=>{const dif=p.r-p.p;
-    s+=`<g class="dy" data-tip="${esc(`<div class='m'>${ddmm(p.d)} · ${WDN[wd(p.d)]}</div><div class='tl'><span>Previsto acumulado</span><b>${f0(p.p)} t</b></div>${p.ok?`<div class='tl'><span>Realizado acumulado</span><b>${f0(p.r)} t</b></div><div class='tl'><span>Diferença</span><b>${dif>=0?'+':''}${f0(dif)} t</b></div>`:''}`)}"><line class="hl" x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${T+ih}"/><rect class="hv" x="${L+iw*i/n}" y="${T}" width="${iw/n}" height="${ih}"/></g>`});
+  if(tn){const tp=tn.proj.map((v,i)=>v==null?null:[X(i),Y(v)]).filter(Boolean);
+    s+=`<path class="ln" d="${tp.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('')}" stroke="${col}" stroke-dasharray="2 5" stroke-width="2.5" opacity=".85"/>`;
+    const q=tp[tp.length-1];s+=`<circle cx="${q[0]}" cy="${q[1]}" r="4" fill="var(--card)" stroke="${col}" stroke-width="2"/><text class="vl" x="${q[0]+8}" y="${q[1]+(Math.abs(q[1]-Y(pts[n-1].p))<14?16:4)}" fill="var(--ink)">tend. ${f0(tn.fim)}</text>`}
+  pts.forEach((p,i)=>{const dif=p.r-p.p,pj=tn&&tn.proj[i]!=null&&!p.ok?tn.proj[i]:null;
+    s+=`<g class="dy" data-tip="${esc(`<div class='m'>${ddmm(p.d)} · ${WDN[wd(p.d)]}</div><div class='tl'><span>Previsto acumulado</span><b>${f0(p.p)} t</b></div>${p.ok?`<div class='tl'><span>Realizado acumulado</span><b>${f0(p.r)} t</b></div><div class='tl'><span>Diferença</span><b>${dif>=0?'+':''}${f0(dif)} t</b></div>`:''}${pj!=null?`<div class='tl'><span>Tendência acumulada</span><b>${f0(pj)} t</b></div>`:''}`)}"><line class="hl" x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${T+ih}"/><rect class="hv" x="${L+iw*i/n}" y="${T}" width="${iw/n}" height="${ih}"/></g>`});
   s+='</svg>';
-  return s+`<div class="leg"><span><i style="background:${col}"></i>Realizado acumulado${mat==='T'?' (todos os materiais)':' · '+MATN[mat]}</span><span><i style="background:none;border-top:2px dashed var(--muted);height:0;border-radius:0;width:16px;vertical-align:3px"></i>Previsto acumulado (meta distribuída nos dias X e XX)</span></div>`;
+  return s+`<div class="leg"><span><i style="background:${col}"></i>Realizado acumulado${mat==='T'?' (todos os materiais)':' · '+MATN[mat]}</span><span><i style="background:none;border-top:2px dashed var(--muted);height:0;border-radius:0;width:16px;vertical-align:3px"></i>Previsto acumulado (meta distribuída nos dias X e XX)</span>${tn?`<span><i style="background:none;border-top:2.5px dotted ${col};height:0;border-radius:0;width:16px;vertical-align:3px"></i>Tendência: ritmo feito (${f0(tn.taxa)} t por dia programado) até o fim do mês → <b style="color:var(--ink)">${f0(tn.fim)} t</b>${metaM?` (${pc1(tn.fim/metaM)} da meta)`:''}</span>`:''}</div>`;
 }
 /* Barras empilhadas por dia, 2px de folga entre materiais; traço da meta do dia */
 function prdBarras(c){
@@ -395,6 +411,7 @@ $('#prdBody').addEventListener('click',e=>{
   const pp=t.closest('[data-prdpar]');if(pp){F.key='custom';F.from=F.to=pp.dataset.prdpar;saveF();renderAll();go('par');return}
   const mr=t.closest('tr[data-prdmes]');if(mr)return prdLoad(mr.dataset.prdmes);
   if(t.closest('[data-prdtab]')){PR.tab=!PR.tab;$('#prdTab').innerHTML=PR.tab?prdTabela(PR.c):'';t.closest('[data-prdtab]').textContent=PR.tab?'Esconder a tabela dia a dia':'Ver a tabela dia a dia';return}
+  if(t.closest('[data-prdtend]')){PR.tend=!PR.tend;try{localStorage.setItem('hb_tend',PR.tend?'1':'0')}catch(e){}const b=t.closest('[data-prdtend]');b.classList.toggle('on',PR.tend);b.setAttribute('aria-pressed',PR.tend);$('#prdCurva').innerHTML=prdCurva(PR.c,PR.mat);$$('#prdCurva .swipe').forEach(s=>s.classList.add('in'));return}
   const sb=t.closest('#prdMatSeg button');if(sb){PR.mat=sb.dataset.v;$$('#prdMatSeg button').forEach(b=>b.classList.toggle('on',b===sb));$('#prdCurva').innerHTML=prdCurva(PR.c,PR.mat);$$('#prdCurva .swipe').forEach(s=>s.classList.add('in'));return}
 });
 $('#prdBody').addEventListener('change',e=>{if(e.target.id==='prdDia'){PR.dia=e.target.value;renderPrdDia()}});

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script>/* tema escolhido pelo usuário antes de pintar a tela (evita piscar) */try{var t=localStorage.getItem('hb_tema');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <title>Horímetros Britagem</title>
 <meta name="description" content="Painel de horímetros, Gantt de operação e paradas da britagem.">
 <link rel="icon" type="image/png" href="assets/logo-azul.png">
@@ -370,6 +371,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
       <div class="stamp" id="stamp">Carregando dados…</div>
       <button class="pbtn" id="btnUser" title="Entrar para justificar paradas"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg><span id="userLbl">Entrar</span></button>
       <button class="pbtn" id="btnRef" title="Buscar dados novos no Supabase"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Atualizar</button>
+      <button class="pbtn" id="btnTema" type="button" title="Trocar entre tema claro e escuro"><svg viewBox="0 0 24 24" id="temaIco"></svg><span id="temaLbl">Tema</span></button>
       <button class="pbtn" id="btnPrint" title="Imprimir em A3 paisagem"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Imprimir A3</button>
     </div>
     <div class="fbar" id="fbar">
@@ -530,7 +532,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
         <button type="button" id="prdNext" title="Próximo mês"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
       <div class="stamp" id="prdStamp"></div>
-      <div class="prdacts"><button type="button" class="btn2" id="prdMetas" hidden>Metas do mês</button><button type="button" class="btn1" id="prdLancar" hidden>Lançar produção</button></div>
+      <div class="prdacts"><button type="button" class="btn2" id="prdExport" title="Relatório no modelo da planilha (PDF), até o dia escolhido em Produção do dia">Exportar relatório</button><button type="button" class="btn2" id="prdMetas" hidden>Metas do mês</button><button type="button" class="btn1" id="prdLancar" hidden>Lançar produção</button></div>
     </div>
     <div id="prdBody"></div>
   </section>
@@ -1373,6 +1375,13 @@ document.addEventListener('click',e=>{
 });
 $('#btnRef').onclick=async()=>{await load(true);if(PANE==='gan')ganEnsure(true);if(PANE==='par')parLoad(true);if(PANE==='prd')prdLoad(null,true)};
 $('#btnPrint').onclick=()=>window.print();
+/* Tema claro/escuro: segue o sistema até o usuário escolher; a escolha fica salva neste navegador */
+const temaAtual=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+function temaUi(){const d=temaAtual()==='dark';$('#temaLbl').textContent=d?'Tema claro':'Tema escuro';
+  $('#temaIco').innerHTML=d?'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>':'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>'}
+$('#btnTema').onclick=()=>{const n=temaAtual()==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem('hb_tema',n)}catch(e){}temaUi();
+  const f=$('#appFrame');try{if(f&&f.contentDocument)f.contentDocument.documentElement.dataset.theme=n}catch(e){}if(PANE==='prd'&&PR.c)renderPrd()};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',temaUi);temaUi();
 const tip=$('#tip');
 document.addEventListener('mousemove',e=>{const t=e.target.closest('[data-tip]');if(!t||!t.dataset.tip){tip.style.opacity=0;return}
   tip.innerHTML=t.dataset.tip;tip.style.opacity=1;const w=tip.offsetWidth,h=tip.offsetHeight;let x=e.clientX+14,y=e.clientY+14;if(x+w>innerWidth-8)x=e.clientX-w-14;if(y+h>innerHeight-8)y=e.clientY-h-14;tip.style.left=x+'px';tip.style.top=y+'px'});
@@ -1385,5 +1394,6 @@ go(PANE);
 (async()=>{if(await gate())load(false)})();
 </script>
 <script src="producao.js"></script>
+<script src="producao-rel.js"></script>
 </body>
 </html>
