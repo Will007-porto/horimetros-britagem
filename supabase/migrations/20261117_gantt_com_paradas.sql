@@ -1,0 +1,5 @@
+-- Gantt com as paradas (aplicada em 17/11/2026 como "gantt_com_paradas")
+-- painel_gantt(p_dia) ganhou 'par': paradas de AV10 e CV07 que tocam o dia de produção (07:30 → 07:30),
+-- no mesmo formato de linha de painel_paradas. O site desenha só nas linhas desses dois motores
+-- (vermelho = justificada, hachurado = sem justificativa) e abre a justificativa ao clicar.
+-- Corpo completo: ver no banco (pg_get_functiondef('public.painel_gantt'::regproc)).

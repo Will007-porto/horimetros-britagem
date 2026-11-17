@@ -83,6 +83,11 @@ supabase/migrations/               SQL das tabelas, funções e permissões
 
 - **17/11/2026** — aba **Produção** (acompanhamento diário com metas, lançamento por turno, curva S e relatório do dia), substituindo a planilha; histórico de set–nov importado. Aba **App (teste)** para testar o app antes do APK. Botão de **tema claro/escuro** no topo; **dia de produção 07:30 → 04:00** em todo o painel e **filtros refeitos** (período com setas, turno, equipamentos por área); linha de tendência e exportação do relatório no modelo da planilha.
 
+## Gantt diário
+
+- Mostra o dia de produção inteiro (07:30 → 07:30), com as faixas dos turnos e pausas.
+- **Paradas** aparecem só nas linhas de **AV10** e **CV07** (os motores que o scanner monitora): vermelho cheio = justificada, hachurado = sem justificativa, contorno tracejado = em andamento. Clicar numa parada abre a justificativa.
+
 ## Atualização automática (sem recarregar)
 
 - O site nunca recarrega a página sozinho. Os dados chegam pelo **Supabase Realtime** (paradas, produção e status das máquinas) e, de reserva, a cada **60 s** com a aba visível.
