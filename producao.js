@@ -218,7 +218,7 @@ function prdCurva(c,mat){
   const metaM=mat==='T'?c.metaT:c.meta[mat],tn=PR.tend?prdTend(c,mat):null;
   const max=Math.max(1,metaM,...pts.map(p=>p.r),tn?tn.fim:0),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
   const X=i=>L+iw*(i+.5)/n,Y=v=>T+ih-ih*v/top;
-  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva S de ${esc(mat==='T'?'todos os materiais':MATN[mat])}">`;
+  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="max-width:${W}px" role="img" aria-label="Curva S de ${esc(mat==='T'?'todos os materiais':MATN[mat])}">`;
   [0,.25,.5,.75,1].forEach(f=>{const y=Y(top*f);s+=`<line class="gl" x1="${L}" x2="${L+iw}" y1="${y}" y2="${y}"/><text class="ax" x="${L-8}" y="${y+3}" text-anchor="end">${f0(top*f)}</text>`});
   const stp=Math.max(1,Math.ceil(n/10));c.days.forEach((o,i)=>{if(i%stp===0||i===n-1)s+=`<text class="ax" x="${X(i)}" y="${H-8}" text-anchor="middle">${ddmm(o.d)}</text>`});
   if(metaM){s+=`<path class="ln" d="${pts.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.p).toFixed(1)).join('')}" stroke="var(--muted)" stroke-dasharray="6 5"/>`;
@@ -239,7 +239,7 @@ function prdBarras(c){
   const n=c.days.length,L=48,W=Math.max(640,Math.min(1060,L+n*32)),H=230,T=12,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
   const max=Math.max(1,...c.days.map(o=>Math.max(o.tot,o.metaT))),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
   const Y=v=>ih*v/top;
-  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*18+L)}px" role="img" aria-label="Produção por dia">`;
+  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*18+L)}px;max-width:${W}px" role="img" aria-label="Produção por dia">`;
   [0,.5,1].forEach(f=>{const y=T+ih-Y(top*f);s+=`<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+3}" text-anchor="end">${f0(top*f)}</text>`});
   const stp=Math.max(1,Math.ceil(46/cw));
   c.days.forEach((o,i)=>{const x=L+i*cw,bw=Math.min(22,cw*.66),bx=x+(cw-bw)/2;let y=T+ih;

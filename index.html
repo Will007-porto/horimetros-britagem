@@ -794,7 +794,7 @@ const stCol={on:'var(--green)',off:'var(--off)',sem:'var(--orange)'};
 function barsH(rows,o={}){
   const W=o.W||560,lw=o.lw||150,rh=o.rh||24,gap=o.gap||9,vw=W-lw-70;
   const max=Math.max(1e-9,...rows.map(r=>r.v));const H=rows.length*(rh+gap);
-  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}">`;
+  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="max-width:${W}px">`;
   [.25,.5,.75,1].forEach(f=>{const x=lw+vw*f;s+=`<line class="gl" x1="${x}" x2="${x}" y1="0" y2="${H-gap}"/>`});
   rows.forEach((r,i)=>{const y=i*(rh+gap),w=Math.max(r.v?2:0,vw*r.v/max);
     s+=`<g class="r" data-tip="${esc(r.tip||'')}"><rect x="0" y="${y}" width="${W}" height="${rh}" fill="transparent"/>
@@ -808,7 +808,7 @@ function heat(){
   const n=DAYS.length,lw=118,cw=Math.max(11,Math.min(30,Math.floor((1000-lw)/n))),ch=26,gap=3,top=34;
   const W=lw+n*cw,H=top+M.length*(ch+gap);
   const max=16;
-  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*12+lw)}px">`;
+  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*12+lw)}px;max-width:${W}px">`;
   const step=Math.max(1,Math.ceil(40/cw));
   DAYS.forEach((d,i)=>{const x=lw+i*cw+cw/2;
     if(i%step===0){s+=`<text class="ax" x="${x}" y="12" text-anchor="middle">${ddmm(d)}</text>`}
@@ -822,17 +822,18 @@ function heat(){
   return s+'</svg>'+`<div class="leg"><span>Menos</span><span class="ramp">${[.15,.35,.55,.75,1].map(a=>`<i style="background:var(--P);opacity:${a}"></i>`).join('')}</span><span>Mais horas (escala até 16h/dia)</span><span style="color:var(--muted)">Clique num dia para abrir o Gantt</span><span><i style="background:var(--line)"></i>Sem operação</span></div>`;
 }
 function cols(){
-  const n=DAYS.length,lw=36,W=Math.max(560,Math.min(1040,lw+n*30)),H=200,top=10,bot=26,cw=(W-lw)/n,ih=H-top-bot;
+  /* coluna de no máximo 44px por dia: período curto = gráfico estreito, não barras gigantes */
+  const n=DAYS.length,lw=36,cw=Math.max(14,Math.min(44,(1040-lw)/n)),W=Math.max(320,lw+n*cw+8),H=200,top=10,bot=26,ih=H-top-bot;
   const tot=DAYS.map(d=>M.reduce((a,m)=>a+(Hd(m.id,d)||0),0));
   const max=Math.max(1,...tot);const nice=Math.ceil(max/10)*10;
   const op=tot.filter(v=>v>0.05),avg=op.length?op.reduce((a,b)=>a+b,0)/op.length:0;
-  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*12+lw)}px">`;
+  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*12+lw)}px;max-width:${W}px">`;
   [0,.5,1].forEach(f=>{const y=top+ih-ih*f;s+=`<line class="gl" x1="${lw}" x2="${W}" y1="${y}" y2="${y}"/><text class="ax" x="${lw-6}" y="${y+3}" text-anchor="end">${f0(nice*f)}</text>`});
   const step=Math.max(1,Math.ceil(44/cw));
   DAYS.forEach((d,i)=>{const v=tot[i],h=ih*v/nice,x=lw+i*cw;
     const br=M.filter(m=>(Hd(m.id,d)||0)>0.05).map(m=>`<div class='tl'><span>${m.id}</span><b>${hm(Hd(m.id,d))}</b></div>`).join('');
     s+=`<g class="r" data-tip="${esc(`<div class='m'>${ddmm(d)} · ${['dom','seg','ter','qua','qui','sex','sáb'][wd(d)]}</div><b>${hm(v)} somadas</b>${br}`)}"><rect x="${x}" y="${top}" width="${cw}" height="${ih}" fill="transparent"/>
-    <rect class="s" x="${x+cw*.16}" y="${top+ih-h}" width="${cw*.68}" height="${Math.max(h,v>0?1.5:0)}" rx="2.5" fill="var(--P)"/></g>`;
+    <rect class="s" x="${x+(cw-Math.min(28,cw*.68))/2}" y="${top+ih-h}" width="${Math.min(28,cw*.68)}" height="${Math.max(h,v>0?1.5:0)}" rx="2.5" fill="var(--P)"/></g>`;
     if(i%step===0)s+=`<text class="ax" x="${x+cw/2}" y="${H-8}" text-anchor="middle">${ddmm(d)}</text>`});
   if(avg){const y=top+ih-ih*avg/nice;s+=`<line x1="${lw}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--orange)" stroke-width="1.5" stroke-dasharray="5 4"/><text class="vl" x="${W}" y="${y-5}" text-anchor="end" fill="var(--orange)">média ${f1(avg)}h</text>`}
   return s+'</svg>'+`<div class="leg"><span><i style="background:var(--P)"></i>Horas somadas no dia</span><span><i style="background:var(--orange)"></i>Média dos dias com operação</span></div>`;
@@ -1140,7 +1141,7 @@ function renderGan(){
   const X=s=>lw+vw*Math.max(0,Math.min(span,s-A))/span;
   const dentro=([a,b])=>b>A&&a<B,corta=([a,b])=>[Math.max(a,A),Math.min(b,B)];
   const naJanela=([a,b])=>winsF.reduce((t,w)=>t+Math.max(0,Math.min(b,w.b)-Math.max(a,w.a)),0);
-  let s=`<svg class="ch" viewBox="0 0 ${W} ${H}" style="min-width:760px"><defs><pattern id="gpH" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="rgba(214,69,69,.16)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--red)" stroke-width="2.4"/></pattern></defs>`;
+  let s=`<svg class="ch" viewBox="0 0 ${W} ${H}" style="min-width:760px;max-width:${W}px"><defs><pattern id="gpH" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="rgba(214,69,69,.16)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--red)" stroke-width="2.4"/></pattern></defs>`;
   // faixas dos turnos (janelas produtivas do dia de produção) e pausas entre elas
   const g=g0,wins=winsF;
   const nowS=Date.parse(D.gerado)/1000;
