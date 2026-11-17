@@ -296,6 +296,48 @@ svg.ch rect.gb:hover{stroke:var(--orange);stroke-width:2}
 @media(max-width:980px){.fbar{gap:6px}.dd{flex:1 1 auto}.ddb{width:100%}.fcount{margin-left:0;flex-basis:100%}#popPer{width:min(540px,calc(100vw - 32px));flex-direction:column}.pres{border-right:0;border-bottom:1px solid var(--line);flex-direction:row;flex-wrap:wrap}.pres button span{display:none}#popAt{width:min(290px,calc(100vw - 32px))}#ddAt .pop{left:auto;right:0}.fempty{margin-left:16px;margin-right:16px}.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px}.navlbl,.sidefoot,.legside,.brandtile .bsub{display:none}.brandtile{padding:9px 12px}.brandtile img{width:110px}.nav{flex-direction:row;flex-wrap:wrap}.pane,.topbar,.appfoot{padding-left:16px;padding-right:16px}.state{margin-left:16px;margin-right:16px}.topbar{flex-direction:column;align-items:flex-start;position:static}.stamp{text-align:left}}
 @media(max-width:980px){#tuSeg,#stSeg{flex:1 1 auto}#tuSeg button,#stSeg button{flex:1}}
 [hidden]{display:none!important}
+/* Filtros (refeitos): período com setas, turno e equipamentos por área numa linha só */
+#fbar.fbar{align-items:flex-end;gap:12px 16px}
+.fg{display:flex;flex-direction:column;gap:5px;position:relative;min-width:0}
+.fl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.fper{display:flex;align-items:center;gap:4px;min-width:0}
+.fnav{width:34px;height:40px;flex:none;border:1px solid var(--grid);background:var(--card);border-radius:9px;display:grid;place-items:center;cursor:pointer;color:var(--ink);transition:background-color .15s ease-out}
+.fnav:hover{background:var(--line)}.fnav:disabled{opacity:.35;cursor:default}
+.fnav svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2}
+#perSeg,#tuSeg{height:40px;align-items:center}
+#perSeg button svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-2px;margin-right:4px}
+#perSeg button,#tuSeg button{white-space:nowrap}
+.fbtn{height:40px;min-width:190px}
+.fbtn #atLbl{font:600 13px var(--sans);white-space:nowrap}.fbtn #atLbl em{font-style:normal;color:var(--grey);font-weight:500;margin-left:6px}
+.fbtn .cv2{margin-left:auto}
+.fsum{margin-left:auto;align-self:center;text-align:right;font-size:12px;color:var(--grey);line-height:1.55;cursor:help}
+.fsum b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.fsum .fclear{padding:0 0 0 2px}
+#fbar #popPer{width:320px;flex-direction:column;padding:14px 16px;gap:10px}
+#popPer .ct,#popAt .ct{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.fdates{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fdates label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--grey)}
+.fdates input{height:40px;border:1px solid var(--grid);border-radius:8px;padding:0 8px;font:600 13px var(--sans);color:var(--ink);background:var(--card);color-scheme:light dark}
+.fquick{display:flex;gap:6px;flex-wrap:wrap}.fquick .act{margin:0}
+#fbar #popAt{width:380px;flex-direction:column;padding:12px;gap:10px}
+#popAt .seg{display:flex}#popAt .seg button{flex:1;padding:7px 4px;font-size:11.5px;white-space:nowrap}
+#popAt .plinks{align-items:center;padding:0 2px}
+#popAt .plist{max-height:330px}
+#popAt .plist label.pgrp{margin-top:6px;background:var(--soft2);font-weight:800;font-size:12px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink2)}
+#popAt .plist label.pgrp:first-child{margin-top:0}
+#popAt .plist label:not(.pgrp){padding-left:14px}
+#popAt .plist .pn{font-weight:500;color:var(--grey)}
+@media(max-width:980px){
+  #fbar.fbar{gap:10px}
+  .fg{flex:1 1 100%}
+  .topbar{padding-left:16px;padding-right:16px}.topbar>div{min-width:0;max-width:100%}.tright{width:100%}.tright .stamp{flex-basis:100%;text-align:left}.tright .pbtn{flex:1 1 auto;justify-content:center}
+  .fg{max-width:100%}.fper{width:100%;max-width:100%}#perSeg{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}#perSeg::-webkit-scrollbar{display:none}#perSeg button{flex:none}
+  #tuSeg{display:flex}#tuSeg button{flex:1}
+  .fbtn{width:100%}
+  .fsum{margin-left:0;text-align:left;flex-basis:100%}
+  #fbar #popPer,#fbar #popAt{width:min(360px,calc(100vw - 32px))}
+}
+
 /* Painel do supervisor (Validar, Equipe, Histórico): só reaproveita os componentes do site */
 .nav a.hidn{display:none}
 /* Período, ativos e turno não se aplicam às abas de gestão */
@@ -374,43 +416,48 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
       <button class="pbtn" id="btnTema" type="button" title="Trocar entre tema claro e escuro"><svg viewBox="0 0 24 24" id="temaIco"></svg><span id="temaLbl">Tema</span></button>
       <button class="pbtn" id="btnPrint" title="Imprimir em A3 paisagem"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Imprimir A3</button>
     </div>
-    <div class="fbar" id="fbar">
-      <div class="dd" id="ddPer">
-        <button class="ddb" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="ddl"><small>Período</small><b id="perLbl">Últimos 30 dias</b></span><svg class="cv2" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="pop" id="popPer" role="dialog" aria-label="Escolher período">
-          <div class="pres" id="pres"></div>
-          <div class="cust">
-            <div class="ct">Intervalo personalizado</div>
-            <label>De<input type="date" id="fFrom"></label>
-            <label>Até<input type="date" id="fTo"></label>
-            <div class="perr" id="perr"></div>
-            <p class="hint">Histórico disponível: últimos 90 dias.</p>
-            <div class="pact"><button class="btn2" data-close>Cancelar</button><button class="btn1" id="fApply">Aplicar</button></div>
+    <div class="fbar" id="fbar" role="group" aria-label="Filtros do painel">
+      <div class="fg dd" id="ddPer">
+        <span class="fl" id="flPer">Período</span>
+        <div class="fper">
+          <button type="button" class="fnav" id="fPrev" title="Período anterior" aria-label="Período anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <div class="seg" id="perSeg" aria-labelledby="flPer"></div>
+          <button type="button" class="fnav" id="fNext" title="Próximo período" aria-label="Próximo período"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="pop" id="popPer" role="dialog" aria-label="Escolher datas">
+          <div class="ct">Escolher datas (dias de produção)</div>
+          <div class="fdates"><label>De<input type="date" id="fFrom"></label><label>Até<input type="date" id="fTo"></label></div>
+          <div class="fquick"><button type="button" class="act" data-k="mespass">Mês passado</button><button type="button" class="act" data-k="90d">Últimos 90 dias</button></div>
+          <div class="perr" id="perr"></div>
+          <p class="hint">Cada dia vai das 07:30 até as 04:00 do dia seguinte (sábado até 23:00). Histórico: últimos 90 dias.</p>
+          <div class="pact"><button type="button" class="btn2" data-close>Cancelar</button><button type="button" class="btn1" id="fApply">Aplicar</button></div>
+        </div>
+      </div>
+      <div class="fg">
+        <span class="fl" id="flTu">Turno</span>
+        <div class="seg" id="tuSeg" aria-labelledby="flTu">
+          <button type="button" data-t="all" class="on">Os dois</button>
+          <button type="button" data-t="1">1º turno</button>
+          <button type="button" data-t="2">2º turno</button>
+        </div>
+      </div>
+      <div class="fg dd" id="ddAt">
+        <span class="fl">Equipamentos</span>
+        <button type="button" class="ddb fbtn" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h10v2M7 13h4"/></svg><span id="atLbl">Todos</span><svg class="cv2" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="pop" id="popAt" role="dialog" aria-label="Escolher equipamentos">
+          <div class="ct">Situação agora</div>
+          <div class="seg" id="stSeg">
+            <button type="button" data-s="all" class="on">Todos</button>
+            <button type="button" data-s="on"><i style="background:var(--green)"></i>Ligados</button>
+            <button type="button" data-s="off"><i style="background:var(--off)"></i>Desligados</button>
+            <button type="button" data-s="sem"><i style="background:var(--orange)"></i>Sem sinal</button>
           </div>
-        </div>
-      </div>
-      <div class="dd" id="ddAt">
-        <button class="ddb" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h10v2M7 13h4"/></svg><span class="ddl"><small>Ativos</small><b id="atLbl">Todos</b></span><svg class="cv2" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="pop" id="popAt" role="dialog" aria-label="Escolher ativos">
-          <input class="psearch" id="atQ" placeholder="Buscar ativo…" autocomplete="off">
-          <div class="plinks"><a id="atAll">Marcar todos</a><a id="atNone">Desmarcar todos</a></div>
+          <div class="plinks"><span class="ct">Por área</span><span><a id="atAll">Todos</a> · <a id="atNone">Nenhum</a></span></div>
           <div class="plist" id="atList"></div>
-          <div class="pact"><button class="btn1" data-close>Concluir</button></div>
+          <div class="pact"><button type="button" class="btn1" data-close>Pronto</button></div>
         </div>
       </div>
-      <div class="seg" id="stSeg">
-        <button data-s="all" class="on">Todos</button>
-        <button data-s="on"><i style="background:var(--green)"></i>Ligados</button>
-        <button data-s="off"><i style="background:var(--off)"></i>Desligados</button>
-        <button data-s="sem"><i style="background:var(--orange)"></i>Sem sinal</button>
-      </div>
-      <div class="seg" id="tuSeg" style="height:44px;align-items:center">
-        <button data-t="all" class="on">Ambos os turnos</button>
-        <button data-t="1">1º turno</button>
-        <button data-t="2">2º turno</button>
-      </div>
-      <div class="fchips" id="fchips"></div>
-      <div class="fcount" id="fcount"></div>
+      <div class="fsum" id="fsum" title="Dia de produção: 1º turno 07:30 → 18:30 e 2º turno 18:30 → 04:00 do dia seguinte. Sábado: 07:30 → 16:00 e 16:00 → 23:00. Domingo só quando a usina rodou."></div>
     </div>
   </div>
   <div class="fempty" id="fempty"><span>Nenhum ativo corresponde aos filtros escolhidos.</span><button class="btn1" data-clear>Limpar filtros</button></div>
@@ -1043,7 +1090,7 @@ function renderGan(){
   });
   if(GDAY===D.hoje){const nx=X(Date.parse(D.gerado)/1000);if(nx>lw&&nx<lw+vw)s+=`<line x1="${nx}" x2="${nx}" y1="${top-4}" y2="${H-6}" stroke="var(--orange)" stroke-width="1.5" stroke-dasharray="4 3"/><text class="vl" x="${nx}" y="${H+8}" text-anchor="middle" fill="var(--orange)">leitura ${hhmm(Date.parse(D.gerado)/1000)}</text>`}
   s+='</svg>';
-  $('#cGan').innerHTML=s+`<div class="leg" style="margin-top:${GDAY===D.hoje?18:12}px"><span><i style="background:var(--P)"></i>Ligado</span><span><i style="background:var(--soft2);border:1px solid var(--grid)"></i>Desligado</span><span><i style="background:rgba(10,46,122,.18)"></i>1º turno</span><span><i style="background:rgba(242,169,59,.35)"></i>2º turno</span><span><i style="background:var(--card);border:1px solid var(--grid)"></i>Fora do turno / pausa</span>${GDAY===D.hoje?'<span><i style="background:var(--orange)"></i>Hora da leitura</span>':''}</div><p class="note">O dia de produção vai das 06h às 06h do dia seguinte, para o 2º turno aparecer inteiro. ${GMERGE?'Pausas menores que 2 minutos foram unidas para facilitar a leitura. Desmarque o botão para ver cada liga/desliga.':'Mostrando cada liga/desliga como veio do sensor.'} Intervalos ligados acima de 16h seguidas são cortados (provável placa sem sinal).</p>`;
+  $('#cGan').innerHTML=s+`<div class="leg" style="margin-top:${GDAY===D.hoje?18:12}px"><span><i style="background:var(--P)"></i>Ligado</span><span><i style="background:var(--soft2);border:1px solid var(--grid)"></i>Desligado</span><span><i style="background:rgba(10,46,122,.18)"></i>1º turno</span><span><i style="background:rgba(242,169,59,.35)"></i>2º turno</span><span><i style="background:var(--card);border:1px solid var(--grid)"></i>Fora do turno / pausa</span>${GDAY===D.hoje?'<span><i style="background:var(--orange)"></i>Hora da leitura</span>':''}</div><p class="note">O dia de produção vai das 07:30 até as 07:30 do dia seguinte: 1º turno 07:30 → 18:30 e 2º turno 18:30 → 04:00 (sábado 07:30 → 16:00 e 16:00 → 23:00). ${GMERGE?'Pausas menores que 2 minutos foram unidas para facilitar a leitura. Desmarque o botão para ver cada liga/desliga.':'Mostrando cada liga/desliga como veio do sensor.'} Intervalos ligados acima de 16h seguidas são cortados (provável placa sem sinal).</p>`;
   const ativos=M.filter(m=>(by[m.id]||[]).length).length;
   const winsN=wins.map(w=>({...w,b:Math.min(w.b,nowS)})).filter(w=>w.b>w.a);
   const avD=winsN.reduce((a,w)=>a+(w.b-w.a),0);let usedD=0;M.forEach(m=>(by[m.id]||[]).forEach(([a,b])=>winsN.forEach(w=>{usedD+=Math.max(0,Math.min(b,w.b)-Math.max(a,w.a))})));
@@ -1081,48 +1128,75 @@ function rTxt(){return {hoje:'hoje',ontem:'ontem','7d':'em 7 dias','30d':'em 30 
 const atTxt=()=>F.sel?(!F.sel.length?'nenhum':F.sel.length<=3?F.sel.join(', '):`${F.sel.length} de ${MALL.length} ativos`):'Todos os ativos';
 function saveF(){try{localStorage.setItem('hb_f',JSON.stringify(F))}catch(e){}}
 function setRange(k){F.key=k;F.from=F.to=null;saveF()}
+const PER_SEG=[['hoje','Hoje'],['ontem','Ontem'],['7d','7 dias'],['30d','30 dias'],['mes','Este mês']];
+const AREA_GRP=[['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack'],['GERAL','Geral'],['OUTROS','Outros']];
+const areaMotor=id=>{const e=D&&D.eqb&&D.eqb[id];return (e&&e[1])||'OUTROS'};
+const nomeMotor=id=>{const e=D&&D.eqb&&D.eqb[id];return e?e[0]:''};
+const CAL_SVG='<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+/* Janela real coberta pelo filtro, no dia de produção (07:30 → 04:00 do dia seguinte) */
+function janTxt(){const um=F.from===F.to,per=um?ddmm(F.from):`${ddmm(F.from)} a ${ddmm(F.to)}`;
+  if(F.tu==='1')return um?`${ddmm(F.from)} · 07:30 → 18:30`:`${per} · 1º turno, 07:30 → 18:30`;
+  if(F.tu==='2')return um?`${ddmm(F.from)} 18:30 → ${ddmm(addDays(F.from,1))} 04:00`:`${per} · 2º turno, 18:30 → 04:00`;
+  return `${ddmm(F.from)} 07:30 → ${ddmm(addDays(F.to,1))} 04:00`}
 function renderFilters(){
-  const n=DAYS.length;
-  $('#perLbl').innerHTML=`${esc(rLabel())}${F.key!=='custom'&&F.key!=='hoje'&&F.key!=='ontem'?`<em>${ddmm(F.from)} – ${ddmm(F.to)}</em>`:''}`;
-  $('#atLbl').innerHTML=F.sel?`${esc(!F.sel.length?'Nenhum':F.sel.length<=2?F.sel.join(', '):F.sel.length+' selecionados')}<em>de ${MALL.length}</em>`:`Todos<em>${MALL.length} ativos</em>`;
-  $$('#stSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===F.st));
-  $$('#tuSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===F.tu));
-  $('#pres').innerHTML=PRESETS.map(([k,l])=>{const r=presetRange(k);return `<button data-k="${k}" class="${F.key===k?'on':''}">${l}<span>${r[0]===r[1]?ddmm(r[0]):ddmm(r[0])+'–'+ddmm(r[1])}</span></button>`}).join('');
-  const fi=$('#fFrom'),ti=$('#fTo');[fi,ti].forEach(i=>{i.min=minDay();i.max=D.hoje});fi.value=F.from;ti.value=F.to;$('#perr').textContent='';
+  const n=DAYS.length,cust=!PER_SEG.some(([k])=>k===F.key);
+  $('#perSeg').innerHTML=PER_SEG.map(([k,l])=>`<button type="button" data-k="${k}" class="${F.key===k?'on':''}" aria-pressed="${F.key===k}">${l}</button>`).join('')
+    +`<button type="button" data-k="custom" class="${cust?'on':''}" aria-haspopup="dialog" title="Escolher as datas">${CAL_SVG}${cust?esc(F.key==='mespass'?'Mês passado':F.key==='90d'?'90 dias':F.from===F.to?ddmm(F.from):ddmm(F.from)+' – '+ddmm(F.to)):'Datas'}</button>`;
+  $('#fPrev').disabled=F.from<=minDay();$('#fNext').disabled=F.to>=D.hoje;
+  $$('#tuSeg button').forEach(b=>{const on=b.dataset.t===F.tu;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+  $$('#stSeg button').forEach(b=>{const on=b.dataset.s===F.st;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+  const fi=$('#fFrom'),ti=$('#fTo');[fi,ti].forEach(i=>{i.min=minDay();i.max=D.hoje});if(!$('#ddPer').classList.contains('open')){fi.value=F.from;ti.value=F.to;$('#perr').textContent=''}
+  const nSel=F.sel?F.sel.length:MALL.length,stN={on:'ligados',off:'desligados',sem:'sem sinal'}[F.st];
+  $('#atLbl').innerHTML=!F.sel&&F.st==='all'?`Todos<em>${MALL.length}</em>`:!nSel?'Nenhum':`${F.sel?(F.sel.length<=2?esc(F.sel.join(', ')):`${F.sel.length} de ${MALL.length}`):'Todos'}${stN?`<em>só ${stN}</em>`:''}`;
   renderAtList();
-  const ch=[];
-  if(F.key!=='30d')ch.push(['per',`Período: ${rLabel()}`]);
-  if(F.sel)ch.push(['at',`Ativos: ${atTxt()}`]);
-  if(F.tu!=='all')ch.push(['tu',`Turno: ${F.tu}º`]);
-  if(F.st!=='all')ch.push(['st',`Estado: ${{on:'Ligados',off:'Desligados',sem:'Sem sinal'}[F.st]}`]);
-  $('#fchips').innerHTML=ch.map(([k,l])=>`<span class="fchip">${esc(l)}<button data-rm="${k}" aria-label="Remover filtro">×</button></span>`).join('')+(ch.length>1?`<button class="fclear" data-clear>Limpar tudo</button>`:'');
-  $('#fcount').innerHTML=`<b>${M.length}</b> de ${MALL.length} ativos · <b>${n}</b> ${n===1?'dia':'dias'}${F.tu!=='all'?` · ${F.tu}º turno`:''}`;
+  const def=F.key==='30d'&&!F.sel&&F.tu==='all'&&F.st==='all';
+  $('#fsum').innerHTML=`<b>${esc(janTxt())}</b><br>${n} ${n===1?'dia de produção':'dias de produção'} · ${M.length} de ${MALL.length} equipamentos${def?'':' · <button type="button" class="fclear" data-clear>Limpar filtros</button>'}`;
   $('#fempty').classList.toggle('show',!M.length);
 }
 function renderAtList(){
-  const q=($('#atQ').value||'').trim().toUpperCase();
-  $('#atList').innerHTML=MALL.filter(m=>!q||m.id.includes(q)||(m.nome||'').toUpperCase().includes(q)).map(m=>`<label><input type="checkbox" value="${esc(m.id)}" ${!F.sel||F.sel.includes(m.id)?'checked':''}><i style="background:${stCol[m.st]}"></i>${esc(m.id)}${m.nome?` <span style="font-weight:500;color:var(--grey)">· ${esc(m.nome)}</span>`:''}<small>${stTxt[m.st]}</small></label>`).join('')||'<div class="pempty">Nenhum ativo encontrado</div>';
+  const sel=new Set(F.sel||MALL.map(m=>m.id));let h='';
+  AREA_GRP.forEach(([a,an])=>{const ms=MALL.filter(m=>areaMotor(m.id)===a);if(!ms.length)return;const k=ms.filter(m=>sel.has(m.id)).length;
+    h+=`<label class="pgrp"><input type="checkbox" data-grp="${a}" ${k===ms.length?'checked':''} ${k&&k<ms.length?'data-ind="1"':''}>${an}<small>${k} de ${ms.length}</small></label>`
+      +ms.map(m=>`<label><input type="checkbox" value="${esc(m.id)}" ${sel.has(m.id)?'checked':''}><i style="background:${stCol[m.st]}"></i>${esc(m.id)}${nomeMotor(m.id)?` <span class="pn">· ${esc(nomeMotor(m.id))}</span>`:''}<small>${stTxt[m.st]}</small></label>`).join('')});
+  $('#atList').innerHTML=h||'<div class="pempty">Nenhum equipamento</div>';
+  $$('#atList [data-ind]').forEach(i=>i.indeterminate=true);
 }
-function closeDD(except){$$('.dd.open').forEach(d=>{if(d!==except){d.classList.remove('open');d.querySelector('.ddb').setAttribute('aria-expanded','false')}})}
-$$('.dd .ddb').forEach(b=>b.onclick=e=>{e.stopPropagation();const d=b.closest('.dd');const o=!d.classList.contains('open');closeDD(d);d.classList.toggle('open',o);b.setAttribute('aria-expanded',o);if(o&&d.id==='ddAt')setTimeout(()=>$('#atQ').focus(),30)});
+const mesMais=(s,n)=>{const [y,m]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1+n,1)).toISOString().slice(0,10)};
+const diasEntre=(a,b)=>Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/864e5);
+/* Setas: andam o período inteiro (um dia, uma semana, um mês…) */
+function andarPeriodo(dir){
+  const mn=minDay();let a=F.from,b=F.to;
+  const mes=a.slice(8)==='01'&&(addDays(b,1).slice(8)==='01'||(b===D.hoje&&a.slice(0,7)===b.slice(0,7)));
+  if(mes){a=mesMais(a,dir);b=addDays(mesMais(a,1),-1)}else{const n=diasEntre(a,b)+1;a=addDays(a,dir*n);b=addDays(b,dir*n)}
+  if(b>D.hoje)b=D.hoje;if(a<mn)a=mn;if(a>b)return;
+  F.key='custom';F.from=a;F.to=b;
+  for(const [k] of PRESETS){const r=presetRange(k);if(r&&r[0]===a&&r[1]===b){F.key=k;break}}
+  saveF();renderAll();
+}
+function closeDD(except){$$('.dd.open').forEach(d=>{if(d!==except){d.classList.remove('open');const b=d.querySelector('.ddb');if(b)b.setAttribute('aria-expanded','false')}})}
+$$('.dd .ddb').forEach(b=>b.onclick=e=>{e.stopPropagation();const d=b.closest('.dd');const o=!d.classList.contains('open');closeDD(d);d.classList.toggle('open',o);b.setAttribute('aria-expanded',o)});
 $$('.pop').forEach(p=>p.addEventListener('click',e=>{e.stopPropagation();if(e.target.closest('[data-close]'))closeDD()}));
 document.addEventListener('click',()=>closeDD());
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDD()});
-$('#pres').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;setRange(b.dataset.k);closeDD();renderAll()};
+$('#perSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;e.stopPropagation();
+  if(b.dataset.k==='custom'){const d=$('#ddPer'),o=!d.classList.contains('open');closeDD(d);d.classList.toggle('open',o);if(o){$('#fFrom').value=F.from;$('#fTo').value=F.to;$('#perr').textContent='';setTimeout(()=>$('#fFrom').focus(),30)}return}
+  closeDD();setRange(b.dataset.k);renderAll()};
+$('#fPrev').onclick=e=>{e.stopPropagation();andarPeriodo(-1)};
+$('#fNext').onclick=e=>{e.stopPropagation();andarPeriodo(1)};
+$('#popPer').addEventListener('click',e=>{const q=e.target.closest('.fquick [data-k]');if(!q||!D)return;setRange(q.dataset.k);closeDD();renderAll()});
 $('#fApply').onclick=()=>{const a=$('#fFrom').value,b=$('#fTo').value,mn=minDay();
   if(!a||!b){$('#perr').textContent='Preencha as duas datas.';return}
   if(a>b){$('#perr').textContent='A data inicial é depois da final.';return}
   if(a<mn||b>D.hoje){$('#perr').textContent=`Escolha entre ${ddmm(mn)} e ${ddmm(D.hoje)}.`;return}
-  F.key='custom';F.from=a;F.to=b;saveF();closeDD();renderAll()};
-$('#atQ').oninput=renderAtList;
-$('#atList').onchange=()=>{const v=[...$$('#atList input:checked')].map(i=>i.value);const vis=[...$$('#atList input')].map(i=>i.value);
-  const cur=new Set(F.sel||MALL.map(m=>m.id));vis.forEach(id=>cur.delete(id));v.forEach(id=>cur.add(id));
+  F.key='custom';F.from=a;F.to=b;for(const [k] of PRESETS){const r=presetRange(k);if(r&&r[0]===a&&r[1]===b){F.key=k;break}}saveF();closeDD();renderAll()};
+$('#atList').onchange=e=>{const t=e.target;const cur=new Set(F.sel||MALL.map(m=>m.id));
+  if(t.dataset.grp)MALL.filter(m=>areaMotor(m.id)===t.dataset.grp).forEach(m=>t.checked?cur.add(m.id):cur.delete(m.id));
+  else t.checked?cur.add(t.value):cur.delete(t.value);
   F.sel=cur.size===MALL.length?null:[...cur].sort();saveF();renderAll()};
 $('#atAll').onclick=()=>{F.sel=null;saveF();renderAll()};
 $('#atNone').onclick=()=>{F.sel=[];saveF();renderAll()};
 $('#tuSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;F.tu=b.dataset.t;saveF();renderAll()};
 $('#stSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;F.st=b.dataset.s;saveF();renderAll()};
-$('#fchips').onclick=e=>{const b=e.target.closest('[data-rm]');if(!b)return;const k=b.dataset.rm;if(k==='per')setRange('30d');if(k==='at')F.sel=null;if(k==='st')F.st='all';if(k==='tu')F.tu='all';saveF();renderAll()};
 
 /* ---------- LOGIN (mesmo do aplicativo: nome + PIN) ---------- */
 let EU={logado:false,nome:null,autorizado:false,papel:null,area:null};

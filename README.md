@@ -38,6 +38,8 @@ Configurados nas tabelas `turnos_config` e `pausas_config`. Para mudar um horár
 
 A função `janelas_produtivas(desde, ate)` devolve os horários produtivos (turno menos pausas) e é a fonte única de verdade.
 
+**Dia de produção:** o dia D vai de D 07:30 até D+1 07:30. Os dois turnos do dia 13/11, por exemplo, vão de 13/11 07:30 até 14/11 04:00. Horas por dia, partidas, Gantt, filtro de período e paradas do dia usam essa regra (`dia_producao(ts)` e `inicio_dia_producao(dia)` no banco). O que rodar entre 04:00 e 07:30 conta como extra do dia anterior.
+
 **Regras de parada** (AV10 · Primário e CV07 · Secundário):
 - conta só dentro das janelas produtivas;
 - abre quando o motor fica desligado por **5 min (AV10)** ou **3 min (CV07)**;
@@ -79,7 +81,7 @@ supabase/migrations/               SQL das tabelas, funções e permissões
 
 - **16/11/2026** — segurança (bright-api v7: só placa/motores cadastrados, rotas do app de teste desativadas; dados só para usuários liberados; auditoria imutável). Site virou o painel do supervisor: login com nome + PIN do app, justificativa com os motivos do app (por setor) e em lote, abas **Validar** e **Equipe** (cadastro e troca de PIN pela função `admin-usuarios`), histórico de cada parada. Ver `supabase/migrations/20261116_INDICE.md`.
 
-- **17/11/2026** — aba **Produção** (acompanhamento diário com metas, lançamento por turno, curva S e relatório do dia), substituindo a planilha; histórico de set–nov importado. Aba **App (teste)** para testar o app antes do APK. Botão de **tema claro/escuro** no topo; linha de tendência e exportação do relatório no modelo da planilha.
+- **17/11/2026** — aba **Produção** (acompanhamento diário com metas, lançamento por turno, curva S e relatório do dia), substituindo a planilha; histórico de set–nov importado. Aba **App (teste)** para testar o app antes do APK. Botão de **tema claro/escuro** no topo; **dia de produção 07:30 → 04:00** em todo o painel e **filtros refeitos** (período com setas, turno, equipamentos por área); linha de tendência e exportação do relatório no modelo da planilha.
 
 ## Produção: acompanhamento diário
 
