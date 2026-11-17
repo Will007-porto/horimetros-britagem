@@ -86,6 +86,7 @@ supabase/migrations/               SQL das tabelas, funções e permissões
 ## Gantt diário
 
 - Mostra o dia de produção inteiro (07:30 → 07:30), com as faixas dos turnos e pausas.
+- **Filtro de turno**: o eixo mostra só a janela do turno escolhido (1º 07:30 → 18:30, 2º 18:30 → 04:00; sábado 07:30 → 16:00 e 16:00 → 23:00) e horas, aproveitamento e paradas contam só dentro dela.
 - **Paradas** aparecem só nas linhas de **AV10** e **CV07** (os motores que o scanner monitora): vermelho cheio = justificada, hachurado = sem justificativa, contorno tracejado = em andamento. Clicar numa parada abre a justificativa.
 
 ## Atualização automática (sem recarregar)

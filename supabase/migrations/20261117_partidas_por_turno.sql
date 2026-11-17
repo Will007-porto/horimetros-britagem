@@ -1,0 +1,5 @@
+-- Partidas por turno (aplicada em 17/11/2026 como "painel_partidas_por_turno")
+-- painel_dados ganhou 'ptj' [motor, dia, turno, n]: quantos "ligado" aconteceram dentro do horário do turno
+-- (turno_inicio → turno_fim, do dia de produção). Com isso o filtro de turno do site vale também nas partidas.
+-- Conferido: AV10 em 13/11 → 21 no 1º + 32 no 2º = 53 no dia.
+-- Corpo completo: ver no banco (pg_get_functiondef('public.painel_dados'::regproc)).

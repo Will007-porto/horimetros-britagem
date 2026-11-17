@@ -754,7 +754,7 @@ function stampTick(){
 setInterval(()=>{if(document.visibilityState==='visible')stampTick()},5000);
 
 /* ---------- model ---------- */
-let M=[],MALL=[],DAYS=[],HD={},PT={},HJ={},AV={},JW=[];
+let M=[],MALL=[],DAYS=[],HD={},PT={},PTJ={},HJ={},AV={},JW=[];
 function model(){
   const now=Date.now();
   const eqn=D.eqn||{};
@@ -767,6 +767,7 @@ function model(){
   HD={};PT={};MALL.forEach(m=>{HD[m.id]={};PT[m.id]={}});
   (D.hd||[]).forEach(([m,d,h])=>{(HD[m]=HD[m]||{})[d]=+h});
   (D.pt||[]).forEach(([m,d,n])=>{(PT[m]=PT[m]||{})[d]=+n});
+  PTJ={};(D.ptj||[]).forEach(([m,d,tu,n])=>{((PTJ[m]=PTJ[m]||{})[d]=PTJ[m][d]||{})[tu]=+n});
   HJ={};AV={};JW=(D.jw||[]).map(([d,tu,a,b])=>({d,tu:+tu,a:+a,b:+b}));
   JW.forEach(w=>{(AV[w.d]=AV[w.d]||{})[w.tu]=(AV[w.d][w.tu]||0)+Math.max(0,w.b-w.a)/3600});
   (D.hj||[]).forEach(([m,d,tu,h])=>{((HJ[m]=HJ[m]||{})[d]=HJ[m][d]||{})[tu]=+h});
@@ -782,7 +783,9 @@ const usedJ=(id,d,tu)=>{const x=(HJ[id]&&HJ[id][d])||{};return Object.keys(x).fi
 const aprov=(id,tu)=>{let u=0,a=0;DAYS.forEach(d=>{const av=AV[d]||{};Object.keys(av).filter(k=>tu?String(k)===String(tu):tuOK(k)).forEach(k=>{a+=av[k];u+=usedJ(id,d,k)})});return a?u/a:null};
 const turnoOf=sec=>{const w=JW.find(w=>sec>=w.a-1&&sec<w.b+1);return w?w.tu:null};
 const perH=m=>DAYS.reduce((a,d)=>a+(Hd(m.id,d)||0),0);
-const perPT=m=>DAYS.reduce((a,d)=>a+(PT[m.id][d]||0),0);
+/* partidas do motor no dia: com filtro de turno, só as que aconteceram dentro do horário daquele turno */
+const PTd=(id,d)=>F.tu==='all'?((PT[id]&&PT[id][d])||0):((PTJ[id]&&PTJ[id][d]&&PTJ[id][d][F.tu])||0);
+const perPT=m=>DAYS.reduce((a,d)=>a+PTd(m.id,d),0);
 const perDiasOp=m=>DAYS.filter(d=>(Hd(m.id,d)||0)>0.05).length;
 const stTxt={on:'Ligado',off:'Desligado',sem:'Sem sinal'};
 const stCol={on:'var(--green)',off:'var(--off)',sem:'var(--orange)'};
@@ -812,7 +815,7 @@ function heat(){
     if(cw>=18)s+=`<text class="ax" x="${x}" y="26" text-anchor="middle" ${wd(d)===0?'fill="var(--orange)"':''}>${WD[wd(d)]}</text>`});
   M.forEach((m,j)=>{const y=top+j*(ch+gap);
     s+=`<text class="lb" x="${lw-12}" y="${y+ch/2+4}" text-anchor="end">${esc(m.id)}</text>`;
-    DAYS.forEach((d,i)=>{const h=Hd(m.id,d)||0,p=PT[m.id][d]||0;const a=h<=0.05?0:Math.min(1,.15+.85*h/max);
+    DAYS.forEach((d,i)=>{const h=Hd(m.id,d)||0,p=PTd(m.id,d);const a=h<=0.05?0:Math.min(1,.15+.85*h/max);
       s+=`<rect class="hc" data-gday="${d}" style="cursor:pointer" x="${lw+i*cw+1}" y="${y}" width="${cw-2}" height="${ch}" rx="3" fill="${a?'var(--P)':'var(--line)'}" ${a?`fill-opacity="${a.toFixed(2)}"`:''} data-tip="${esc(`<div class='m'>${m.id} · ${ddmm(d)}</div><b>${h>0.05?hm(h):'Sem operação'}</b>${p?`<div class='tl'><span>Partidas</span><b>${p}</b></div>`:''}`)}"/>`;
       if(cw>=26&&h>=1)s+=`<text x="${lw+i*cw+cw/2}" y="${y+ch/2+4}" text-anchor="middle" style="font:600 9.5px var(--mono);pointer-events:none" fill="${a>.55?'#fff':'var(--ink2)'}">${Math.round(h)}</text>`;
     })});
@@ -955,7 +958,8 @@ function renderPar(){
     +kt(cnt.ag,'Aguardando justificativa','var(--orange)',`${f1(hAg)}h paradas sem motivo`)
     +kt((all.length-cnt.hi)?Math.round(cnt.ok*100/(all.length-cnt.hi)):0,'Justificadas','var(--green)',`${cnt.ok} de ${all.length-cnt.hi}${cnt.hi?` · ${cnt.hi} no histórico`:''}`,'%')
     +kt(hClosed,'Horas paradas','var(--navy2)',cnt.ab?`+ ${cnt.ab} ainda abertas`:'paradas encerradas','h',1);
-  $$('#kP [data-count]').forEach(countUp);$$('#kP .rv').forEach(e=>e.classList.add('in'));
+  const kAnim=PQ.animK!==PQ.key+'|'+F.tu+'|'+(F.sel||[]).join()+'|'+F.st;PQ.animK=PQ.key+'|'+F.tu+'|'+(F.sel||[]).join()+'|'+F.st;
+  $$('#kP [data-count]').forEach(c=>{if(kAnim)countUp(c);else{const v=+c.dataset.count||0,dc=+c.dataset.dec||0;c.textContent=dc?v.toLocaleString('pt-BR',{minimumFractionDigits:dc,maximumFractionDigits:dc}):Math.round(v).toLocaleString('pt-BR')}});$$('#kP .rv').forEach(e=>e.classList.add('in'));
   // gráfico 1: por equipamento
   const C={ag:'var(--orange)',ok:'var(--green)',hi:'var(--off)'};const eqs=[...new Set(all.map(r=>r.mo))].sort();const eqn=D.eqn||{};
   $('#cP1').innerHTML=all.length?barsH(eqs.map(e=>{const r=all.filter(x=>x.mo===e&&x.min!=null);const s=k=>r.filter(x=>x.s===k).reduce((a,x)=>a+x.min,0)/60;const v=s('ag')+s('ok')+s('hi');
@@ -1127,10 +1131,18 @@ function renderGan(){
   const {t0,by}=ganRows();const day=86400;
   const lw=118,rw=92,W=1060,top=54,rh=26,gap=10,vw=W-lw-rw,H=top+M.length*(rh+gap)+6;
   const parGan=((GDATA[GDAY]||{}).par||[]).map(normRow);GDATA[GDAY].parN=parGan;
-  const X=s=>lw+vw*Math.max(0,Math.min(day,s-t0))/day;
+  /* Filtro de turno: o eixo passa a mostrar só a janela daquele turno, e tudo é contado dentro dela */
+  const g0=GDATA[GDAY]||{};const winsAll=(g0.jan?g0.jan.map(([tu,a,b])=>({tu:+tu,a:+a,b:+b})):JW.filter(w=>w.d===GDAY)).sort((a,b)=>a.a-b.a);
+  const fT=F.tu!=='all',winsF=fT?winsAll.filter(w=>String(w.tu)===F.tu):winsAll;
+  if(fT&&!winsF.length){$('#kG').innerHTML='';$('#ganK').textContent=`${ddmm(GDAY)} · ${F.tu}º turno`;
+    $('#cGan').innerHTML=`<div class="pempty"><b>Não houve ${F.tu}º turno em ${ddmm(GDAY)}</b>Escolha "Os dois" no filtro de turno ou outro dia.</div>`;return}
+  const A=fT?winsF[0].a:t0,B=fT?winsF[winsF.length-1].b:t0+day,span=B-A;
+  const X=s=>lw+vw*Math.max(0,Math.min(span,s-A))/span;
+  const dentro=([a,b])=>b>A&&a<B,corta=([a,b])=>[Math.max(a,A),Math.min(b,B)];
+  const naJanela=([a,b])=>winsF.reduce((t,w)=>t+Math.max(0,Math.min(b,w.b)-Math.max(a,w.a)),0);
   let s=`<svg class="ch" viewBox="0 0 ${W} ${H}" style="min-width:760px"><defs><pattern id="gpH" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="rgba(214,69,69,.16)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--red)" stroke-width="2.4"/></pattern></defs>`;
   // faixas dos turnos (janelas produtivas do dia de produção) e pausas entre elas
-  const g=GDATA[GDAY]||{};const wins=(g.jan?g.jan.map(([tu,a,b])=>({tu:+tu,a:+a,b:+b})):JW.filter(w=>w.d===GDAY)).sort((a,b)=>a.a-b.a);
+  const g=g0,wins=winsF;
   const nowS=Date.parse(D.gerado)/1000;
   const tcol={1:'rgba(10,46,122,.07)',2:'rgba(242,169,59,.12)'},hcol={1:'var(--P)',2:'var(--orange)'};
   wins.forEach(w=>{s+=`<rect x="${X(w.a)}" y="${top-6}" width="${X(w.b)-X(w.a)}" height="${H-top}" fill="${tcol[w.tu]}"/>`});
@@ -1141,37 +1153,37 @@ function renderGan(){
     if(txt)s+=`<text x="${(X(big.a)+X(big.b))/2}" y="15.5" text-anchor="middle" style="font:700 10px var(--sans);pointer-events:none" fill="${tu===1?'#fff':'#3d2600'}">${txt}</text>`;
     for(let i=1;i<ws.length;i++){const pa=ws[i-1].b,pb=ws[i].a;if(pb>pa){s+=`<rect x="${X(pa)}" y="4" width="${X(pb)-X(pa)}" height="16" fill="var(--card)"/><text x="${(X(pa)+X(pb))/2}" y="15.5" text-anchor="middle" style="font:600 9px var(--mono)" fill="var(--grey)">pausa</text>`}}});
   /* eixo: marcas nas horas pares a partir do início do dia de produção (07:30) */
-  {const h0=+hhmm(t0).slice(0,2),m0=+hhmm(t0).slice(3,5);let ts=t0+((60-m0)%60)*60+((h0+((60-m0)%60?1:0))%2?3600:0);
-   for(;ts<=t0+day;ts+=7200){const x=X(ts),hh=+hhmm(ts).slice(0,2);s+=`<line class="gl" x1="${x}" x2="${x}" y1="${top-6}" y2="${H-6}" ${hh%6?'':'style="stroke:var(--grid)"'}/><text class="ax" x="${x}" y="${top-12}" text-anchor="middle">${String(hh).padStart(2,'0')}h</text>`}}
+  {const st=span<=46800?3600:7200,h0=+hhmm(A).slice(0,2),m0=+hhmm(A).slice(3,5);let ts=A+((60-m0)%60)*60;if(st===7200&&(h0+(m0?1:0))%2)ts+=3600;
+   for(;ts<=B;ts+=st){const x=X(ts),hh=+hhmm(ts).slice(0,2);s+=`<line class="gl" x1="${x}" x2="${x}" y1="${top-6}" y2="${H-6}" ${hh%6?'':'style="stroke:var(--grid)"'}/><text class="ax" x="${x}" y="${top-12}" text-anchor="middle">${String(hh).padStart(2,'0')}h</text>`}}
   let totAll=0,firstOn=null,lastOff=null,nSeg=0;
-  M.forEach((m,j)=>{const y=top+j*(rh+gap);const segs=by[m.id]||[];
-    const tot=segs.reduce((a,[x,z])=>a+(z-x),0)/3600;totAll+=tot;nSeg+=segs.length;
+  M.forEach((m,j)=>{const y=top+j*(rh+gap);const segs=(by[m.id]||[]).filter(dentro).map(corta);
+    const tot=(fT?segs.reduce((a,sg)=>a+naJanela(sg),0):segs.reduce((a,[x,z])=>a+(z-x),0))/3600;totAll+=tot;nSeg+=segs.length;
     s+=`<rect x="${lw}" y="${y}" width="${vw}" height="${rh}" rx="4" fill="var(--soft2)"/>`;
     s+=`<text class="lb" x="${lw-12}" y="${m.nome?y+rh/2-1:y+rh/2+4}" text-anchor="end">${esc(m.id)}</text>`;
     if(m.nome)s+=`<text class="ax" x="${lw-12}" y="${y+rh/2+10}" text-anchor="end">${esc(m.nome)}</text>`;
     segs.forEach(([a,b])=>{if(firstOn===null||a<firstOn)firstOn=a;if(lastOff===null||b>lastOff)lastOff=b;
       const x=X(a),w=Math.max(1.5,X(b)-x);
       s+=`<rect class="gb" x="${x}" y="${y+3}" width="${w}" height="${rh-6}" rx="2.5" fill="var(--P)" data-tip="${esc(`<div class='m'>${m.id} · ${ddmm(GDAY)}</div><b>${hhmm(a)} → ${hhmm(b)}</b><div class='tl'><span>Duração</span><b>${hm((b-a)/3600)}</b></div>`)}"/>`});
-    if(GPAR.includes(m.id)){const pr=parGan.filter(p=>p.mo===m.id);
+    if(GPAR.includes(m.id)){const pr=parGan.filter(p=>p.mo===m.id&&dentro([p.iniMs/1000,p.fimMs?p.fimMs/1000:nowS]));
       pr.forEach(p=>{const a=p.iniMs/1000,b=p.fimMs?p.fimMs/1000:nowS;const x=X(a),w=Math.max(3,X(b)-x),ok=p.s==='ok'||p.s==='hi',ab=p.s==='ab';
         const mot=p.cod?motNome(p.cod)+(p.eqc?' · '+p.eqc:''):(p.cat||'').split(SEP).pop();
         s+=`<rect class="gp" data-gpar="${esc(p.id)}" x="${x}" y="${y+1}" width="${w}" height="${rh-2}" rx="3" fill="${ok?'var(--red)':'url(#gpH)'}" ${ok?'fill-opacity=".85"':`stroke="var(--red)" stroke-width="1.4" ${ab?'stroke-dasharray="3 2"':''}`} data-tip="${esc(`<div class='m'>${m.id} · parada</div><b>${hhmm(a)} → ${p.fimMs?hhmm(b):'agora'} · ${hm((b-a)/3600)}</b><div class='tl'><span>Situação</span><b>${ok?'Justificada':ab?'Em andamento':'Sem justificativa'}</b></div>${mot?`<div class='tl'><span>Motivo</span><b>${esc(mot)}</b></div>`:''}${p.por&&ok?`<div class='tl'><span>Por</span><b>${esc(p.por)}</b></div>`:''}<div class='tl'><span></span><b>${ok?'clique para ver ou corrigir':'clique para justificar'}</b></div>`)}"/>`});
       const np=pr.length,sem=pr.filter(p=>p.s==='ag'||p.s==='ab').length;
       if(np)s+=`<text class="ax" x="${W-rw+10}" y="${y+rh/2+15}" style="fill:${sem?'var(--red)':'var(--grey)'}">${np} parada${np>1?'s':''}${sem?` · ${sem} s/ just.`:''}</text>`}
-    s+=`<text class="tot" x="${W-rw+10}" y="${y+rh/2+(GPAR.includes(m.id)&&parGan.some(p=>p.mo===m.id)?0:4)}">${tot>0.01?hm(tot):'—'}</text>`;
+    s+=`<text class="tot" x="${W-rw+10}" y="${y+rh/2+(GPAR.includes(m.id)&&parGan.some(p=>p.mo===m.id&&dentro([p.iniMs/1000,p.fimMs?p.fimMs/1000:nowS]))?0:4)}">${tot>0.01?hm(tot):'—'}</text>`;
   });
   if(GDAY===D.hoje){const nx=X(Date.parse(D.gerado)/1000);if(nx>lw&&nx<lw+vw)s+=`<line x1="${nx}" x2="${nx}" y1="${top-4}" y2="${H-6}" stroke="var(--orange)" stroke-width="1.5" stroke-dasharray="4 3"/><text class="vl" x="${nx}" y="${H+8}" text-anchor="middle" fill="var(--orange)">leitura ${hhmm(Date.parse(D.gerado)/1000)}</text>`}
   s+='</svg>';
-  $('#cGan').innerHTML=s+`<div class="leg" style="margin-top:${GDAY===D.hoje?18:12}px"><span><i style="background:var(--P)"></i>Ligado</span><span><i style="background:var(--soft2);border:1px solid var(--grid)"></i>Desligado</span><span><i style="background:rgba(10,46,122,.18)"></i>1º turno</span><span><i style="background:rgba(242,169,59,.35)"></i>2º turno</span><span><i style="background:var(--card);border:1px solid var(--grid)"></i>Fora do turno / pausa</span>${M.some(m=>GPAR.includes(m.id))?'<span><i style="background:var(--red);opacity:.85"></i>Parada justificada</span><span><i style="background:repeating-linear-gradient(45deg,var(--red) 0 2px,rgba(214,69,69,.16) 2px 5px);outline:1.4px solid var(--red)"></i>Parada sem justificativa (AV10 e CV07)</span>':''}${GDAY===D.hoje?'<span><i style="background:var(--orange)"></i>Hora da leitura</span>':''}</div><p class="note">O dia de produção vai das 07:30 até as 07:30 do dia seguinte: 1º turno 07:30 → 18:30 e 2º turno 18:30 → 04:00 (sábado 07:30 → 16:00 e 16:00 → 23:00). ${GMERGE?'Pausas menores que 2 minutos foram unidas para facilitar a leitura. Desmarque o botão para ver cada liga/desliga.':'Mostrando cada liga/desliga como veio do sensor.'} Intervalos ligados acima de 16h seguidas são cortados (provável placa sem sinal).</p>`;
-  const ativos=M.filter(m=>(by[m.id]||[]).length).length;
+  $('#cGan').innerHTML=s+`<div class="leg" style="margin-top:${GDAY===D.hoje?18:12}px"><span><i style="background:var(--P)"></i>Ligado</span><span><i style="background:var(--soft2);border:1px solid var(--grid)"></i>Desligado</span><span><i style="background:rgba(10,46,122,.18)"></i>1º turno</span><span><i style="background:rgba(242,169,59,.35)"></i>2º turno</span><span><i style="background:var(--card);border:1px solid var(--grid)"></i>Fora do turno / pausa</span>${M.some(m=>GPAR.includes(m.id))?'<span><i style="background:var(--red);opacity:.85"></i>Parada justificada</span><span><i style="background:repeating-linear-gradient(45deg,var(--red) 0 2px,rgba(214,69,69,.16) 2px 5px);outline:1.4px solid var(--red)"></i>Parada sem justificativa (AV10 e CV07)</span>':''}${GDAY===D.hoje?'<span><i style="background:var(--orange)"></i>Hora da leitura</span>':''}</div><p class="note">${fT?`<b>Mostrando só o ${F.tu}º turno (${hhmm(A)} → ${hhmm(B)}).</b> Horas e aproveitamento contam só o tempo dentro do turno, sem as pausas. `:''}O dia de produção vai das 07:30 até as 07:30 do dia seguinte: 1º turno 07:30 → 18:30 e 2º turno 18:30 → 04:00 (sábado 07:30 → 16:00 e 16:00 → 23:00). ${GMERGE?'Pausas menores que 2 minutos foram unidas para facilitar a leitura. Desmarque o botão para ver cada liga/desliga.':'Mostrando cada liga/desliga como veio do sensor.'} Intervalos ligados acima de 16h seguidas são cortados (provável placa sem sinal).</p>`;
+  const ativos=M.filter(m=>(by[m.id]||[]).some(dentro)).length;
   const winsN=wins.map(w=>({...w,b:Math.min(w.b,nowS)})).filter(w=>w.b>w.a);
   const avD=winsN.reduce((a,w)=>a+(w.b-w.a),0);let usedD=0;M.forEach(m=>(by[m.id]||[]).forEach(([a,b])=>winsN.forEach(w=>{usedD+=Math.max(0,Math.min(b,w.b)-Math.max(a,w.a))})));
   const apD=avD&&M.length?Math.round(usedD*100/(avD*M.length)):null;
-  $('#kG').innerHTML=kt(totAll,'Horas no dia','var(--P)',`${ativos} de ${M.length} ativos operaram`,'h',1)
+  $('#kG').innerHTML=kt(totAll,fT?`Horas no ${F.tu}º turno`:'Horas no dia','var(--P)',`${ativos} de ${M.length} ativos operaram`,'h',1)
     +`<div class="k rv in"><div class="bar" style="background:var(--green)"></div><b style="font-size:30px">${firstOn!==null?hhmm(firstOn):'—'}</b><span>Primeira partida</span><em>qualquer ativo</em></div>`
     +`<div class="k rv in"><div class="bar" style="background:var(--navy2)"></div><b style="font-size:30px">${lastOff!==null?hhmm(lastOff):'—'}</b><span>${GDAY===D.hoje?'Último registro':'Último desligamento'}</span><em>qualquer ativo</em></div>`
     +`<div class="k rv in"><div class="bar" style="background:var(--orange)"></div><b style="font-size:30px">${apD!=null?apD+'%':'—'}</b><span>Aproveitamento do dia</span><em>${wins.length?`rodando ÷ ${hm(avD/3600)} disponíveis${GDAY===D.hoje?' até agora':''}`:'dia sem turno'}</em></div>`;
-  $('#ganK').textContent=`${ddmm(GDAY)} · ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][wd(GDAY)]}`;
+  $('#ganK').textContent=`${ddmm(GDAY)} · ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][wd(GDAY)]}${fT?` · ${F.tu}º turno, ${hhmm(A)} → ${hhmm(B)}`:''}`;
   $('#ganPk').innerHTML=`Dia ${ddmm(GDAY)}`;
   $$('#kG [data-count]').forEach(countUp);$$('#kG .rv').forEach(e=>e.classList.add('in'));
 }
