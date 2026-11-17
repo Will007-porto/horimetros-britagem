@@ -76,3 +76,16 @@ supabase/migrations/               SQL das tabelas, funções e permissões
 - **14/11/2026** — reconstrução: tabelas `leituras`, `dispositivos` e `notificacoes_push` recriadas (tinham sido apagadas e derrubaram a detecção de paradas desde 01/10); scanner reescrito com fechamento por janela; turnos reais em tabela; paradas de 01/10 a 14/11 recalculadas a partir dos eventos (antes de 01/11 marcadas como *histórico*); site publicado com login para justificar e escrita pública do banco fechada.
 
 - **16/11/2026** — segurança (bright-api v7: só placa/motores cadastrados, rotas do app de teste desativadas; dados só para usuários liberados; auditoria imutável). Site virou o painel do supervisor: login com nome + PIN do app, justificativa com os motivos do app (por setor) e em lote, abas **Validar** e **Equipe** (cadastro e troca de PIN pela função `admin-usuarios`), histórico de cada parada. Ver `supabase/migrations/20261116_INDICE.md`.
+
+## App (teste): ambiente de teste do app de apontamentos
+
+A aba **App (teste)** (só supervisor) roda a próxima versão do app `APP-JUSTIFICATIVA-BRITAGEM`
+dentro do site, em `/app/`, **com os dados reais** e login separado do painel. Fluxo:
+
+1. Mudança no app → commit no repositório do app.
+2. Gerar a versão de teste: `npm run build:teste` (gera `dist-teste/` com base `/app/`, faixa
+   "VERSÃO DE TESTE" e sessão própria via `.env.teste`).
+3. Copiar `dist-teste/` para a pasta `app/` deste site e atualizar `app/versao.json`
+   (versão + commit do app + data) → publicar o site.
+4. Testar na aba **App (teste)**.
+5. Aprovado → publicar o app no GitHub (AI Studio puxa) e gerar o APK com o mesmo commit.

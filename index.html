@@ -313,6 +313,16 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
 .pill.role{background:var(--soft);color:var(--P)}
 .eqtools{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:12px}
 .eqtools .note{margin:0}
+/* Aba App (teste): o app num quadro do tamanho de um celular, ao lado das instruções */
+.appt{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:24px;align-items:start}
+.appphone{border:1px solid var(--grid);border-radius:28px;overflow:hidden;background:var(--card);box-shadow:0 1px 2px rgba(10,25,66,.08),0 12px 32px rgba(10,25,66,.12);height:min(860px,calc(100dvh - 190px));min-height:560px}
+.appphone iframe{display:block;width:100%;height:100%;border:0}
+.appinfo .tt{font-weight:700;font-size:15px;color:var(--ink)}
+.appinfo .warnb{margin-top:12px}
+.appver{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:14px 0 0;font-size:12.5px}
+.appver dt{color:var(--muted)}.appver dd{margin:0;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.appinfo .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.appinfo .acts .act{margin-left:0;padding:8px 12px;text-decoration:none}
+@media (max-width:900px){.appt{grid-template-columns:1fr}.appphone{height:80dvh;min-height:520px;border-radius:20px}}
 #tE tr[data-uid]{cursor:pointer}#tE tr[data-uid]:hover td{background:var(--soft2)}
 /* Painel lateral de edição de usuário */
 .fs .seg button{white-space:nowrap}
@@ -345,6 +355,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
     <a data-p="par"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>Paradas<span class="badge" id="navBadge" hidden></span><span class="dot"></span></a>
     <a data-p="val" class="hidn"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Validar<span class="badge" id="navVal" hidden></span><span class="dot"></span></a>
     <a data-p="equ" class="hidn"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.5 5.2"/></svg>Equipe<span class="dot"></span></a>
+    <a data-p="app" class="hidn"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>App (teste)<span class="dot"></span></a>
   </nav>
   <div class="navlbl">Legenda</div>
   <div class="legside"><div><i style="background:var(--green)"></i>Ligado agora</div><div><i style="background:var(--off)"></i>Desligado</div><div><i style="background:var(--orange)"></i>Sem sinal há +24h</div></div>
@@ -505,6 +516,22 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
         <div class="scrollx"><table class="tb" id="tE"></table></div>
         <p class="note" id="nE">Papéis: <b>Operador</b> justifica as paradas do seu setor no turno · <b>Manutenção</b> confirma ou contesta paradas de manutenção · <b>Supervisor</b> justifica qualquer data, corrige, valida e cadastra usuários. Desativar tira o acesso na hora e dá para reativar depois; <b>Apagar</b> remove o login de vez (o histórico de paradas é mantido).</p>
       </div></div></div></div>
+  </section>
+
+  <!-- APP (TESTE): versão nova do app de apontamentos antes de virar APK -->
+  <section class="pane" id="p-app">
+    <div class="phead"><img src="assets/logo-azul.png" alt="Tripoloni"><div class="pt">App de apontamentos · versão de teste</div><div class="pk pfil"></div></div>
+    <div class="appt rv">
+      <div class="appphone"><iframe id="appFrame" title="App de apontamentos (versão de teste)" allow="microphone"></iframe></div>
+      <div class="box appinfo"><div class="boxb">
+        <div class="tt">Teste antes de gerar o APK</div>
+        <p class="note">Esta é a <b>próxima versão</b> do app, a mesma que vai para os celulares depois de aprovada. Teste aqui as telas novas; quando estiver tudo certo, o APK é gerado com esse mesmo código.</p>
+        <div class="warnb">Usa os <b>dados reais</b>: o que for justificado ou separado aqui vale de verdade e aparece no painel.</div>
+        <dl class="appver"><dt>Versão em teste</dt><dd id="appVer">—</dd><dt>Gerada em</dt><dd id="appData">—</dd></dl>
+        <p class="note">O login aqui é separado do painel: dá para entrar como um operador (nome + PIN) sem sair da sua conta no site.</p>
+        <div class="acts"><button type="button" class="act" id="appReload">Recarregar o app</button><a class="act" href="app/" target="_blank" rel="noopener">Abrir em tela cheia</a></div>
+      </div></div>
+    </div>
   </section>
 
   <div class="appfoot"><span>Tripoloni Construtora · Britagem</span><span id="footsrc">Fonte: Supabase · HORIMETROS BRITAGEM</span></div>
@@ -1086,8 +1113,8 @@ async function refreshEU(){try{EU=await rpc('painel_eu')||EU}catch(e){EU={logado
   $('#userLbl').textContent=EU.logado?(EU.nome||'Conectado'):'Entrar';$('#btnUser').classList.toggle('on',EU.logado);navVis()}
 function navVis(){
   const sup=EU.autorizado&&EU.papel==='supervisor',val=EU.autorizado&&(sup||EU.papel==='manutencao');
-  $('#nav [data-p="val"]').classList.toggle('hidn',!val);$('#nav [data-p="equ"]').classList.toggle('hidn',!sup);
-  if((PANE==='val'&&!val)||(PANE==='equ'&&!sup))go('geral');
+  $('#nav [data-p="val"]').classList.toggle('hidn',!val);$('#nav [data-p="equ"]').classList.toggle('hidn',!sup);$('#nav [data-p="app"]').classList.toggle('hidn',!sup);
+  if((PANE==='val'&&!val)||((PANE==='equ'||PANE==='app')&&!sup))go('geral');
 }
 /* Sem login (ou sem liberação) o painel não mostra nada: os dados só saem para usuários liberados. */
 async function gate(){
@@ -1183,6 +1210,14 @@ document.addEventListener('click',async e=>{
   const co=e.target.closest('[data-vcor]');if(co){const r=(VQ.rows||[]).find(x=>x.id===co.dataset.vcor);if(r)openJus([r]);return}
   const vh=e.target.closest('[data-vhist]');if(vh){openHist(vh.dataset.vhist);return}
 });
+
+/* ---------- APP (TESTE) ---------- */
+/* Só carrega o app quando a aba abre; versao.json é escrito junto com a versão de teste */
+function appLoad(reload){const f=$('#appFrame');if(!f)return;
+  if(!f.src||reload)f.src='app/?t='+Date.now();
+  fetch('app/versao.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(v=>{if(!v)return;
+    $('#appVer').textContent=v.versao||'—';$('#appData').textContent=v.gerada_em?dtFmt.format(Date.parse(v.gerada_em)):'—'}).catch(()=>{})}
+document.addEventListener('click',e=>{if(e.target.closest('#appReload'))appLoad(true)});
 
 /* ---------- EQUIPE ---------- */
 let EQ={rows:null,err:null};
@@ -1306,8 +1341,8 @@ function reveal(){
 }
 
 /* ---------- interactions ---------- */
-const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',val:'Validar',equ:'Equipe'};
-function go(p){const mudou=PANE!==p;PANE=p;document.body.classList.toggle('semfiltro',p==='val'||p==='equ');
+const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',val:'Validar',equ:'Equipe',app:'App (teste)'};
+function go(p){const mudou=PANE!==p;PANE=p;document.body.classList.toggle('semfiltro',p==='val'||p==='equ'||p==='app');if(p==='app')appLoad();
   if(D&&p==='val'&&(mudou||!VQ.rows))valLoad();if(D&&p==='equ'&&(mudou||!EQ.rows))equLoad();$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p&&!!D));$('#pgt').textContent=TITLES[p];if(p==='gan'&&D)ganEnsure();if(p==='par'&&D)parLoad();try{localStorage.setItem('hb_pane',p)}catch(e){}if(D)reveal();window.scrollTo({top:0})}
 $('#nav').onclick=e=>{const a=e.target.closest('a');if(a)go(a.dataset.p)};
 document.addEventListener('click',e=>{
