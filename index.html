@@ -743,6 +743,10 @@ function rtAvisoEdicao(t,r){
   if((t==='producao_mes'||t==='producao_dia')&&$('#gdrw').classList.contains('open')&&!(GO&&GO.busy)&&typeof MT!=='undefined'&&MT&&$('#mCal')&&String(r.mes||r.dia||'').slice(0,7)===MT.mes.slice(0,7))
     av($('#gB'),'As metas deste mês foram alteradas por outro usuário enquanto você editava. Ao salvar, as suas substituem.');
 }
+/* Layout adaptável: mudou o tamanho da janela (ou girou o celular), redesenha os gráficos na nova largura */
+let RSZ=null,RSZ_W=innerWidth;
+addEventListener('resize',()=>{clearTimeout(RSZ);RSZ=setTimeout(()=>{if(Math.abs(innerWidth-RSZ_W)<8||!D)return;RSZ_W=innerWidth;
+  renderAll(true);if(PANE==='gan'&&GDATA[GDAY])renderGan();if(PANE==='prd'&&typeof PR!=='undefined'&&PR.c)renderPrd(false)},200)});
 /* "Atualizado há X" no topo, com o horário exato no título */
 function stampTick(){
   const e=$('#stamp');if(!e)return;
@@ -791,8 +795,19 @@ const stTxt={on:'Ligado',off:'Desligado',sem:'Sem sinal'};
 const stCol={on:'var(--green)',off:'var(--off)',sem:'var(--orange)'};
 
 /* ---------- charts ---------- */
+/* Largura útil de um gráfico: o tamanho real da caixa na tela (escala 1:1).
+   O gráfico ocupa a caixa inteira, as letras ficam sempre no tamanho normal e,
+   ao mudar o tamanho da janela, tudo é redesenhado. meia = caixa da metade (duas lado a lado). */
+function largGraf(meia){
+  const main=$('main'),pane=$('#p-geral');if(!main||!pane)return meia?520:1040;
+  const cs=getComputedStyle(pane),padP=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight);
+  const caixa=main.clientWidth-padP;                 /* largura de uma caixa inteira */
+  const dupla=meia&&innerWidth>1100;                  /* acima de 1100px as caixas .two ficam lado a lado */
+  const w=(dupla?(caixa-16)/2:caixa)-2-36;            /* borda + padding interno da caixa */
+  return Math.max(260,Math.floor(w));
+}
 function barsH(rows,o={}){
-  const W=o.W||560,lw=o.lw||150,rh=o.rh||24,gap=o.gap||9,vw=W-lw-70;
+  const W=o.W||largGraf(true),lw=o.lw||150,rh=o.rh||24,gap=o.gap||9,vw=W-lw-70;
   const max=Math.max(1e-9,...rows.map(r=>r.v));const H=rows.length*(rh+gap);
   let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="max-width:${W}px">`;
   [.25,.5,.75,1].forEach(f=>{const x=lw+vw*f;s+=`<line class="gl" x1="${x}" x2="${x}" y1="0" y2="${H-gap}"/>`});
@@ -805,7 +820,7 @@ function barsH(rows,o={}){
   return s+'</svg>';
 }
 function heat(){
-  const n=DAYS.length,lw=118,cw=Math.max(11,Math.min(30,Math.floor((1000-lw)/n))),ch=26,gap=3,top=34;
+  const n=DAYS.length,lw=118,ch=26,gap=3,top=34,cw=Math.max(11,(largGraf(false)-lw)/n);
   const W=lw+n*cw,H=top+M.length*(ch+gap);
   const max=16;
   let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*12+lw)}px;max-width:${W}px">`;
@@ -823,7 +838,7 @@ function heat(){
 }
 function cols(){
   /* coluna de no máximo 44px por dia: período curto = gráfico estreito, não barras gigantes */
-  const n=DAYS.length,lw=36,cw=Math.max(14,Math.min(44,(1040-lw)/n)),W=Math.max(320,lw+n*cw+8),H=200,top=10,bot=26,ih=H-top-bot;
+  const n=DAYS.length,lw=36,W=Math.max(lw+n*14,largGraf(false)),cw=(W-lw-8)/n,H=200,top=10,bot=26,ih=H-top-bot;
   const tot=DAYS.map(d=>M.reduce((a,m)=>a+(Hd(m.id,d)||0),0));
   const max=Math.max(1,...tot);const nice=Math.ceil(max/10)*10;
   const op=tot.filter(v=>v>0.05),avg=op.length?op.reduce((a,b)=>a+b,0)/op.length:0;
@@ -833,7 +848,7 @@ function cols(){
   DAYS.forEach((d,i)=>{const v=tot[i],h=ih*v/nice,x=lw+i*cw;
     const br=M.filter(m=>(Hd(m.id,d)||0)>0.05).map(m=>`<div class='tl'><span>${m.id}</span><b>${hm(Hd(m.id,d))}</b></div>`).join('');
     s+=`<g class="r" data-tip="${esc(`<div class='m'>${ddmm(d)} · ${['dom','seg','ter','qua','qui','sex','sáb'][wd(d)]}</div><b>${hm(v)} somadas</b>${br}`)}"><rect x="${x}" y="${top}" width="${cw}" height="${ih}" fill="transparent"/>
-    <rect class="s" x="${x+(cw-Math.min(28,cw*.68))/2}" y="${top+ih-h}" width="${Math.min(28,cw*.68)}" height="${Math.max(h,v>0?1.5:0)}" rx="2.5" fill="var(--P)"/></g>`;
+    <rect class="s" x="${x+(cw-Math.min(56,cw*.68))/2}" y="${top+ih-h}" width="${Math.min(56,cw*.68)}" height="${Math.max(h,v>0?1.5:0)}" rx="2.5" fill="var(--P)"/></g>`;
     if(i%step===0)s+=`<text class="ax" x="${x+cw/2}" y="${H-8}" text-anchor="middle">${ddmm(d)}</text>`});
   if(avg){const y=top+ih-ih*avg/nice;s+=`<line x1="${lw}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--orange)" stroke-width="1.5" stroke-dasharray="5 4"/><text class="vl" x="${W}" y="${y-5}" text-anchor="end" fill="var(--orange)">média ${f1(avg)}h</text>`}
   return s+'</svg>'+`<div class="leg"><span><i style="background:var(--P)"></i>Horas somadas no dia</span><span><i style="background:var(--orange)"></i>Média dos dias com operação</span></div>`;
@@ -895,7 +910,7 @@ function renderHor(){
   $('#nH').textContent=`Horas do período calculadas a partir dos eventos de liga/desliga (fuso de Brasília). Intervalos ligados acima de 16h seguidas são cortados em 16h, porque costumam ser placa sem sinal e não operação real. Aproveitamento = horas rodando dentro dos turnos ÷ horas disponíveis (turno menos almoço e janta), conforme a tabela de turnos do banco.${F.tu!=='all'?` Com o filtro de ${F.tu}º turno, as horas consideram só o que rodou dentro desse turno.`:''}`;
   // aproveitamento por turno
   const rows=[];M.forEach(m=>{[1,2].filter(k=>tuOK(k)).forEach(k=>{const a=aprov(m.id,k);if(a!=null)rows.push({label:`${m.id} · ${k}º`,v:a*100,txt:Math.round(a*100)+'%',c:k===1?'var(--P)':'var(--orange)',tip:`<div class='m'>${label(m)} · ${k}º turno</div><b>${Math.round(a*100)}% aproveitado</b>`})})});
-  $('#cH3').innerHTML=rows.length?barsH(rows,{W:1040,lw:150,rh:18,gap:7})+`<div class="leg"><span><i style="background:var(--P)"></i>1º turno</span><span><i style="background:var(--orange)"></i>2º turno</span></div><p class="note">Quanto do tempo disponível de cada turno o motor ficou rodando no período. O tempo disponível já desconta almoço e janta.</p>`:'<p class="note">Sem turnos no período.</p>';
+  $('#cH3').innerHTML=rows.length?barsH(rows,{W:largGraf(false),lw:150,rh:18,gap:7})+`<div class="leg"><span><i style="background:var(--P)"></i>1º turno</span><span><i style="background:var(--orange)"></i>2º turno</span></div><p class="note">Quanto do tempo disponível de cada turno o motor ficou rodando no período. O tempo disponível já desconta almoço e janta.</p>`:'<p class="note">Sem turnos no período.</p>';
 }
 
 /* ---------- PARADAS (eventos_parada + justificativa) ---------- */
@@ -964,12 +979,12 @@ function renderPar(){
   // gráfico 1: por equipamento
   const C={ag:'var(--orange)',ok:'var(--green)',hi:'var(--off)'};const eqs=[...new Set(all.map(r=>r.mo))].sort();const eqn=D.eqn||{};
   $('#cP1').innerHTML=all.length?barsH(eqs.map(e=>{const r=all.filter(x=>x.mo===e&&x.min!=null);const s=k=>r.filter(x=>x.s===k).reduce((a,x)=>a+x.min,0)/60;const v=s('ag')+s('ok')+s('hi');
-    return {label:eqn[e]?`${e} · ${eqn[e]}`:e,v,txt:f1(v)+'h',parts:[{v:s('ag'),c:C.ag},{v:s('ok'),c:C.ok},{v:s('hi'),c:C.hi}],tip:`<div class='m'>${e}</div><b>${all.filter(x=>x.mo===e).length} paradas · ${hm(v)}</b><div class='tl'><span>Sem justificativa</span><b>${hm(s('ag'))}</b></div><div class='tl'><span>Justificadas</span><b>${hm(s('ok'))}</b></div>${s('hi')?`<div class='tl'><span>Histórico sem motivo</span><b>${hm(s('hi'))}</b></div>`:''}`}}),{W:520,lw:150})
+    return {label:eqn[e]?`${e} · ${eqn[e]}`:e,v,txt:f1(v)+'h',parts:[{v:s('ag'),c:C.ag},{v:s('ok'),c:C.ok},{v:s('hi'),c:C.hi}],tip:`<div class='m'>${e}</div><b>${all.filter(x=>x.mo===e).length} paradas · ${hm(v)}</b><div class='tl'><span>Sem justificativa</span><b>${hm(s('ag'))}</b></div><div class='tl'><span>Justificadas</span><b>${hm(s('ok'))}</b></div>${s('hi')?`<div class='tl'><span>Histórico sem motivo</span><b>${hm(s('hi'))}</b></div>`:''}`}}),{lw:150})
     +`<div class="leg"><span><i style="background:${C.ag}"></i>Aguardando</span><span><i style="background:${C.ok}"></i>Justificada</span>${cnt.hi?`<span><i style="background:${C.hi}"></i>Histórico (antes de 01/11)</span>`:''}</div>`:'<p class="note">Sem paradas neste filtro.</p>';
   // gráfico 2: por classificação
   const g={};all.filter(r=>r.s==='ok').forEach(r=>{const mm=r.cod?motOf(r.cod):null;const c=mm?GN[mm.g]||mm.g:(r.cat||'Sem categoria').split(SEP)[0];g[c]=g[c]||{h:0,n:0,m:{}};g[c].h+=(r.min||0)/60;g[c].n++;const mo=mm?mm.n:(r.cat||'').split(SEP)[1];if(mo)g[c].m[mo]=(g[c].m[mo]||0)+1});
   const gr=Object.entries(g).sort((a,b)=>b[1].h-a[1].h).slice(0,8);
-  $('#cP2').innerHTML=gr.length?barsH(gr.map(([k,v])=>({label:k.length>26?k.slice(0,25)+'…':k,v:v.h,txt:f1(v.h)+'h',c:'var(--P)',tip:`<div class='m'>${esc(k)}</div><b>${v.n} paradas · ${hm(v.h)}</b>${Object.entries(v.m).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([m,n])=>`<div class='tl'><span>${esc(m)}</span><b>${n}</b></div>`).join('')}`})),{W:520,lw:180})
+  $('#cP2').innerHTML=gr.length?barsH(gr.map(([k,v])=>({label:k.length>26?k.slice(0,25)+'…':k,v:v.h,txt:f1(v.h)+'h',c:'var(--P)',tip:`<div class='m'>${esc(k)}</div><b>${v.n} paradas · ${hm(v.h)}</b>${Object.entries(v.m).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([m,n])=>`<div class='tl'><span>${esc(m)}</span><b>${n}</b></div>`).join('')}`})),{lw:180})
     :'<p class="note">Nenhuma parada justificada neste filtro ainda. Assim que justificar, as causas aparecem aqui.</p>';
   // abas
   $('#pTabs').innerHTML=[['todas','Todas'],['ag','Aguardando'],['ab','Abertas'],['ok','Justificadas'],['hi','Histórico']].filter(([k])=>k!=='hi'||cnt.hi).map(([k,l])=>`<button data-t="${k}" class="${PTAB===k?'on':''}">${l}<span>${f0(cnt[k])}</span></button>`).join('');
@@ -1130,7 +1145,7 @@ function ganRows(){
 const hhmm=s=>new Intl.DateTimeFormat('pt-BR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}).format(s*1000);
 function renderGan(){
   const {t0,by}=ganRows();const day=86400;
-  const lw=118,rw=92,W=1060,top=54,rh=26,gap=10,vw=W-lw-rw,H=top+M.length*(rh+gap)+6;
+  const lw=118,rw=92,W=Math.max(760,largGraf(false)),top=54,rh=26,gap=10,vw=W-lw-rw,H=top+M.length*(rh+gap)+6;
   const parGan=((GDATA[GDAY]||{}).par||[]).map(normRow);GDATA[GDAY].parN=parGan;
   /* Filtro de turno: o eixo passa a mostrar só a janela daquele turno, e tudo é contado dentro dela */
   const g0=GDATA[GDAY]||{};const winsAll=(g0.jan?g0.jan.map(([tu,a,b])=>({tu:+tu,a:+a,b:+b})):JW.filter(w=>w.d===GDAY)).sort((a,b)=>a.a-b.a);

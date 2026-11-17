@@ -212,7 +212,7 @@ function prdParHtml(dia){
 
 /* Curva S: uma escala só; previsto tracejado, realizado na cor do material */
 function prdCurva(c,mat){
-  const W=760,H=250,L=56,R=104,T=14,Bo=28,iw=W-L-R,ih=H-T-Bo,n=c.days.length;
+  const W=Math.max(560,largGraf(false)),H=250,L=56,R=104,T=14,Bo=28,iw=W-L-R,ih=H-T-Bo,n=c.days.length;
   const col=mat==='T'?'var(--P)':MATC[mat];
   let pa=0,ra=0;const pts=c.days.map(o=>{pa+=mat==='T'?o.metaT:o.meta[mat];ra+=mat==='T'?o.tot:o.real[mat];return {d:o.d,p:pa,r:ra,ok:!!c.ref&&o.d<=c.ref}});
   const metaM=mat==='T'?c.metaT:c.meta[mat],tn=PR.tend?prdTend(c,mat):null;
@@ -236,13 +236,13 @@ function prdCurva(c,mat){
 }
 /* Barras empilhadas por dia, 2px de folga entre materiais; traço da meta do dia */
 function prdBarras(c){
-  const n=c.days.length,L=48,W=Math.max(640,Math.min(1060,L+n*32)),H=230,T=12,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
+  const n=c.days.length,L=48,W=Math.max(L+n*18,largGraf(false)),H=230,T=12,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
   const max=Math.max(1,...c.days.map(o=>Math.max(o.tot,o.metaT))),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
   const Y=v=>ih*v/top;
   let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*18+L)}px;max-width:${W}px" role="img" aria-label="Produção por dia">`;
   [0,.5,1].forEach(f=>{const y=T+ih-Y(top*f);s+=`<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+3}" text-anchor="end">${f0(top*f)}</text>`});
   const stp=Math.max(1,Math.ceil(46/cw));
-  c.days.forEach((o,i)=>{const x=L+i*cw,bw=Math.min(22,cw*.66),bx=x+(cw-bw)/2;let y=T+ih;
+  c.days.forEach((o,i)=>{const x=L+i*cw,bw=Math.min(30,cw*.66),bx=x+(cw-bw)/2;let y=T+ih;
     const tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]}${o.t?' · '+o.t:''}</div><b>${o.tem?f0(o.tot)+' t':'Sem lançamento'}</b>${MATS.filter(([k])=>o.real[k]>0).map(([k,nm])=>`<div class='tl'><span>${nm}</span><b>${f0(o.real[k])} t</b></div>`).join('')}${o.metaT?`<div class='tl'><span>Meta do dia</span><b>${f0(o.metaT)} t</b></div>`:''}`;
     s+=`<g class="bd" data-dia="${o.d}" data-tip="${esc(tip)}"><rect class="bg" x="${x}" y="${T}" width="${cw}" height="${ih}" fill="transparent" rx="3"/>`;
     const segs=MATS.filter(([k])=>o.real[k]>0);
