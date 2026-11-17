@@ -340,6 +340,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
 [data-theme="dark"] .warnb{background:rgba(242,169,59,.10);border-color:rgba(242,169,59,.35);color:#F7C77A}
 @media(max-width:560px){.cgrid{grid-template-columns:1fr}.bulk{flex-wrap:wrap}.bulk #bulkTxt{flex-basis:100%}.hcard .big{font-size:44px}.tb .hm{display:none}.k b{font-size:28px}.kpis{gap:8px}}
 </style>
+<link rel="stylesheet" href="producao.css">
 </head>
 <body>
 <div id="prog"></div>
@@ -353,6 +354,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
     <a data-p="hor"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>Horímetros<span class="dot"></span></a>
     <a data-p="gan"><svg viewBox="0 0 24 24"><path d="M3 5h18M3 19h18"/><rect x="4" y="8" width="8" height="3" rx="1"/><rect x="9" y="13" width="10" height="3" rx="1"/></svg>Gantt diário<span class="dot"></span></a>
     <a data-p="par"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>Paradas<span class="badge" id="navBadge" hidden></span><span class="dot"></span></a>
+    <a data-p="prd"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20l4-9 3 4 3-7 4 12"/></svg>Produção<span class="dot"></span></a>
     <a data-p="val" class="hidn"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Validar<span class="badge" id="navVal" hidden></span><span class="dot"></span></a>
     <a data-p="equ" class="hidn"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.5 5.2"/></svg>Equipe<span class="dot"></span></a>
     <a data-p="app" class="hidn"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>App (teste)<span class="dot"></span></a>
@@ -518,6 +520,21 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
       </div></div></div></div>
   </section>
 
+  <!-- PRODUÇÃO: acompanhamento diário (antes era a planilha ACOMPANHAMENTO_DIÁRIO_DA_PRODUÇÃO) -->
+  <section class="pane" id="p-prd">
+    <div class="phead"><img src="assets/logo-azul.png" alt="Tripoloni"><div class="pt">Produção da britagem · acompanhamento diário</div><div class="pk" id="prdPk"></div></div>
+    <div class="prdtools">
+      <div class="dayctl">
+        <button type="button" id="prdPrev" title="Mês anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <select id="prdMes" aria-label="Mês"></select>
+        <button type="button" id="prdNext" title="Próximo mês"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="stamp" id="prdStamp"></div>
+      <div class="prdacts"><button type="button" class="btn2" id="prdMetas" hidden>Metas do mês</button><button type="button" class="btn1" id="prdLancar" hidden>Lançar produção</button></div>
+    </div>
+    <div id="prdBody"></div>
+  </section>
+
   <!-- APP (TESTE): versão nova do app de apontamentos antes de virar APK -->
   <section class="pane" id="p-app">
     <div class="phead"><img src="assets/logo-azul.png" alt="Tripoloni"><div class="pt">App de apontamentos · versão de teste</div><div class="pk pfil"></div></div>
@@ -568,6 +585,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
     <footer><div class="derr" id="gErr"></div><button class="btn2" data-gclose>Fechar</button><button class="btn1" id="gOk"></button></footer>
   </aside></div>
 <div class="toast" id="toast"></div>
+<div id="prdRel" aria-hidden="true"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 /* Configuração pública do Supabase. A chave publishable é feita para ficar no navegador:
@@ -1149,7 +1167,7 @@ sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){gate()}else if(ev==='TOKEN_
 
 /* ---------- janela genérica ---------- */
 let GO=null;
-function gOpen({k='',t,body,ok,onOk}){GO={onOk,busy:false};$('#gK').textContent=k;$('#gT').textContent=t;$('#gB').innerHTML=body;$('#gErr').textContent='';
+function gOpen({k='',t,body,ok,onOk,w=460}){GO={onOk,busy:false};$('#gdrw .drwp').style.width=`min(${w}px,100vw)`;$('#gK').textContent=k;$('#gT').textContent=t;$('#gB').innerHTML=body;$('#gErr').textContent='';
   const b=$('#gOk');b.hidden=!ok;b.textContent=ok||'';b.disabled=false;b.classList.remove('danger');
   $('#gdrw').classList.add('open');$('#gdrw').setAttribute('aria-hidden','false');setTimeout(()=>{const i=$('#gB input,#gB textarea,#gB select');if(i)i.focus()},50)}
 function gClose(){if(GO&&GO.busy)return;$('#gdrw').classList.remove('open');$('#gdrw').setAttribute('aria-hidden','true')}
@@ -1321,7 +1339,7 @@ document.addEventListener('input',e=>{if(e.target.id==='gNome'&&$('#gLogin')){co
 /* ---------- render ---------- */
 function renderAll(){
   if(!D)return;model();
-  renderGeral();renderHor();ganInit();renderPar();if(PANE==='par')parLoad();
+  renderGeral();renderHor();ganInit();renderPar();if(PANE==='par')parLoad();if(PANE==='prd')prdLoad();
   const g=Date.parse(D.gerado);
   $('#stamp').innerHTML=`Dados de <b>${dtFmt.format(g)}</b><br>Lido do Supabase`;
   const pl=(D.placa||[])[0];
@@ -1341,8 +1359,8 @@ function reveal(){
 }
 
 /* ---------- interactions ---------- */
-const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',val:'Validar',equ:'Equipe',app:'App (teste)'};
-function go(p){const mudou=PANE!==p;PANE=p;document.body.classList.toggle('semfiltro',p==='val'||p==='equ'||p==='app');if(p==='app')appLoad();
+const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',prd:'Produção',val:'Validar',equ:'Equipe',app:'App (teste)'};
+function go(p){const mudou=PANE!==p;PANE=p;document.body.classList.toggle('semfiltro',p==='val'||p==='equ'||p==='app'||p==='prd');if(p==='app')appLoad();if(p==='prd'&&D)prdLoad();
   if(D&&p==='val'&&(mudou||!VQ.rows))valLoad();if(D&&p==='equ'&&(mudou||!EQ.rows))equLoad();$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p&&!!D));$('#pgt').textContent=TITLES[p];if(p==='gan'&&D)ganEnsure();if(p==='par'&&D)parLoad();try{localStorage.setItem('hb_pane',p)}catch(e){}if(D)reveal();window.scrollTo({top:0})}
 $('#nav').onclick=e=>{const a=e.target.closest('a');if(a)go(a.dataset.p)};
 document.addEventListener('click',e=>{
@@ -1353,7 +1371,7 @@ document.addEventListener('click',e=>{
   const bh=e.target.closest('button.boxh');if(bh){bh.closest('.box').classList.toggle('closed');return}
   const tr=e.target.closest('tr.g');if(tr){const k=tr.dataset.g;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);tr.classList.toggle('cl');$$(`tr.it[data-p="${CSS.escape(k)}"]`).forEach(r=>r.classList.toggle('hid',!OPEN.has(k)))}
 });
-$('#btnRef').onclick=async()=>{await load(true);if(PANE==='gan')ganEnsure(true);if(PANE==='par')parLoad(true)};
+$('#btnRef').onclick=async()=>{await load(true);if(PANE==='gan')ganEnsure(true);if(PANE==='par')parLoad(true);if(PANE==='prd')prdLoad(null,true)};
 $('#btnPrint').onclick=()=>window.print();
 const tip=$('#tip');
 document.addEventListener('mousemove',e=>{const t=e.target.closest('[data-tip]');if(!t||!t.dataset.tip){tip.style.opacity=0;return}
@@ -1366,5 +1384,6 @@ const _render=renderAll;renderAll=function(){_render();go(PANE)};
 go(PANE);
 (async()=>{if(await gate())load(false)})();
 </script>
+<script src="producao.js"></script>
 </body>
 </html>
