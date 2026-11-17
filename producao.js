@@ -35,7 +35,7 @@ function prdTend(c,mat){
   return {taxa,proj,fim:ac,feito};
 }
 
-async function prdLoad(mes,force){
+async function prdLoad(mes,force,silencioso){
   if(!D)return;mes=mes||PR.mes||mesDe(D.hoje);
   if(PR.mes===mes&&PR.x&&!force){renderPrd();return}
   if(PR.mes!==mes){PR.x=null;PR.c=null;PR.tab=false}
@@ -44,7 +44,7 @@ async function prdLoad(mes,force){
     PR.x=x;PR.c=prdCalc(x,mes);if(force)PR.par={};
     if(!PR.dia||mesDe(PR.dia)!==mes)PR.dia=PR.c.ref||(mesDe(D.hoje)===mes?D.hoje:mes);
   }catch(e){if(PR.mes===mes)PR.err=e}
-  finally{if(PR.mes===mes){PR.busy=false;renderPrd(true)}}
+  finally{if(PR.mes===mes){PR.busy=false;renderPrd(!silencioso)}}
 }
 
 function prdCalc(x,mes){
@@ -320,7 +320,7 @@ function prdLancar(dia){
       $$('#plGrid .pin').forEach(inp=>{const [m,e,t]=inp.dataset.k.split('|');const v=prdConta(inp.value);if(Number.isNaN(v)||(v!=null&&(v<0||v>50000))){bad++;inp.setAttribute('aria-invalid','true')}else itens.push({turno:+t,material:m,equipamento:e,t:v})});
       if(bad)throw falha(bad===1?'Confira o valor marcado em vermelho.':`Confira os ${bad} valores marcados em vermelho.`);
       const d=$('#plDia').value;if(!isDay(d)||d>D.hoje)throw falha('Escolha um dia até hoje.');
-      await rpc('prod_salvar_dia',{p_dia:d,p_itens:itens});
+      ULT_SALVO=Date.now();await rpc('prod_salvar_dia',{p_dia:d,p_itens:itens});ULT_SALVO=Date.now();
       toast(`Produção de ${dmy(d)} salva.`);PR.dia=d;delete PR.par[d];await prdLoad(mesDe(d),true);
     }});
   plFill(dia);
@@ -377,8 +377,8 @@ function prdMetas(){
       if(!(peso>0&&peso<=1))throw falha('O peso do sábado precisa ficar entre 1% e 100%.');if(bm<0||bm>1)throw falha('A parte do BM10 precisa ficar entre 0% e 100%.');
       const dias=Object.entries(MT.cal).filter(([,t])=>t).map(([d,t])=>({dia:addDays(MT.mes,+d-1),tipo:t}));
       if(!dias.length)throw falha('Marque pelo menos um dia programado.');
-      await rpc('prod_salvar_mes',{p_mes:MT.mes,p_meta_rachao_irati:g('mRI'),p_meta_rachao_palmeira:g('mRP'),p_meta_brita01:g('mB1'),p_meta_po:g('mPO'),p_meta_brita02:g('mB2'),p_peso_sabado:peso,p_pct_bm10:bm,p_dias:dias});
-      toast(`Metas de ${mesTxt(MT.mes)} salvas.`);await prdLoad(MT.mes,true);
+      ULT_SALVO=Date.now();await rpc('prod_salvar_mes',{p_mes:MT.mes,p_meta_rachao_irati:g('mRI'),p_meta_rachao_palmeira:g('mRP'),p_meta_brita01:g('mB1'),p_meta_po:g('mPO'),p_meta_brita02:g('mB2'),p_peso_sabado:peso,p_pct_bm10:bm,p_dias:dias});
+      ULT_SALVO=Date.now();toast(`Metas de ${mesTxt(MT.mes)} salvas.`);await prdLoad(MT.mes,true);
     }});
   mtCal();mtTot();
 }

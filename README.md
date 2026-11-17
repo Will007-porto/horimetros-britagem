@@ -83,6 +83,14 @@ supabase/migrations/               SQL das tabelas, funções e permissões
 
 - **17/11/2026** — aba **Produção** (acompanhamento diário com metas, lançamento por turno, curva S e relatório do dia), substituindo a planilha; histórico de set–nov importado. Aba **App (teste)** para testar o app antes do APK. Botão de **tema claro/escuro** no topo; **dia de produção 07:30 → 04:00** em todo o painel e **filtros refeitos** (período com setas, turno, equipamentos por área); linha de tendência e exportação do relatório no modelo da planilha.
 
+## Atualização automática (sem recarregar)
+
+- O site nunca recarrega a página sozinho. Os dados chegam pelo **Supabase Realtime** (paradas, produção e status das máquinas) e, de reserva, a cada **60 s** com a aba visível.
+- A atualização troca só os números: não volta ao topo, não refaz animação, não apaga filtro nem seleção.
+- Aba escondida: o tempo real desliga; ao voltar, atualiza na hora.
+- Com formulário aberto ou campo em edição, a atualização espera. Se o registro aberto for alterado por outra pessoa, aparece um aviso no formulário (nada é substituído).
+- No topo: "Atualizado há X" ("ao vivo" quando o tempo real está conectado) e o botão **Atualizar**, que busca de novo sem recarregar.
+
 ## Produção: acompanhamento diário
 
 Aba **Produção** substitui a planilha `ACOMPANHAMENTO_DIÁRIO_DA_PRODUÇÃO_BRITAGEM_IRATI.xlsx`. Todo usuário liberado vê; só o supervisor lança e muda metas.

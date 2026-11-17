@@ -676,22 +676,80 @@ function prog(p){const e=$('#prog');e.style.opacity=1;e.style.width=p+'%';if(p>=
 
 
 let busy=false;
-async function load(force){
-  if(busy)return;busy=true;$('#btnRef').classList.add('spin');prog(25);
+/* Leitura dos dados. silencioso = atualização automática: troca só os números, sem barra de progresso,
+   sem animação de entrada e sem banner por cima do que já está na tela. Nunca recarrega a página. */
+let ULT_OK=0,ULT_ERRO=null;
+async function load(force,silencioso){
+  if(busy)return;busy=true;$('#btnRef').classList.add('spin');if(!silencioso)prog(25);
   try{
     if(!D)showState('load','Buscando dados no Supabase…','Lendo eventos dos motores, horímetros e paradas.');
-    prog(55);
-    D=await rpc('painel_dados');
-    hideState();prog(100);renderAll();
+    if(!silencioso)prog(55);
+    D=await rpc('painel_dados');ULT_OK=Date.now();ULT_ERRO=null;
+    hideState();if(!silencioso)prog(100);renderAll(silencioso);
   }catch(e){
-    prog(100);
+    if(!silencioso)prog(100);
     if(/permission denied|JWT|not authorized|nao_autorizado/i.test((e&&e.message)||'')){gate();return}
-    const keep=D?' Os números abaixo são da última leitura bem-sucedida.':'';
     const off=!navigator.onLine||/fetch|network/i.test((e&&e.message)||'');
+    ULT_ERRO=off?'sem conexão':'falha ao atualizar';
+    if(silencioso&&D){stampTick();return}
+    const keep=D?' Os números abaixo são da última leitura bem-sucedida.':'';
     showState('err',off?'Sem conexão':'Não foi possível carregar',off?'Verifique a internet e tente de novo.'+keep:esc((e&&(e.message||e.code))||String(e))+keep,'Tentar de novo');
-  }finally{busy=false;$('#btnRef').classList.remove('spin')}
+  }finally{busy=false;$('#btnRef').classList.remove('spin');stampTick()}
 }
-setInterval(()=>{if(document.visibilityState==='visible'&&D&&EU.autorizado&&!$('#drw').classList.contains('open')&&!$('#gdrw').classList.contains('open')){load(false);if(PANE==='val')valLoad()}},120000);
+
+/* ---------- atualização automática sem recarregar ----------
+   - Tempo real (Supabase Realtime) nas paradas, produção e status das máquinas: chegou mudança, busca de novo.
+   - Reserva: a cada 60 s com a aba visível (horas e status vêm dos eventos, que não são escutados um a um).
+   - Aba escondida: desliga o tempo real e o relógio; ao voltar, atualiza na hora.
+   - Formulário aberto ou campo em edição: não mexe na tela; atualiza assim que fechar. */
+const POLL_MS=60000;let PEND=false,RT=null,RT_OK=false,RT_TIMER=null,ULT_SALVO=0;
+const ocupado=()=>['drw','gdrw','login'].some(id=>$('#'+id).classList.contains('open'))||!!document.querySelector('.dd.open')
+  ||(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+async function atualizarSilencioso(){
+  if(!D||!EU.autorizado||document.visibilityState!=='visible')return;
+  if(ocupado()){PEND=true;return}
+  PEND=false;await load(false,true);
+  if(PANE==='val'&&typeof valLoad==='function')valLoad(true);
+  if(PANE==='par')parLoad(true);
+  if(PANE==='prd'&&typeof prdLoad==='function')prdLoad(null,true,true);
+}
+setInterval(()=>{if(Date.now()-ULT_OK>=POLL_MS-1000)atualizarSilencioso()},POLL_MS);
+/* Sai do formulário ou do campo → aplica a atualização que ficou esperando */
+setInterval(()=>{if(PEND&&!ocupado())atualizarSilencioso()},3000);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){rtDesligar();return}
+  if(D&&EU.autorizado){rtLigar();if(Date.now()-ULT_OK>15000)atualizarSilencioso()}stampTick()});
+function rtLigar(){
+  if(RT||!EU.autorizado||document.visibilityState!=='visible')return;
+  const ch=sb.channel('painel-britagem');
+  ['eventos_parada','producao_lanc','producao_mes','producao_dia','maquinas'].forEach(t=>ch.on('postgres_changes',{event:'*',schema:'public',table:t},p=>rtEvento(t,p)));
+  RT=ch.subscribe(st=>{RT_OK=st==='SUBSCRIBED';stampTick()});
+}
+function rtDesligar(){if(RT){sb.removeChannel(RT);RT=null;RT_OK=false;stampTick()}}
+function rtEvento(t,p){
+  const r=p.new&&Object.keys(p.new).length?p.new:(p.old||{});
+  if(Date.now()-ULT_SALVO>4000)rtAvisoEdicao(t,r);
+  clearTimeout(RT_TIMER);RT_TIMER=setTimeout(atualizarSilencioso,1500);
+}
+/* Registro aberto num formulário mudou por outro usuário: avisa em vez de trocar o que está sendo digitado */
+function rtAvisoEdicao(t,r){
+  const av=(alvo,msg)=>{if(!alvo||alvo.querySelector('.rtaviso'))return;const d=document.createElement('div');d.className='warnb rtaviso';d.setAttribute('role','status');d.textContent=msg;alvo.prepend(d)};
+  if(t==='eventos_parada'&&$('#drw').classList.contains('open')&&!JS.busy&&JS.rows.some(x=>x.id===r.id))
+    av($('#drwB'),'Esta parada foi alterada por outro usuário enquanto você editava. Confira antes de salvar: o que você salvar substitui.');
+  if(t==='producao_lanc'&&$('#gdrw').classList.contains('open')&&!(GO&&GO.busy)&&typeof PL!=='undefined'&&PL&&r.dia===PL.dia&&$('#plGrid'))
+    av($('#gB'),'Este dia foi alterado por outro usuário enquanto você lançava. Os valores na tela continuam os seus; ao salvar, eles substituem.');
+  if((t==='producao_mes'||t==='producao_dia')&&$('#gdrw').classList.contains('open')&&!(GO&&GO.busy)&&typeof MT!=='undefined'&&MT&&$('#mCal')&&String(r.mes||r.dia||'').slice(0,7)===MT.mes.slice(0,7))
+    av($('#gB'),'As metas deste mês foram alteradas por outro usuário enquanto você editava. Ao salvar, as suas substituem.');
+}
+/* "Atualizado há X" no topo, com o horário exato no título */
+function stampTick(){
+  const e=$('#stamp');if(!e)return;
+  if(!ULT_OK){e.textContent='Carregando dados…';return}
+  const s=Math.max(0,Math.round((Date.now()-ULT_OK)/1000)),txt=s<10?'agora':s<60?`há ${s} s`:s<3600?`há ${Math.floor(s/60)} min`:`há ${Math.floor(s/3600)} h`;
+  e.innerHTML=`Atualizado <b>${txt}</b><br>${ULT_ERRO?`<span style="color:var(--orange)">${esc(ULT_ERRO)} · tentando de novo</span>`:RT_OK?'ao vivo · Supabase':'Lido do Supabase'}`;
+  e.title=`Última leitura: ${dtFmt.format(ULT_OK)}${D&&D.gerado?` (dados do servidor de ${dtFmt.format(Date.parse(D.gerado))})`:''}. Atualiza sozinho, sem recarregar a página.`;
+}
+setInterval(()=>{if(document.visibilityState==='visible')stampTick()},5000);
 
 /* ---------- model ---------- */
 let M=[],MALL=[],DAYS=[],HD={},PT={},HJ={},AV={},JW=[];
@@ -1014,7 +1072,7 @@ $('#drwSave').onclick=async()=>{
   const corr=JS.rows.filter(r=>r.s==='ok'||r.s==='hi');
   if(corr.length&&EU.papel!=='supervisor')return err('Só o supervisor pode corrigir paradas já justificadas.');
   if(corr.length&&txt.length<3)return err('Escreva na observação o motivo da correção.');
-  JS.busy=true;$('#drwSave').disabled=true;err('');
+  JS.busy=true;ULT_SALVO=Date.now();$('#drwSave').disabled=true;err('');
   let ok=0;const falhas=[];const total=JS.rows.length;
   for(const r of [...JS.rows]){
     $('#drwSave').textContent=total>1?`Salvando ${ok+falhas.length+1} de ${total}…`:'Salvando…';
@@ -1027,7 +1085,7 @@ $('#drwSave').onclick=async()=>{
   JS.busy=false;$('#drwSave').disabled=false;$('#drwSave').textContent='Salvar justificativa';
   if(!falhas.length){closeJus();toast(`${ok} ${ok===1?'parada justificada':'paradas justificadas'}`)}
   else{err(`${ok} gravada(s), ${falhas.length} com erro: ${falhas[0]}`);if(ok)toast(`${ok} gravada(s); confira as que deram erro.`)}
-  load(true);parLoad(true);if(PANE==='val')valLoad();
+  ULT_SALVO=Date.now();load(true,true);parLoad(true);if(PANE==='val')valLoad();
 };
 let tT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3800)}
 
@@ -1203,7 +1261,9 @@ let EU={logado:false,nome:null,autorizado:false,papel:null,area:null};
 const DOMINIO_LOGIN='operador.paradas-britagem.app';
 const normLogin=n=>String(n||'').trim().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,'.').replace(/[^a-z0-9.-]/g,'').replace(/\.{2,}/g,'.').replace(/^\.+|\.+$/g,'');
 const PAPEL_N={operador:'Operador',manutencao:'Manutenção',supervisor:'Supervisor'};
-async function refreshEU(){try{EU=await rpc('painel_eu')||EU}catch(e){EU={logado:false,nome:null,autorizado:false,papel:null,area:null}}
+async function refreshEU(){try{EU=await rpc('painel_eu')||EU}catch(e){
+    /* Falha de rede não é logout: mantém quem já estava liberado (o logout real chega como SIGNED_OUT) */
+    if(!EU.logado||/JWT|auth|permission/i.test((e&&e.message)||''))EU={logado:false,nome:null,autorizado:false,papel:null,area:null}}
   $('#userLbl').textContent=EU.logado?(EU.nome||'Conectado'):'Entrar';$('#btnUser').classList.toggle('on',EU.logado);navVis()}
 function navVis(){
   const sup=EU.autorizado&&EU.papel==='supervisor',val=EU.autorizado&&(sup||EU.papel==='manutencao');
@@ -1237,9 +1297,10 @@ $('#lgForm').onsubmit=async e=>{e.preventDefault();const b=$('#lgBtn');
   b.disabled=false;b.textContent='Entrar';
   if(error){$('#lgErr').textContent=/invalid/i.test(error.message)?'Nome ou PIN incorreto.':error.message;return}
   $('#lgPin').value='';closeLogin();
-  if(await gate()){toast(`Bem-vindo, ${EU.nome}`);load(true)}};
+  if(await gate()){toast(`Bem-vindo, ${EU.nome}`);await load(true);rtLigar()}};
 $('#lgSair').onclick=async()=>{await sb.auth.signOut();closeLogin();toast('Você saiu.')};
-sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){gate()}else if(ev==='TOKEN_REFRESHED'||ev==='USER_UPDATED'){refreshEU()}});
+/* Só reage a mudança real de estado: saiu → tela de login; token renovado → só confere o papel, sem redirecionar */
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){rtDesligar();gate()}else if(ev==='USER_UPDATED'){refreshEU()}});
 
 /* ---------- janela genérica ---------- */
 let GO=null;
@@ -1270,8 +1331,8 @@ async function openHist(id){
 
 /* ---------- VALIDAR ---------- */
 let VQ={rows:null,busy:false,err:null};
-async function valLoad(){
-  if(!EU.autorizado)return;VQ.busy=true;VQ.err=null;renderVal();
+async function valLoad(silencioso){
+  if(!EU.autorizado)return;if(!silencioso){VQ.busy=true;VQ.err=null;renderVal()}
   try{const [r]=await Promise.all([rpc('app_fila_validacao'),ensureCat()]);
     VQ.rows=(r||[]).map(x=>{const iniMs=Date.parse(x.inicio_parada),fimMs=x.fim_parada?Date.parse(x.fim_parada):null;
       return {id:x.id,est:x.estagio,mo:'',iniMs,fimMs,min:x.duracao_minutos??(fimMs?(fimMs-iniMs)/6e4:null),s:'ok',cod:x.codigo_motivo,eqc:x.equipamento_causa,cls:x.classe,txt:x.justificativa_texto,por:x.justificado_por,em:x.justificado_em,conf:x.confirmacao_manutencao,cpor:x.confirmado_por,cobs:x.confirmacao_obs}});
@@ -1413,17 +1474,20 @@ $('#eNovo').onclick=()=>gOpen({k:'Equipe',t:'Novo usuário',ok:'Cadastrar',
 document.addEventListener('input',e=>{if(e.target.id==='gNome'&&$('#gLogin')){const l=normLogin(e.target.value);$('#gLogin').innerHTML=l?`Login no app e no site: <b>${esc(l)}</b>`:'É o nome que a pessoa digita para entrar.'}});
 
 /* ---------- render ---------- */
-function renderAll(){
+function renderAll(silencioso){
   if(!D)return;model();
   renderGeral();renderHor();ganInit();renderPar();if(PANE==='par')parLoad();if(PANE==='prd')prdLoad();
   const g=Date.parse(D.gerado);
-  $('#stamp').innerHTML=`Dados de <b>${dtFmt.format(g)}</b><br>Lido do Supabase`;
+  stampTick();
   const pl=(D.placa||[])[0];
   $('#sidefoot').innerHTML=`Britagem${pl?`<br>Placa ${esc(pl.id)}`:''}<br>Fonte: Supabase<br>Lido ${esc(dtFmt.format(g))}`;
   $$('.pfil').forEach(e=>e.innerHTML=`Dados de ${esc(dtFmt.format(g))}<br>Período: ${esc(rLabel())} · ${esc(atTxt())}`);
   renderFilters();
-  reveal();
+  if(silencioso)revelarJa();else reveal();
 }
+/* Mostra tudo já no lugar (usado na atualização automática: nada some nem reconta do zero) */
+function revelarJa(){$$('#p-'+PANE+' .rv').forEach(el=>{if(io)io.unobserve(el);el.classList.add('in');el.querySelectorAll('.swipe').forEach(s=>s.classList.add('in'));
+  el.querySelectorAll('[data-count]').forEach(c=>{const v=+c.dataset.count||0,dc=+c.dataset.dec||0;c.textContent=dc?v.toLocaleString('pt-BR',{minimumFractionDigits:dc,maximumFractionDigits:dc}):Math.round(v).toLocaleString('pt-BR')})})}
 function countUp(el){const to=+el.dataset.count||0,dec=+el.dataset.dec||0,t0=performance.now(),dur=900;
   const fmt=v=>dec?v.toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec}):Math.round(v).toLocaleString('pt-BR');
   if(matchMedia('(prefers-reduced-motion:reduce)').matches){el.textContent=fmt(to);return}
@@ -1437,7 +1501,7 @@ function reveal(){
 /* ---------- interactions ---------- */
 const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',prd:'Produção',val:'Validar',equ:'Equipe',app:'App (teste)'};
 function go(p){const mudou=PANE!==p;PANE=p;document.body.classList.toggle('semfiltro',p==='val'||p==='equ'||p==='app'||p==='prd');if(p==='app')appLoad();if(p==='prd'&&D)prdLoad();
-  if(D&&p==='val'&&(mudou||!VQ.rows))valLoad();if(D&&p==='equ'&&(mudou||!EQ.rows))equLoad();$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p&&!!D));$('#pgt').textContent=TITLES[p];if(p==='gan'&&D)ganEnsure();if(p==='par'&&D)parLoad();try{localStorage.setItem('hb_pane',p)}catch(e){}if(D)reveal();window.scrollTo({top:0})}
+  if(D&&p==='val'&&(mudou||!VQ.rows))valLoad();if(D&&p==='equ'&&(mudou||!EQ.rows))equLoad();$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p&&!!D));$('#pgt').textContent=TITLES[p];if(p==='gan'&&D)ganEnsure();if(p==='par'&&D)parLoad();try{localStorage.setItem('hb_pane',p)}catch(e){}if(D&&mudou)reveal();if(mudou)window.scrollTo({top:0})}
 $('#nav').onclick=e=>{const a=e.target.closest('a');if(a)go(a.dataset.p)};
 document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
@@ -1447,7 +1511,7 @@ document.addEventListener('click',e=>{
   const bh=e.target.closest('button.boxh');if(bh){bh.closest('.box').classList.toggle('closed');return}
   const tr=e.target.closest('tr.g');if(tr){const k=tr.dataset.g;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);tr.classList.toggle('cl');$$(`tr.it[data-p="${CSS.escape(k)}"]`).forEach(r=>r.classList.toggle('hid',!OPEN.has(k)))}
 });
-$('#btnRef').onclick=async()=>{await load(true);if(PANE==='gan')ganEnsure(true);if(PANE==='par')parLoad(true);if(PANE==='prd')prdLoad(null,true)};
+$('#btnRef').onclick=async()=>{await load(true,true);if(PANE==='gan')ganEnsure(true);if(PANE==='par')parLoad(true);if(PANE==='prd')prdLoad(null,true,true);if(PANE==='val')valLoad(true)};
 $('#btnPrint').onclick=()=>window.print();
 /* Tema claro/escuro: segue o sistema até o usuário escolher; a escolha fica salva neste navegador */
 const temaAtual=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
@@ -1463,9 +1527,11 @@ document.addEventListener('scroll',()=>tip.style.opacity=0,{passive:true});
 
 try{const s=JSON.parse(localStorage.getItem('hb_f')||'null');if(s&&typeof s==='object')F={...FDEF,...s}}catch(e){}
 try{  const pn=localStorage.getItem('hb_pane');if(pn&&TITLES[pn])PANE=pn}catch(e){}
-const _render=renderAll;renderAll=function(){_render();go(PANE)};
+/* Depois de desenhar, mostra a aba atual. Na atualização automática só garante a aba visível:
+   sem voltar ao topo e sem refazer animação (antes, a cada 2 min a página pulava para o topo e piscava). */
+const _render=renderAll;renderAll=function(silencioso){_render(silencioso);if(silencioso)$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+PANE&&!!D));else go(PANE)};
 go(PANE);
-(async()=>{if(await gate())load(false)})();
+(async()=>{if(await gate()){await load(false);rtLigar()}})();
 </script>
 <script src="producao.js"></script>
 <script src="producao-rel.js"></script>
