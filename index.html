@@ -1134,7 +1134,7 @@ $('#gOk').onclick=async()=>{if(!GO||!GO.onOk||GO.busy)return;GO.busy=true;const 
 const falha=m=>{const e=new Error(m);e.userMsg=m;return e};
 
 /* ---------- histórico de uma parada ---------- */
-const ACAO_N={JUSTIFICOU:'Justificou',ALTEROU:'Alterou',CORRIGIU:'Corrigiu',CONFIRMOU:'Validou',CONTESTOU:'Contestou'};
+const ACAO_N={FRACIONOU:'Dividiu a parada',JUSTIFICOU:'Justificou',ALTEROU:'Alterou',CORRIGIU:'Corrigiu',CONFIRMOU:'Validou',CONTESTOU:'Contestou'};
 async function openHist(id){
   gOpen({k:'Histórico',t:'Histórico da parada',body:'<div class="gmsg">Buscando…</div>'});
   try{await ensureCat();const h=await rpc('app_historico_parada',{p_id:id});
