@@ -193,3 +193,6 @@ svg.sk .skf:hover{fill-opacity:.7}
 #prdRel .rssk{padding:3mm}
 #prdRel svg.sk{background:#fff;width:100%;height:auto}
 #prdRel svg.sk .skl{font:700 11px var(--sans)}#prdRel svg.sk .sks{font:600 10px var(--sans)}
+
+#prdVis{height:40px;align-items:center}
+@media(max-width:560px){#prdVis{width:100%}#prdVis button{flex:1}}

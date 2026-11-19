@@ -1,0 +1,5 @@
+-- Visão sem dupla contagem (aplicada em 19/11/2026 como "prod_dados_meses_britado")
+-- Os finos (Brita 01, Pó, Brita 02) saem do rachão do BM10; somar rachão + finos conta os finos duas vezes.
+-- prod_dados.meses ganhou meta_britado (meta de rachão: Irati + Palmeira) e real_britado (soma do RACHAO,
+-- BM10 + BMM05) para o comparativo dos meses na visão nova. Os campos antigos (meta, real) continuam.
+-- Corpo completo: ver no banco (pg_get_functiondef('public.prod_dados'::regproc)).
