@@ -133,8 +133,8 @@ function renderPrd(anima){
     <div class="cwrap"><div class="cinner"><div class="boxb"><div class="prdseg">${segHtml('prdMatSeg',[['T','Total'],...MATS.map(([k,n,col])=>[k,`<i style="background:${col}"></i>${n}`])],PR.mat)}<button type="button" class="pbtn tendb${PR.tend?' on':''}" data-prdtend aria-pressed="${PR.tend}" title="Projeta o fim do mês mantendo o ritmo já feito"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Linha de tendência</button></div><div id="prdCurva">${prdCurva(c,PR.mat)}</div></div></div></div></div>`;
 
   /* por dia */
-  h+=`<div class="box rv"><button class="boxh">${icoBox('<path d="M5 20V10M10 20V4M15 20v-7M20 20v-4"/>')}<div><div class="tt">Produção por dia</div><div class="kk">Toneladas por material · traço = meta do dia</div></div>${chevS}</button>
-    <div class="cwrap"><div class="cinner"><div class="boxb"><div class="scrollx">${prdBarras(c)}</div>
+  h+=`<div class="box rv"><button class="boxh">${icoBox('<path d="M5 20V10M10 20V4M15 20v-7M20 20v-4"/>')}<div><div class="tt">Produção por dia</div><div class="kk">Toneladas por dia · traço = meta do dia · % = atendimento da meta</div></div>${chevS}</button>
+    <div class="cwrap"><div class="cinner"><div class="boxb"><div id="prdBarsBloco">${prdBarrasBloco(c)}</div>
       <div class="prdtab"><button type="button" class="fclear" data-prdtab>${PR.tab?'Esconder a tabela dia a dia':'Ver a tabela dia a dia'}</button></div>
       <div class="scrollx" id="prdTab">${PR.tab?prdTabela(c):''}</div></div></div></div></div>`;
 
@@ -235,6 +235,56 @@ function prdCurva(c,mat){
   return s+`<div class="leg"><span><i style="background:${col}"></i>Realizado acumulado${mat==='T'?' (todos os materiais)':' · '+MATN[mat]}</span><span><i style="background:none;border-top:2px dashed var(--muted);height:0;border-radius:0;width:16px;vertical-align:3px"></i>Previsto acumulado (meta distribuída nos dias X e XX)</span>${tn?`<span><i style="background:none;border-top:2.5px dotted ${col};height:0;border-radius:0;width:16px;vertical-align:3px"></i>Tendência: ritmo feito (${f0(tn.taxa)} t por dia programado) até o fim do mês → <b style="color:var(--ink)">${f0(tn.fim)} t</b>${metaM?` (${pc1(tn.fim/metaM)} da meta)`:''}</span>`:''}</div>`;
 }
 /* Barras empilhadas por dia, 2px de folga entre materiais; traço da meta do dia */
+/* Filtro do gráfico por dia: Total (empilhado) ou um material; no rachão, BM10 / BMM05 separados.
+   A meta acompanha o filtro e cada barra mostra o atendimento da meta do dia. */
+function prdBarrasBloco(c){
+  const bm=PR.bm||'T',be=bm==='RACHAO'?(PR.be||'AMB'):'AMB';
+  const segM=segHtml('prdBarMat',[['T','Total'],...MATS.map(([k,n,col])=>[k,`<i style="background:${col}"></i>${n}`])],bm);
+  const segE=bm==='RACHAO'?segHtml('prdBarEq',[['AMB','Os dois'],['BM10','BM10 · Primário'],['BMM05','BMM05 · Lokotrack']],be):'';
+  return `<div class="prdbarf">${segM}${segE}</div><div class="scrollx">${bm==='T'?prdBarras(c):prdBarrasMat(c,bm,be)}</div>${prdAtendResumo(c,bm,be)}`;
+}
+/* valor, meta e cor de um dia conforme o filtro */
+function prdSerie(c,bm,be){
+  const pct=e=>e==='BM10'?c.pctBM:1-c.pctBM;
+  return c.days.map(o=>{
+    if(bm==='T')return {o,v:o.tot,m:o.metaT};
+    if(bm==='RACHAO'&&be!=='AMB')return {o,v:o.eq[be],m:o.meta.RACHAO*pct(be)};
+    return {o,v:o.real[bm],m:o.meta[bm]};
+  });
+}
+function prdAtendResumo(c,bm,be){
+  const ser=prdSerie(c,bm,be).filter(x=>x.o.tem&&x.m>0);if(!ser.length)return '';
+  const v=ser.reduce((a,x)=>a+x.v,0),m=ser.reduce((a,x)=>a+x.m,0),ok=ser.filter(x=>x.v>=x.m).length;
+  const nome=bm==='T'?'todos os materiais':bm==='RACHAO'&&be!=='AMB'?`rachão no ${be}`:MATN[bm].toLowerCase();
+  return `<p class="note">Atendimento da meta nos dias programados lançados (${esc(nome)}): ${stAd(v/m)} · ${f0(v)} t de ${f0(m)} t · <b>${ok}</b> de ${ser.length} ${ser.length===1?'dia':'dias'} na meta ou acima.</p>`;
+}
+/* Um material só (ou o rachão por equipamento): barras simples, meta do material, % por dia */
+function prdBarrasMat(c,bm,be){
+  const ser=prdSerie(c,bm,be),dois=bm==='RACHAO'&&be==='AMB';
+  const n=c.days.length,L=48,W=Math.max(L+n*18,largGraf(false)),H=250,T=26,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
+  const max=Math.max(1,...ser.map(x=>Math.max(x.v,x.m))),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
+  const Y=v=>ih*v/top,col=MATC[bm],corEq={BM10:'var(--m1)',BMM05:'var(--m3)'};
+  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,n*18+L)}px;max-width:${W}px" role="img" aria-label="Produção por dia de ${esc(MATN[bm])}">`;
+  [0,.5,1].forEach(f=>{const y=T+ih-Y(top*f);s+=`<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+3}" text-anchor="end">${f0(top*f)}</text>`});
+  const stp=Math.max(1,Math.ceil(46/cw));
+  ser.forEach(({o,v,m},i)=>{const x=L+i*cw,bw=Math.min(30,cw*.66),bx=x+(cw-bw)/2,at=o.tem&&m>0?v/m:null;
+    const linhasEq=bm==='RACHAO'?EQS.map(([e,en])=>`<div class='tl'><span>${en}</span><b>${f0(o.eq[e])} t</b></div>`).join(''):'';
+    const tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]}${o.t?' · '+o.t:''} · ${MATN[bm]}${bm==='RACHAO'&&be!=='AMB'?' '+be:''}</div><b>${o.tem?f0(v)+' t':'Sem lançamento'}</b>${dois?linhasEq:''}${m?`<div class='tl'><span>Meta do dia</span><b>${f0(m)} t</b></div>`:''}${at!=null?`<div class='tl'><span>Atendimento</span><b>${pc1(at)}</b></div>`:''}`;
+    s+=`<g class="bd" data-dia="${o.d}" data-tip="${esc(tip)}"><rect class="bg" x="${x}" y="${T}" width="${cw}" height="${ih}" fill="transparent" rx="3"/>`;
+    if(v>0){
+      if(dois){/* BM10 embaixo, BMM05 em cima, 2px de folga */
+        const h1=Y(o.eq.BM10),h2=Y(o.eq.BMM05);let y=T+ih;
+        if(h1>0){y-=h1;s+=`<rect x="${bx}" y="${y+(h2>0?2:0)}" width="${bw}" height="${Math.max(1,h1-(h2>0?2:0))}" fill="${corEq.BM10}" rx="${h2>0?0:3}"/>`}
+        if(h2>0){y-=h2;s+=`<rect x="${bx}" y="${y}" width="${bw}" height="${Math.max(1,h2)}" fill="${corEq.BMM05}" rx="3"/>`}
+      }else{const hh=Y(v);s+=`<rect x="${bx}" y="${T+ih-hh}" width="${bw}" height="${Math.max(1,hh)}" fill="${be!=='AMB'?corEq[be]:col}" rx="3"/>`}
+    }
+    if(m){const ym=T+ih-Y(m);s+=`<line x1="${x+cw*.08}" x2="${x+cw*.92}" y1="${ym}" y2="${ym}" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>`}
+    if(at!=null&&cw>=24){const yt=T+ih-Math.max(Y(v),Y(m))-6;s+=`<text x="${x+cw/2}" y="${Math.max(10,yt)}" text-anchor="middle" style="font:700 ${cw>=34?10.5:9}px var(--mono)" fill="${at>=1?'var(--ok)':at>=.9?'var(--at)':'var(--cr)'}">${at>=1?'▲':'▼'}${Math.round(at*100)}%</text>`}
+    s+='</g>';
+    if(i%stp===0)s+=`<text class="ax" x="${x+cw/2}" y="${H-8}" text-anchor="middle" ${o.d===PR.dia?'fill="var(--ink)" style="font-weight:700"':''}>${ddmm(o.d)}</text>`});
+  const leg=dois?`<span><i style="background:${corEq.BM10}"></i>BM10 · Primário</span><span><i style="background:${corEq.BMM05}"></i>BMM05 · Lokotrack</span>`:`<span><i style="background:${be!=='AMB'?corEq[be]:col}"></i>${MATN[bm]}${be!=='AMB'?' · '+be:''}</span>`;
+  return s+'</svg>'+`<div class="leg">${leg}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>Meta do dia${bm==='RACHAO'&&be!=='AMB'?` (${Math.round((be==='BM10'?c.pctBM:1-c.pctBM)*100)}% da meta de rachão)`:''}</span><span>▲ % = atendimento da meta do dia</span></div>`;
+}
 function prdBarras(c){
   const n=c.days.length,L=48,W=Math.max(L+n*18,largGraf(false)),H=230,T=12,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
   const max=Math.max(1,...c.days.map(o=>Math.max(o.tot,o.metaT))),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
@@ -410,6 +460,9 @@ $('#prdBody').addEventListener('click',e=>{
   const bd=t.closest('g.bd[data-dia]');if(bd){PR.dia=bd.dataset.dia;renderPrdDia();$('#prdDiaBox').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});return}
   const pp=t.closest('[data-prdpar]');if(pp){F.key='custom';F.from=F.to=pp.dataset.prdpar;saveF();renderAll();go('par');return}
   const mr=t.closest('tr[data-prdmes]');if(mr)return prdLoad(mr.dataset.prdmes);
+  const bmb=t.closest('#prdBarMat button,#prdBarEq button');if(bmb){
+    if(bmb.closest('#prdBarMat')){PR.bm=bmb.dataset.v;if(PR.bm!=='RACHAO')PR.be='AMB'}else PR.be=bmb.dataset.v;
+    $('#prdBarsBloco').innerHTML=prdBarrasBloco(PR.c);$$('#prdBarsBloco .swipe').forEach(s=>s.classList.add('in'));return}
   if(t.closest('[data-prdtab]')){PR.tab=!PR.tab;$('#prdTab').innerHTML=PR.tab?prdTabela(PR.c):'';t.closest('[data-prdtab]').textContent=PR.tab?'Esconder a tabela dia a dia':'Ver a tabela dia a dia';return}
   if(t.closest('[data-prdtend]')){PR.tend=!PR.tend;try{localStorage.setItem('hb_tend',PR.tend?'1':'0')}catch(e){}const b=t.closest('[data-prdtend]');b.classList.toggle('on',PR.tend);b.setAttribute('aria-pressed',PR.tend);$('#prdCurva').innerHTML=prdCurva(PR.c,PR.mat);$$('#prdCurva .swipe').forEach(s=>s.classList.add('in'));return}
   const sb=t.closest('#prdMatSeg button');if(sb){PR.mat=sb.dataset.v;$$('#prdMatSeg button').forEach(b=>b.classList.toggle('on',b===sb));$('#prdCurva').innerHTML=prdCurva(PR.c,PR.mat);$$('#prdCurva .swipe').forEach(s=>s.classList.add('in'));return}
