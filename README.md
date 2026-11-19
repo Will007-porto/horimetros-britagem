@@ -84,6 +84,13 @@ supabase/migrations/               SQL das tabelas, funções e permissões
 
 - **17/11/2026** — aba **Produção** (acompanhamento diário com metas, lançamento por turno, curva S e relatório do dia), substituindo a planilha; histórico de set–nov importado. Aba **App (teste)** para testar o app antes do APK. Botão de **tema claro/escuro** no topo; **dia de produção 07:30 → 04:00** em todo o painel e **filtros refeitos** (período com setas, turno, equipamentos por área); linha de tendência e exportação do relatório no modelo da planilha.
 
+## Dividir parada
+
+Quando até um horário foi um motivo e depois foi outro: botão **Dividir** na tabela de Paradas, ou **Dividir esta parada** na janela de justificativa (também aberta clicando na parada no Gantt).
+- Escolha o horário pela régua ou digitando a hora (entende passagem da meia-noite). A tela mostra as duas partes com a duração.
+- A 1ª parte fica com a justificativa atual; a 2ª nasce sem justificativa e abre em seguida para justificar. Parada aberta: a 2ª parte continua aberta até a máquina religar.
+- Mesma regra do app (`app_fracionar_parada`): supervisor divide qualquer uma; operador só no seu turno e setor; manutenção não divide. Mínimo de 2 min depois do início e 1 min antes do fim. Fica registrado no histórico ("Dividiu a parada").
+
 ## Gantt diário
 
 - Mostra o dia de produção inteiro (07:30 → 07:30), com as faixas dos turnos e pausas.

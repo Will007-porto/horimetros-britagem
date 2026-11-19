@@ -308,6 +308,21 @@ svg.ch rect.gp{cursor:pointer}svg.ch rect.gp:hover{stroke:var(--ink);stroke-widt
 @media(max-width:980px){.fbar{gap:6px}.dd{flex:1 1 auto}.ddb{width:100%}.fcount{margin-left:0;flex-basis:100%}#popPer{width:min(540px,calc(100vw - 32px));flex-direction:column}.pres{border-right:0;border-bottom:1px solid var(--line);flex-direction:row;flex-wrap:wrap}.pres button span{display:none}#popAt{width:min(290px,calc(100vw - 32px))}#ddAt .pop{left:auto;right:0}.fempty{margin-left:16px;margin-right:16px}.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px}.navlbl,.sidefoot,.legside,.brandtile .bsub{display:none}.brandtile{padding:9px 12px}.brandtile img{width:110px}.nav{flex-direction:row;flex-wrap:wrap}.pane,.topbar,.appfoot{padding-left:16px;padding-right:16px}.state{margin-left:16px;margin-right:16px}.topbar{flex-direction:column;align-items:flex-start;position:static}.stamp{text-align:left}}
 @media(max-width:980px){#tuSeg,#stSeg{flex:1 1 auto}#tuSeg button,#stSeg button{flex:1}}
 [hidden]{display:none!important}
+/* Dividir parada */
+.divlink{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.divlink .act{display:inline-flex;align-items:center;gap:6px;margin:0}.divlink .act svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.dvbar{position:relative;height:30px;border-radius:8px;overflow:hidden;background:var(--line);margin:4px 0 10px}
+.dvbar i{position:absolute;top:0;bottom:0}
+#dvA{left:0;background:var(--red);opacity:.85}
+#dvB{background:repeating-linear-gradient(45deg,var(--red) 0 2px,rgba(214,69,69,.16) 2px 6px)}
+#dvM{position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:2px}
+#dvR{width:100%;accent-color:var(--navy2);height:28px}
+.dvrow{display:flex;align-items:center;gap:12px;margin-top:6px}.dvrow .tin{width:130px;height:42px;font-size:16px;font-weight:700}
+.dvparts{margin-top:12px;border:1px solid var(--grid);border-radius:10px;overflow:hidden}
+.dvparts div{display:flex;align-items:center;gap:10px;padding:9px 12px;font-size:13px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.dvparts div:last-child{border-bottom:0}.dvparts span{flex:1}
+.dvparts i{width:12px;height:12px;border-radius:3px;flex:none}.dvparts i.a{background:var(--red);opacity:.85}.dvparts i.b{background:repeating-linear-gradient(45deg,var(--red) 0 2px,rgba(214,69,69,.16) 2px 5px);outline:1px solid var(--red)}
+
 /* Carregamento: esqueleto com o formato do painel, sem texto técnico */
 .state.load{border:0;background:none;padding:0;border-radius:0}
 .skg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
@@ -980,7 +995,7 @@ const eqNome=t=>{const e=CAT.eqp.find(x=>x.t===t);return e?e.n:t};
 const motAplicaEq=(m,tag)=>!m.a||m.a.some(x=>x===tag||(x==='TC'&&tag.startsWith('TC')));
 const eqsDaArea=area=>area==='LOKOTRACK'?CAT.eqp.filter(e=>e.v==='LOKOTRACK'):CAT.eqp.filter(e=>e.v===area||e.v==='GERAL');
 const motsDaArea=area=>{const eqs=eqsDaArea(area);return CAT.mot.filter(m=>(!m.ar||m.ar.includes(area))&&(!m.a||eqs.some(e=>motAplicaEq(m,e.t))))};
-const ERR_APP={nao_autorizado:'Seu usuário não tem permissão para isso.',sem_permissao:'Seu usuário não tem permissão para isso.',sem_area:'Seu usuário ainda não tem setor definido.',fora_da_sua_area:'Essa parada não é do seu setor.',parada_de_outro_turno:'Essa parada é do outro turno: quem justifica é o operador daquele turno.',fora_do_turno:'Essa parada é de um turno que já fechou: só o supervisor pode justificar.',ja_justificada:'Essa parada já foi justificada por outra pessoa.',motivo_invalido:'Motivo inválido.',motivo_fora_da_area:'Esse motivo não vale para este setor.',motivo_nao_se_aplica:'Esse motivo não vale para esse equipamento.',equipamento_fora_da_area:'Esse equipamento não é deste setor.',equipamento_invalido:'Escolha o equipamento.',obs_obrigatoria:'Escreva na observação o motivo da correção (mínimo 3 letras).',texto_longo:'Texto muito longo (máx. 500).',nao_justificada:'Essa parada não está justificada.',parada_nao_encontrada:'Essa parada não existe mais.',nao_aguarda_confirmacao:'Essa parada já foi validada por outra pessoa.',acao_invalida:'Ação inválida.'};
+const ERR_APP={quando_no_futuro:'O horário escolhido ainda não chegou.',muito_perto_do_inicio:'Escolha um horário pelo menos 2 minutos depois do início da parada.',muito_perto_do_fim:'Escolha um horário pelo menos 1 minuto antes do fim da parada.',maquina_ja_voltou:'A máquina já religou antes desse horário: atualize a tela, a parada já foi fechada.',tente_de_novo:'Já existe uma divisão nesse mesmo segundo. Escolha outro horário.',parada_nao_encontrada:'Parada não encontrada. Atualize a tela.',nao_autorizado:'Seu usuário não tem permissão para isso.',sem_permissao:'Seu usuário não tem permissão para isso.',sem_area:'Seu usuário ainda não tem setor definido.',fora_da_sua_area:'Essa parada não é do seu setor.',parada_de_outro_turno:'Essa parada é do outro turno: quem justifica é o operador daquele turno.',fora_do_turno:'Essa parada é de um turno que já fechou: só o supervisor pode justificar.',ja_justificada:'Essa parada já foi justificada por outra pessoa.',motivo_invalido:'Motivo inválido.',motivo_fora_da_area:'Esse motivo não vale para este setor.',motivo_nao_se_aplica:'Esse motivo não vale para esse equipamento.',equipamento_fora_da_area:'Esse equipamento não é deste setor.',equipamento_invalido:'Escolha o equipamento.',obs_obrigatoria:'Escreva na observação o motivo da correção (mínimo 3 letras).',texto_longo:'Texto muito longo (máx. 500).',nao_justificada:'Essa parada não está justificada.',parada_nao_encontrada:'Essa parada não existe mais.',nao_aguarda_confirmacao:'Essa parada já foi validada por outra pessoa.',acao_invalida:'Ação inválida.'};
 function errApp(e){const m=(e&&(e.message||e.code))||String(e);const k=Object.keys(ERR_APP).find(k=>m.includes(k));if(k)return ERR_APP[k];if(/JWT|auth|permission denied/i.test(m))return 'Sua sessão expirou. Entre de novo.';if(/fetch|network/i.test(m))return 'Sem resposta do servidor. Confira a internet e tente de novo.';return 'Erro: '+m}
 async function parLoad(force){
   if(!D)return;
@@ -1042,7 +1057,7 @@ function renderPar(){
     <td class="n">${r.min!=null?hm(r.min/60):`<span style="color:var(--muted)">desde ${ago(Date.now()-r.iniMs)}</span>`}</td><td><span class="pill ${sl[0]}">${sl[1]}</span>${r.tp==='programada'?' <span class="pill off">Prog.</span>':''}${vl?` <span class="pill ${vl[0]}" title="${esc(vl[2]+(r.cpor?' · '+r.cpor:'')+(r.cobs?': '+r.cobs:''))}">${vl[1]}</span>`:''}</td>
     <td>${r.cat?`<span class="why">${esc(c2||c1)}</span><span class="wsub">${esc(c2?c1:'')}${r.txt&&r.txt!=='Sem observações.'?`${c2?' · ':''}${esc(r.txt)}`:''}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
     <td class="hm">${esc(r.por||'')}${r.em?`<span class="sub">${dtFmt.format(Date.parse(r.em))}</span>`:''}</td>
-    <td class="n" style="white-space:nowrap">${r.s==='ok'||r.s==='hi'?`<button class="act" data-hist="${esc(r.id)}" title="Quem justificou, validou ou alterou">Histórico</button>`:''}<button class="act ${r.s==='ok'?'':'pri'}" data-jus="${esc(r.id)}">${r.s==='ok'?'Corrigir':'Justificar'}</button></td></tr>`});
+    <td class="n" style="white-space:nowrap">${podeDividir(r)?`<button class="act" data-dividir="${esc(r.id)}" title="Separar esta parada em duas a partir de um horário">Dividir</button>`:''}${r.s==='ok'||r.s==='hi'?`<button class="act" data-hist="${esc(r.id)}" title="Quem justificou, validou ou alterou">Histórico</button>`:''}<button class="act ${r.s==='ok'?'':'pri'}" data-jus="${esc(r.id)}">${r.s==='ok'?'Corrigir':'Justificar'}</button></td></tr>`});
   if(!vis.length)h+=`<tr><td colspan="10"><div class="pempty"><b>${PTAB==='ag'?'Nada aguardando justificativa':'Nenhuma parada aqui'}</b>${PTAB==='ag'&&cnt.ok?'Tudo justificado neste filtro.':(PMODE?'':`Período: ${esc(rLabel())}.`)}${!PMODE&&ps.pend?`<br><button class="btn1" data-pend>Ver todas as ${f0(ps.pend)} pendentes</button>`:''}</div></td></tr>`;
   $('#tP').innerHTML=h+'</tbody>';
   $('#pMore').innerHTML=rows.length>PLIM?`<button class="more btn2" style="margin-top:12px" id="pMoreB">Mostrar mais ${Math.min(60,rows.length-PLIM)} de ${rows.length-PLIM} restantes</button>`:'';
@@ -1087,7 +1102,7 @@ async function openJus(rs){
   const nomeEq=r=>r.mo||(r.eqc?eqNome(r.eqc):AREA_N[areaOf(r)]);
   const list=rs.slice(0,5).map(r=>`<div><span><b>${esc(nomeEq(r))}</b> · ${dtFmt.format(r.iniMs)}</span><span>${r.min!=null?hm(r.min/60):'aberta'}</span></div>`).join('')+(rs.length>5?`<div><span>e mais ${rs.length-5}…</span><span></span></div>`:'')+(rs.length>1?`<div class="tot"><span>Total</span><span>${hm(tot/60)}</span></div>`:'');
   const sup=EU.papel==='supervisor';
-  $('#drwB').innerHTML=`<div class="fs"><h4>Paradas</h4><div class="slist">${list}</div></div>
+  $('#drwB').innerHTML=`<div class="fs"><h4>Paradas</h4><div class="slist">${list}</div>${rs.length===1&&podeDividir(rs[0])?`<div class="divlink"><button type="button" class="act" data-dividir="${esc(rs[0].id)}"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>Dividir esta parada</button><span class="fhint" style="margin:0">Até um horário foi um motivo, depois foi outro? Separe em duas.</span></div>`:''}</div>
    ${JS.area?'':`<div class="warnb">A seleção mistura setores (${areas.map(a=>AREA_N[a]).join(', ')}), que têm motivos diferentes. Justifique um setor por vez.</div>`}
    ${jaJ?`<div class="warnb">${jaJ===rs.length?(rs.length===1?'Esta parada já tem justificativa':'Todas já têm justificativa'):`${jaJ} de ${rs.length} já ${jaJ===1?'tem':'têm'} justificativa`}: a troca fica registrada como <b>correção</b> no histórico${sup?' e precisa de observação.':'. <b>Só o supervisor pode corrigir.</b>'}</div>`:''}
    <div class="fs"><h4>O que aconteceu? <b>*</b></h4><div class="cgrid" id="jG"></div></div>
@@ -1455,6 +1470,66 @@ function appLoad(reload){const f=$('#appFrame');if(!f)return;
     $('#appVer').textContent=v.versao||'—';$('#appData').textContent=v.gerada_em?dtFmt.format(Date.parse(v.gerada_em)):'—'}).catch(()=>{})}
 document.addEventListener('click',e=>{if(e.target.closest('#appReload'))appLoad(true)});
 
+
+/* ---------- DIVIDIR PARADA (até um horário foi um motivo, depois outro) ----------
+   Usa app_fracionar_parada (mesma regra do app): supervisor divide qualquer uma; operador só no
+   seu turno e setor; manutenção não divide. Cada parte precisa de 2 min no começo e 1 min no fim. */
+const DIV_MIN_INI=120e3,DIV_MIN_FIM=60e3;
+const fimDiv=r=>r.fimMs?r.fimMs-DIV_MIN_FIM:Date.now();
+const podeDividir=r=>!!(r&&EU.autorizado&&EU.papel!=='manutencao'&&fimDiv(r)-(r.iniMs+DIV_MIN_INI)>=60e3);
+const diaProd=ms=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(ms-27e6);
+const hm2=ms=>new Intl.DateTimeFormat('pt-BR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}).format(ms);
+function acharParada(id){return (PQ.rows||[]).find(x=>x.id===id)||((GDATA[GDAY]||{}).parN||[]).find(x=>x.id===id)||(JS.rows||[]).find(x=>x.id===id)||null}
+let DV=null;
+function abrirDividir(r){
+  if(!podeDividir(r)){toast('Esta parada é curta demais para dividir.');return}
+  const mn=Math.ceil((r.iniMs+DIV_MIN_INI)/6e4)*6e4,mx=Math.floor(fimDiv(r)/6e4)*6e4;
+  DV={r,mn,mx,t:Math.round((mn+(mx-mn)/2)/6e4)*6e4};
+  const mot=r.cod?motNome(r.cod)+(r.eqc?' · '+r.eqc:''):(r.cat||'').split(SEP).pop();
+  gOpen({k:'Paradas',t:'Dividir parada',ok:'Dividir e justificar a 2ª parte',w:520,
+    body:`<div class="fs"><h4>Parada</h4><div class="slist">
+        <div><span><b>${esc(r.mo)}</b> · ${esc(AREA_N[areaOf(r)]||'')}</span><span>${r.min!=null?hm(r.min/60):'em andamento'}</span></div>
+        <div><span>Início</span><b>${dtFmt.format(r.iniMs)}</b></div>
+        <div><span>Fim</span><b>${r.fimMs?dtFmt.format(r.fimMs):'ainda parada'}</b></div>
+        <div><span>Motivo atual</span><b>${mot?esc(mot):'sem justificativa'}</b></div></div></div>
+      <div class="fs"><h4>Dividir às</h4>
+        <div class="dvbar" aria-hidden="true"><i id="dvA"></i><i id="dvB"></i><b id="dvM"></b></div>
+        <input type="range" id="dvR" min="${mn}" max="${mx}" step="60000" value="${DV.t}" aria-label="Horário da divisão">
+        <div class="dvrow"><input class="tin" type="time" id="dvT" step="60" aria-label="Horário da divisão"><span class="fhint" id="dvLim" style="margin:0"></span></div>
+        <div class="dvparts" id="dvP"></div></div>
+      <div class="fhint">A <b>1ª parte</b> fica com ${mot?'a justificativa atual':'a situação atual (sem justificativa)'}. A <b>2ª parte</b> nasce sem justificativa e abre em seguida para você escolher o motivo.${r.fimMs?'':' Como a parada ainda está aberta, a 2ª parte continua aberta até a máquina religar.'}</div>`,
+    onOk:async()=>{
+      const r0=DV.r,t=DV.t;ULT_SALVO=Date.now();
+      const res=await rpc('app_fracionar_parada',{p_id:r0.id,p_quando:new Date(t).toISOString()});ULT_SALVO=Date.now();
+      toast(`Parada dividida às ${hm2(t)}. Agora justifique a 2ª parte.`);
+      const nova=res&&res.nova;
+      await Promise.all([PQ.rows?parLoad(true):null,GDATA[GDAY]?ganEnsure(true,true):null]);load(true,true);
+      let rn=nova&&acharParada(nova);
+      if(!rn&&nova){try{const d=diaProd(t),x=await rpc('painel_paradas',{p_desde:d,p_ate:d,p_pendentes:false});rn=(x.rows||[]).map(normRow).find(p=>p.id===nova)}catch(e){}}
+      if(rn)setTimeout(()=>openJus([rn]),260);
+    }});
+  dvAtual();
+}
+function dvAtual(){
+  if(!DV||!$('#dvR'))return;const {r,mn,mx}=DV;const t=Math.min(mx,Math.max(mn,DV.t));DV.t=t;
+  const fim=r.fimMs||Date.now(),tot=fim-r.iniMs,p=(t-r.iniMs)/tot*100;
+  $('#dvA').style.width=p+'%';$('#dvB').style.left=p+'%';$('#dvB').style.width=(100-p)+'%';$('#dvM').style.left=p+'%';
+  $('#dvR').value=t;const tv=hm2(t);if($('#dvT').value!==tv)$('#dvT').value=tv;
+  $('#dvLim').textContent=`entre ${hm2(mn)} e ${hm2(mx)}`;
+  const d1=(t-r.iniMs)/36e5,d2=(fim-t)/36e5;
+  $('#dvP').innerHTML=`<div><i class="a"></i><span><b>1ª parte</b> ${hm2(r.iniMs)} → ${tv}</span><b>${hm(d1)}</b></div><div><i class="b"></i><span><b>2ª parte</b> ${tv} → ${r.fimMs?hm2(r.fimMs):'agora'}</span><b>${r.fimMs?hm(d2):hm(d2)+'+'}</b></div>`;
+}
+$('#gB').addEventListener('input',e=>{if(!DV)return;
+  if(e.target.id==='dvR'){DV.t=+e.target.value;dvAtual()}
+  if(e.target.id==='dvT'&&/^\d\d:\d\d$/.test(e.target.value)){
+    /* hora digitada → o instante dentro da parada (pode passar da meia-noite) */
+    const [h,m]=e.target.value.split(':').map(Number),{mn,mx}=DV;
+    const base=new Date(new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(DV.r.iniMs)+'T00:00:00-03:00').getTime();
+    let t=base+(h*60+m)*6e4;while(t<mn-6e4&&t<mx+864e5)t+=864e5;
+    if(t>=mn&&t<=mx){DV.t=t;dvAtual()}}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-dividir]');if(!b)return;e.preventDefault();
+  const r=acharParada(b.dataset.dividir);if(!r){toast('Parada não encontrada. Atualize a tela.');return}
+  if($('#drw').classList.contains('open'))closeJus();abrirDividir(r)});
 /* ---------- EQUIPE ---------- */
 let EQ={rows:null,err:null};
 const AREA_LISTA=[['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack'],['AMBOS','Todas']];
