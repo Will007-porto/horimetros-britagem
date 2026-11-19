@@ -89,7 +89,7 @@ function renderPrd(anima){
   const B=$('#prdBody');
   if(!PR.c){$('#prdStamp').innerHTML='';$('#p-prd').classList.remove('carregado');
     B.innerHTML=PR.err?`<div class="box"><div class="pempty"><b>Não foi possível carregar a produção</b>${esc(errApp(PR.err))}<br><button class="btn1" type="button" data-prdre>Tentar de novo</button></div></div>`
-      :`<div class="box"><div class="boxb" style="border:0;padding-top:16px"><div class="gmsg">Buscando a produção de ${esc(mesTxt(PR.mes))}…</div><div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div></div></div>`;return}
+      :`<div class="box"><div class="boxb" style="border:0;padding-top:16px"><span class="sr">Carregando a produção</span><div class="skel" style="width:40%;height:28px"></div><div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div></div></div>`;return}
   $('#p-prd').classList.add('carregado');
   const c=PR.c,ref=c.ref;
   $('#prdStamp').innerHTML=ref?`Atualizado até <b>${dmy(ref)}</b><br>${c.diasCom} ${c.diasCom===1?'dia lançado':'dias lançados'}`:'Sem lançamentos<br>neste mês';

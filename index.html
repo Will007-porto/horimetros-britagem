@@ -15,6 +15,8 @@
 <meta name="apple-mobile-web-app-title" content="Britagem">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://mygzyalhxlpsutbdauhp.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -154,6 +156,7 @@ table.tb{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
 .tright{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .stamp{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;text-align:right;line-height:1.5}
 .stamp b{color:var(--ink2);font-weight:600}
+.aovivo{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:1px;box-shadow:0 0 0 0 rgba(46,158,107,.5);animation:pulse 2s infinite}
 /* state banner */
 .state{margin:24px 36px 0;border:1px solid var(--grid);border-left:5px solid var(--orange);background:var(--card);border-radius:12px;padding:18px 20px;display:none}
 .state.show{display:block}
@@ -305,6 +308,17 @@ svg.ch rect.gp{cursor:pointer}svg.ch rect.gp:hover{stroke:var(--ink);stroke-widt
 @media(max-width:980px){.fbar{gap:6px}.dd{flex:1 1 auto}.ddb{width:100%}.fcount{margin-left:0;flex-basis:100%}#popPer{width:min(540px,calc(100vw - 32px));flex-direction:column}.pres{border-right:0;border-bottom:1px solid var(--line);flex-direction:row;flex-wrap:wrap}.pres button span{display:none}#popAt{width:min(290px,calc(100vw - 32px))}#ddAt .pop{left:auto;right:0}.fempty{margin-left:16px;margin-right:16px}.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px}.navlbl,.sidefoot,.legside,.brandtile .bsub{display:none}.brandtile{padding:9px 12px}.brandtile img{width:110px}.nav{flex-direction:row;flex-wrap:wrap}.pane,.topbar,.appfoot{padding-left:16px;padding-right:16px}.state{margin-left:16px;margin-right:16px}.topbar{flex-direction:column;align-items:flex-start;position:static}.stamp{text-align:left}}
 @media(max-width:980px){#tuSeg,#stSeg{flex:1 1 auto}#tuSeg button,#stSeg button{flex:1}}
 [hidden]{display:none!important}
+/* Carregamento: esqueleto com o formato do painel, sem texto técnico */
+.state.load{border:0;background:none;padding:0;border-radius:0}
+.skg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.skc{height:98px;border-radius:12px;background:var(--card);border:1px solid var(--grid);position:relative;overflow:hidden}
+.skc::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--soft),transparent);transform:translateX(-100%);animation:skm 1.3s ease-in-out infinite}
+@keyframes skm{to{transform:translateX(100%)}}
+.skb{height:280px;margin-top:16px}.skb2{height:180px;margin-top:16px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media(max-width:1100px){.skg{grid-template-columns:1fr 1fr}}
+@media(max-width:980px){.state{margin:16px 16px 0}}
+
 /* PWA: aviso de nova versão (só recarrega quando o usuário toca em Atualizar) */
 .pwaup{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:calc(100vw - 32px);background:var(--card);color:var(--ink);border:1px solid var(--grid);border-left:4px solid var(--orange);border-radius:12px;padding:12px 14px;box-shadow:0 12px 32px rgba(0,28,84,.25);font-size:13px}
 .pwaup[hidden]{display:none}.pwaup .btn1{height:36px}
@@ -419,7 +433,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
   </nav>
   <div class="navlbl">Legenda</div>
   <div class="legside"><div><i style="background:var(--green)"></i>Ligado agora</div><div><i style="background:var(--off)"></i>Desligado</div><div><i style="background:var(--orange)"></i>Sem sinal há +24h</div></div>
-  <div class="sidefoot" id="sidefoot">Britagem<br>Fonte: Supabase<br>Carregando…</div>
+  <div class="sidefoot" id="sidefoot">Britagem<br>Construtora Tripoloni Ltda.</div>
 </aside>
 <main>
   <div class="topbar">
@@ -427,7 +441,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
     <div class="tright">
       <div class="stamp" id="stamp">Carregando dados…</div>
       <button class="pbtn" id="btnUser" title="Entrar para justificar paradas"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg><span id="userLbl">Entrar</span></button>
-      <button class="pbtn" id="btnRef" title="Buscar dados novos no Supabase"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Atualizar</button>
+      <button class="pbtn" id="btnRef" title="Buscar os dados mais recentes agora"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>Atualizar</button>
       <button class="pbtn" id="btnInstalar" type="button" hidden title="Instalar o painel como aplicativo neste aparelho"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Instalar app</button>
       <button class="pbtn" id="btnTema" type="button" title="Trocar entre tema claro e escuro"><svg viewBox="0 0 24 24" id="temaIco"></svg><span id="temaLbl">Tema</span></button>
       <button class="pbtn" id="btnPrint" title="Imprimir em A3 paisagem"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Imprimir A3</button>
@@ -478,7 +492,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
   </div>
   <div class="fempty" id="fempty"><span>Nenhum ativo corresponde aos filtros escolhidos.</span><button class="btn1" data-clear>Limpar filtros</button></div>
 
-  <div class="state load show" id="state"><h3>Buscando dados no Supabase…</h3><p>Lendo eventos dos motores, horímetros e paradas do projeto HORIMETROS BRITAGEM.</p><div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div></div>
+  <div class="state load show" id="state" aria-busy="true"><div class="skg"><div class="skc"></div><div class="skc"></div><div class="skc"></div><div class="skc"></div></div><div class="skc skb"></div><div class="skc skb2"></div><span class="sr">Carregando o painel</span></div>
 
   <!-- VISÃO GERAL -->
   <section class="pane" id="p-geral">
@@ -616,7 +630,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
     </div>
   </section>
 
-  <div class="appfoot"><span>Tripoloni Construtora · Britagem</span><span id="footsrc">Fonte: Supabase · HORIMETROS BRITAGEM</span></div>
+  <div class="appfoot"><span>Construtora Tripoloni Ltda. · Britagem Irati</span><span id="footsrc">Painel da britagem · dados em tempo real</span></div>
 </main>
 </div>
 
@@ -683,8 +697,10 @@ const PNAME=Object.fromEntries(PRESETS);
 const OPEN=new Set();
 
 /* ---------- data load ---------- */
+const SKEL='<div class="skg"><div class="skc"></div><div class="skc"></div><div class="skc"></div><div class="skc"></div></div><div class="skc skb"></div><div class="skc skb2"></div><span class="sr">Carregando o painel</span>';
 function showState(kind,title,body,btn){
   const s=$('#state');s.className='state show'+(kind==='load'?' load':'');
+  if(kind==='load'){s.setAttribute('aria-busy','true');s.innerHTML=SKEL;return}s.removeAttribute('aria-busy');
   s.innerHTML=`<h3>${esc(title)}</h3><p>${body}</p>`+(kind==='load'?'<div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div>':'')+(btn?`<button class="pbtn" id="stBtn"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>${esc(btn)}</button>`:'');
   const b=$('#stBtn');if(b)b.onclick=()=>load(true);
 }
@@ -696,12 +712,19 @@ let busy=false;
 /* Leitura dos dados. silencioso = atualização automática: troca só os números, sem barra de progresso,
    sem animação de entrada e sem banner por cima do que já está na tela. Nunca recarrega a página. */
 let ULT_OK=0,ULT_ERRO=null;
+/* Última leitura guardada neste aparelho, presa ao usuário logado: o painel abre na hora com ela
+   e atualiza por trás. Apagada ao sair. */
+const CACHE_K='hb_cache_v1';
+function uidSessao(){try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^sb-.*-auth-token$/.test(k)){const v=JSON.parse(localStorage.getItem(k)||'null');return (v&&v.user&&v.user.id)||null}}}catch(e){}return null}
+function cacheGravar(){try{if(EU&&EU.uid&&D)localStorage.setItem(CACHE_K,JSON.stringify({uid:EU.uid,eu:EU,d:D,em:Date.now()}))}catch(e){}}
+function cacheLer(){try{const c=JSON.parse(localStorage.getItem(CACHE_K)||'null'),u=uidSessao();if(c&&u&&c.uid===u&&c.d&&c.eu&&Date.now()-c.em<7*864e5)return c}catch(e){}return null}
+function cacheApagar(){try{localStorage.removeItem(CACHE_K)}catch(e){}}
 async function load(force,silencioso){
   if(busy)return;busy=true;$('#btnRef').classList.add('spin');if(!silencioso)prog(25);
   try{
-    if(!D)showState('load','Buscando dados no Supabase…','Lendo eventos dos motores, horímetros e paradas.');
+    if(!D)showState('load');
     if(!silencioso)prog(55);
-    D=await rpc('painel_dados');ULT_OK=Date.now();ULT_ERRO=null;
+    D=await rpc('painel_dados');ULT_OK=Date.now();ULT_ERRO=null;cacheGravar();
     hideState();if(!silencioso)prog(100);renderAll(silencioso);
   }catch(e){
     if(!silencioso)prog(100);
@@ -766,9 +789,9 @@ addEventListener('resize',()=>{clearTimeout(RSZ);RSZ=setTimeout(()=>{if(Math.abs
 /* "Atualizado há X" no topo, com o horário exato no título */
 function stampTick(){
   const e=$('#stamp');if(!e)return;
-  if(!ULT_OK){e.textContent='Carregando dados…';return}
+  if(!ULT_OK){e.innerHTML=D?'Atualizando…':'Carregando…';return}
   const s=Math.max(0,Math.round((Date.now()-ULT_OK)/1000)),txt=s<10?'agora':s<60?`há ${s} s`:s<3600?`há ${Math.floor(s/60)} min`:`há ${Math.floor(s/3600)} h`;
-  e.innerHTML=`Atualizado <b>${txt}</b><br>${ULT_ERRO?`<span style="color:var(--orange)">${esc(ULT_ERRO)} · tentando de novo</span>`:RT_OK?'ao vivo · Supabase':'Lido do Supabase'}`;
+  e.innerHTML=`Atualizado <b>${txt}</b><br>${ULT_ERRO?`<span style="color:var(--orange)">${esc(ULT_ERRO)} · tentando de novo</span>`:RT_OK?'<span class="aovivo"></span>ao vivo':'atualiza sozinho'}`;
   e.title=`Última leitura: ${dtFmt.format(ULT_OK)}${D&&D.gerado?` (dados do servidor de ${dtFmt.format(Date.parse(D.gerado))})`:''}. Atualiza sozinho, sem recarregar a página.`;
 }
 setInterval(()=>{if(document.visibilityState==='visible')stampTick()},5000);
@@ -979,7 +1002,7 @@ function renderPar(){
   $('#pMode').checked=PMODE;
   if(!PQ.rows){
     $('#kP').innerHTML='';$('#cP1').innerHTML=$('#cP2').innerHTML='';$('#pTabs').innerHTML='';$('#pMore').innerHTML='';$('#bulk').classList.remove('show');
-    $('#tP').innerHTML=`<tbody><tr><td>${PQ.err?`<div class="pempty"><b>Não foi possível carregar as paradas</b>${esc(PQ.err.code||PQ.err.message||'erro')}<br><button class="btn1" onclick="parLoad(true)">Tentar de novo</button></div>`:'<div class="gmsg">Buscando paradas no Supabase…</div><div class="skel" style="width:80%"></div><div class="skel" style="width:55%"></div>'}</td></tr></tbody>`;
+    $('#tP').innerHTML=`<tbody><tr><td>${PQ.err?`<div class="pempty"><b>Não foi possível carregar as paradas</b>${esc(PQ.err.code||PQ.err.message||'erro')}<br><button class="btn1" onclick="parLoad(true)">Tentar de novo</button></div>`:'<span class="sr">Carregando paradas</span><div class="skel" style="width:80%"></div><div class="skel" style="width:55%"></div>'}</td></tr></tbody>`;
     $('#nP').textContent='';return}
   const all=parRows();
   const cnt={todas:all.length,ag:0,ab:0,ok:0,hi:0};all.forEach(r=>cnt[r.s]++);
@@ -1147,7 +1170,7 @@ async function ganEnsure(force,silencioso){
   const opts=[...$('#gDay').options].map(o=>o.value),i=opts.indexOf(GDAY);
   $('#gPrev').disabled=i>=opts.length-1;$('#gNext').disabled=i<=0;$('#gToday').classList.toggle('on',GDAY===D.hoje);$('#gMerge').classList.toggle('on',GMERGE);
   if(GDATA[GDAY]&&!force){renderGan();return}
-  const want=GDAY;if(!(silencioso&&GDATA[want]))$('#cGan').innerHTML='<div class="gmsg">Buscando os períodos ligados de '+ddmm(want)+'…</div><div class="skel" style="width:80%"></div><div class="skel" style="width:60%"></div>';
+  const want=GDAY;if(!(silencioso&&GDATA[want]))$('#cGan').innerHTML='<span class="sr">Carregando</span><div class="skel" style="width:80%"></div><div class="skel" style="width:60%"></div>';
   try{
     GDATA[want]=await rpc('painel_gantt',{p_dia:want});if(GDAY===want)renderGan();
   }catch(e){if(GDAY===want)$('#cGan').innerHTML=`<div class="gmsg">Não foi possível buscar este dia (${esc(e&&(e.message||e.code)||'erro')}). <button class="pbtn" style="display:inline-flex;margin-left:8px" onclick="ganEnsure(true)">Tentar de novo</button></div>`}
@@ -1332,7 +1355,7 @@ function navVis(){
 async function gate(){
   await refreshEU();
   if(EU.logado&&EU.autorizado){if(EU.papel==='supervisor'||EU.papel==='manutencao')valLoad();return true}
-  D=null;$$('.pane').forEach(s=>s.classList.remove('on'));
+  D=null;cacheApagar();$$('.pane').forEach(s=>s.classList.remove('on'));
   if(!EU.logado){showState('err','Entre para ver o painel','Use o mesmo <b>nome e PIN</b> do aplicativo Paradas Britagem.','Entrar');$('#stBtn').onclick=()=>openLogin();openLogin()}
   else{showState('err','Acesso ainda não liberado','Você entrou como <b>'+esc(EU.nome||'usuário sem cadastro')+'</b>, mas seu acesso ainda não foi liberado pelo supervisor.','Sair');$('#stBtn').onclick=()=>sb.auth.signOut()}
   return false;
@@ -1358,7 +1381,7 @@ $('#lgForm').onsubmit=async e=>{e.preventDefault();const b=$('#lgBtn');
   if(await gate()){toast(`Bem-vindo, ${EU.nome}`);await load(true);rtLigar()}};
 $('#lgSair').onclick=async()=>{await sb.auth.signOut();closeLogin();toast('Você saiu.')};
 /* Só reage a mudança real de estado: saiu → tela de login; token renovado → só confere o papel, sem redirecionar */
-sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){rtDesligar();gate()}else if(ev==='USER_UPDATED'){refreshEU()}});
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){cacheApagar();rtDesligar();gate()}else if(ev==='USER_UPDATED'){refreshEU()}});
 
 /* ---------- janela genérica ---------- */
 let GO=null;
@@ -1538,7 +1561,7 @@ function renderAll(silencioso){
   const g=Date.parse(D.gerado);
   stampTick();
   const pl=(D.placa||[])[0];
-  $('#sidefoot').innerHTML=`Britagem${pl?`<br>Placa ${esc(pl.id)}`:''}<br>Fonte: Supabase<br>Lido ${esc(dtFmt.format(g))}`;
+  $('#sidefoot').innerHTML=`Britagem${pl?`<br>Placa ${esc(pl.id)}`:''}<br>Construtora Tripoloni Ltda.`;
   $$('.pfil').forEach(e=>e.innerHTML=`Dados de ${esc(dtFmt.format(g))}<br>Período: ${esc(rLabel())} · ${esc(atTxt())}`);
   renderFilters();
   if(silencioso)revelarJa();else reveal();
@@ -1591,7 +1614,18 @@ try{const q=new URLSearchParams(location.search),ab=q.get('aba');if(ab&&TITLES[a
    sem voltar ao topo e sem refazer animação (antes, a cada 2 min a página pulava para o topo e piscava). */
 const _render=renderAll;renderAll=function(silencioso){_render(silencioso);if(silencioso)$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+PANE&&!!D));else go(PANE)};
 go(PANE);
-(async()=>{if(await gate()){await load(false);rtLigar()}})();
+(async()=>{
+  /* 1) abre na hora com a última leitura deste usuário (se houver) */
+  const c=cacheLer();
+  if(c){EU=c.eu;D=c.d;hideState();$('#userLbl').textContent=EU.nome||'Conectado';navVis();try{renderAll()}catch(e){D=null;showState('load')}}
+  /* 2) busca os dados junto com a conferência do login, em paralelo */
+  const pD=uidSessao()?rpc('painel_dados').then(d=>({d}),e=>({e})):null;
+  if(!(await gate()))return;
+  const r=pD?await pD:null;
+  if(r&&r.d){D=r.d;ULT_OK=Date.now();ULT_ERRO=null;hideState();renderAll(!!c);cacheGravar();stampTick()}
+  else await load(false,!!c);
+  rtLigar();
+})();
 
 /* ---------- PWA: instalar no celular/computador e atualizar versão ---------- */
 let PWA_EVT=null,PWA_PEDIU=false,PWA_RECARREGOU=false;

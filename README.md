@@ -100,6 +100,13 @@ O painel pode ser instalado no celular ou no computador como aplicativo (ícone 
 - Versão nova do `sw.js` não assume sozinha: aparece o aviso "Nova versão do painel disponível" e só recarrega quando o usuário toca em **Atualizar** (uma vez só). Ao mudar `sw.js`, troque a constante `VERSAO`.
 - Ícones em `icons/` (símbolo da Tripoloni sobre o azul do painel), `manifest.webmanifest` na raiz.
 
+## Abertura rápida
+
+- Consulta principal (`painel_dados`) em ~0,2 s (era ~4,2 s): ver `supabase/migrations/20261119_painel_dados_rapido.sql`.
+- O painel guarda a última leitura no aparelho (`hb_cache_v1`, presa ao usuário logado, válida por 7 dias): ao abrir, mostra na hora e atualiza por trás ("Atualizando…" no topo). Apagada ao sair ou se o login for recusado.
+- Os dados são pedidos junto com a conferência do login (em paralelo), e as conexões com o banco e a CDN são abertas antes (preconnect).
+- Carregamento sem texto técnico: esqueleto com o formato do painel.
+
 ## Atualização automática (sem recarregar)
 
 - O site nunca recarrega a página sozinho. Os dados chegam pelo **Supabase Realtime** (paradas, produção e status das máquinas) e, de reserva, a cada **60 s** com a aba visível.

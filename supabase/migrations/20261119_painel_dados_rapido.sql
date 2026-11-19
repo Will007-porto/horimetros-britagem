@@ -1,0 +1,18 @@
+-- painel_dados 20x mais rápido (aplicada em 19/11/2026 como "painel_dados_rapido" e "painel_dados_rapido_2")
+-- Antes: ~4,2 s. Depois: ~0,21 s. Mesmos números (conferido em 13/11: horas, horas por turno e partidas por turno).
+--
+-- Gargalo 1 (3,7 s): as horas por dia cruzavam cada período ligado com cada dia chamando
+--   inicio_dia_producao() a cada comparação (~600 mil vezes). Agora 'dias' é materializado uma vez
+--   com d0/d1 (início e fim do dia de produção).
+-- Gargalo 2 (0,2 s): as horas por turno cruzavam todos os períodos com todas as janelas.
+--   Agora cada período é cortado por dia de produção uma vez ('segd') e só cruza as janelas do mesmo dia.
+--
+-- Trecho que mudou (resto igual a 20261117_partidas_por_turno):
+--   dias as materialized (select d::date d, inicio_dia_producao(d::date) d0, inicio_dia_producao(d::date + 1) d1
+--     from generate_series(hoje - 89, hoje, interval '1 day') d),
+--   segd as materialized (select s.m, dd.d, greatest(s.a, dd.d0) a, least(s.b, dd.d1) b
+--     from seg s join dias dd on s.a < dd.d1 and s.b > dd.d0),
+--   hd  as (select m, d, sum(extract(epoch from b - a)) / 3600 h from segd group by 1, 2),
+--   jw  as materialized (select * from janelas_produtivas(...)),
+--   hjc as (... from segd s join jw j on j.dia = s.d and s.a < j.fim and s.b > j.inicio ...)
+-- Corpo completo: ver no banco (pg_get_functiondef('public.painel_dados'::regproc)).
