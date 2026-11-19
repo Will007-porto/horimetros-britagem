@@ -138,6 +138,10 @@ function renderPrd(anima){
       <div class="prdtab"><button type="button" class="fclear" data-prdtab>${PR.tab?'Esconder a tabela dia a dia':'Ver a tabela dia a dia'}</button></div>
       <div class="scrollx" id="prdTab">${PR.tab?prdTabela(c):''}</div></div></div></div></div>`;
 
+  /* saldo de material: BM10 = rachão que ficou rachão + finos do secundário; BMM05 à parte */
+  h+=`<div class="box rv" id="prdSaldoBox"><button class="boxh">${icoBox('<path d="M4 6h16M4 12h10M4 18h6"/><path d="M17 15l3 3-3 3"/>')}<div><div class="tt">Saldo de material</div><div class="kk">Britado = BM10 (rachão + finos do secundário) + BMM05</div></div>${chevS}</button>
+    <div class="cwrap"><div class="cinner"><div class="boxb" id="prdSaldoIn">${prdSaldoBloco(c)}</div></div></div></div>`;
+
   /* equipamentos + meses */
   h+=`<div class="two">
     <div class="box rv"><button class="boxh">${icoBox('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h10v2M7 13h4"/>')}<div><div class="tt">Rachão por equipamento</div><div class="kk">BM10 × BMM05 · meta ${Math.round(c.pctBM*100)}% / ${Math.round((1-c.pctBM)*100)}%</div></div>${chevS}</button>
@@ -185,6 +189,7 @@ function renderPrdDia(){
   else h+=`<div class="pempty"><b>${fut?'Dia ainda não chegou':'Sem lançamento neste dia'}</b>${o.metaT?`Meta do dia: ${f0(o.metaT)} t.`:''}${sup&&!fut?'<br><button class="btn1" type="button" data-prdlanc>Lançar este dia</button>':''}</div>`;
   h+=`</div><div class="pdpar">${prdParHtml(o.d)}</div></div>`;
   box.innerHTML=h;
+  if($('#prdSaldoIn'))$('#prdSaldoIn').innerHTML=prdSaldoBloco(c); /* o saldo acompanha o dia escolhido */
   prdParadas(o.d);
 }
 async function prdParadas(dia){
@@ -308,6 +313,50 @@ function prdTabela(c){
   c.days.filter(o=>o.w>0||o.tem).forEach(o=>{const dv=o.tot-o.metaT;
     h+=`<tr><td class="m">${ddmm(o.d)}<span class="sub">${WDN[wd(o.d)]}${o.t?' · '+o.t:''}</span></td>${MATS.map(([k])=>`<td class="n">${o.tem?f0(o.real[k]):'—'}</td>`).join('')}<td class="n" style="font-weight:700;color:var(--ink)">${o.tem?f0(o.tot):'—'}</td><td class="n">${o.metaT?f0(o.metaT):'—'}</td><td class="n" style="color:${!o.tem?'var(--muted)':dv>=0?'var(--ok)':'var(--cr)'}">${o.tem?(dv>=0?'▲ +':'▼ ')+f0(dv):'—'}</td></tr>`});
   h+=`<tr class="tot"><td>Total</td>${MATS.map(([k])=>`<td class="n">${f0(c.real[k])}</td>`).join('')}<td class="n">${f0(c.realT)}</td><td class="n">${f0(c.metaT)}</td><td class="n">${f0(c.realT-c.metaT)}</td></tr></tbody></table>`;
+  return h;
+}
+/* ---------- SALDO DE MATERIAL ----------
+   Tudo o que sai do secundário (Brita 01, Pó, Brita 02) vem do BM10. Então:
+   BM10 britado = rachão do BM10 (o que ficou rachão) + finos do secundário; o BMM05 só faz rachão.
+   Britado total = BM10 + BMM05. Rachão total = rachão do BM10 + BMM05. */
+function prdSaldo(c,dia,soDia){
+  const dd=c.days.filter(o=>soDia?o.d===dia:(!dia||o.d<=dia));const s={rBM:0,rMM:0,b1:0,po:0,b2:0};
+  dd.forEach(o=>{s.rBM+=o.eq.BM10;s.rMM+=o.eq.BMM05;s.b1+=o.real.BRITA01;s.po+=o.real.PO;s.b2+=o.real.BRITA02});
+  s.finos=s.b1+s.po+s.b2;s.bm10=s.rBM+s.finos;s.total=s.bm10+s.rMM;s.rach=s.rBM+s.rMM;return s;
+}
+const pcS=(a,b)=>b?Math.round(a*1000/b)/10:0;
+const fmtPc=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+/* barra de composição: segmentos proporcionais com rótulo dentro quando cabe */
+function sldBarra(titulo,total,segs){
+  const tot=segs.reduce((a,x)=>a+x.v,0)||1;
+  return `<div class="sldl"><div class="sldt"><b>${titulo}</b><span>${f0(total)} t</span></div><div class="sldb" role="img" aria-label="${esc(titulo+': '+segs.map(x=>`${x.n} ${f0(x.v)} t`).join(', '))}">${segs.filter(x=>x.v>0).map(x=>{const p=x.v*100/tot;
+    return `<i class="${x.cl||''}" style="width:${p}%;background-color:${x.c}" data-tip="${esc(`<div class='m'>${titulo}</div><b>${x.n}</b><div class='tl'><span>Toneladas</span><b>${f0(x.v)} t</b></div><div class='tl'><span>Parte</span><b>${fmtPc(p)}</b></div>`)}">${p>=9?`<span>${esc(x.curto||x.n)} ${Math.round(p)}%</span>`:''}</i>`}).join('')}</div></div>`;
+}
+const SLD_SEGS=s=>({
+  total:[{n:'Rachão do BM10',curto:'Rachão BM10',v:s.rBM,c:'var(--m1)'},{n:'Brita 01',v:s.b1,c:'var(--m2)'},{n:'Pó de pedra',curto:'Pó',v:s.po,c:'var(--m3)'},{n:'Brita 02',v:s.b2,c:'var(--m4)'},{n:'Rachão do BMM05 (Lokotrack)',curto:'BMM05',v:s.rMM,c:'var(--m1)',cl:'lok'}],
+  bm10:[{n:'Ficou rachão',curto:'Rachão',v:s.rBM,c:'var(--m1)'},{n:"Virou finos no secundário",curto:"Finos",v:s.finos,c:"var(--mfin)"}],
+  finos:[{n:'Brita 01',v:s.b1,c:'var(--m2)'},{n:'Pó de pedra',curto:'Pó',v:s.po,c:'var(--m3)'},{n:'Brita 02',v:s.b2,c:'var(--m4)'}],
+  rach:[{n:'BM10 · Primário',curto:'BM10',v:s.rBM,c:'var(--m1)'},{n:'BMM05 · Lokotrack',curto:'BMM05',v:s.rMM,c:'var(--m1)',cl:'lok'}]});
+function prdSaldoBloco(c){
+  const modo=PR.sm||'M',dia=modo==='D'?PR.dia:(c.ref||PR.dia),s=prdSaldo(c,dia,modo==='D'),g=SLD_SEGS(s);
+  const seg=segHtml('prdSaldoSeg',[['M',`Mês até ${dia?ddmm(dia):'—'}`],['D',`Só o dia ${PR.dia?ddmm(PR.dia):'—'}`]],modo);
+  if(!s.total)return `<div class="prdbarf">${seg}</div><div class="pempty"><b>Sem produção lançada ${modo==='D'?'neste dia':'neste mês'}</b></div>`;
+  let h=`<div class="prdbarf">${seg}</div><div class="sldk">
+    <div><span>Britado total</span><b>${f0(s.total)}<small>t</small></b><em>BM10 + BMM05</em></div>
+    <div><span>BM10 · primário</span><b>${f0(s.bm10)}<small>t</small></b><em>${fmtPc(pcS(s.bm10,s.total))} do britado</em></div>
+    <div><span>Finos do secundário</span><b>${f0(s.finos)}<small>t</small></b><em>${fmtPc(pcS(s.finos,s.bm10))} do que o BM10 britou</em></div>
+    <div><span>BMM05 · Lokotrack</span><b>${f0(s.rMM)}<small>t</small></b><em>${fmtPc(pcS(s.rMM,s.total))} do britado</em></div></div>
+    <div class="sld">${sldBarra('Britado total',s.total,g.total)}${sldBarra('BM10 · primário',s.bm10,g.bm10)}${sldBarra('Finos do secundário',s.finos,g.finos)}${sldBarra('Rachão total',s.rach,g.rach)}</div>
+    <div class="leg"><span><i style="background:var(--m1)"></i>Rachão do BM10</span><span><i class="lok" style="background-color:var(--m1)"></i>Rachão do BMM05</span><span><i style="background:var(--mfin)"></i>Finos (secundário)</span>${MATS.slice(1).map(([,n,col])=>`<span><i style="background:${col}"></i>${n}</span>`).join('')}</div>`;
+  h+=`<div class="prdtab"><button type="button" class="fclear" data-sldtab>${PR.stab?'Esconder o saldo dia a dia':'Ver o saldo dia a dia'}</button></div><div class="scrollx" id="sldTab">${PR.stab?prdSaldoTabela(c):''}</div>`;
+  return h;
+}
+function prdSaldoTabela(c){
+  const lin=c.days.filter(o=>o.tem);
+  let h=`<table class="tb"><thead><tr><th>Dia</th><th class="n">Rachão BM10</th><th class="n">Brita 01</th><th class="n">Pó</th><th class="n">Brita 02</th><th class="n">Finos</th><th class="n">BM10 total</th><th class="n hm">% finos</th><th class="n">BMM05</th><th class="n">Britado</th></tr></thead><tbody>`;
+  lin.forEach(o=>{const s=prdSaldo(c,o.d,true);h+=`<tr><td class="m">${ddmm(o.d)}<span class="sub">${WDN[wd(o.d)]}</span></td><td class="n">${f0(s.rBM)}</td><td class="n">${f0(s.b1)}</td><td class="n">${f0(s.po)}</td><td class="n">${f0(s.b2)}</td><td class="n">${f0(s.finos)}</td><td class="n" style="font-weight:700;color:var(--ink)">${f0(s.bm10)}</td><td class="n hm">${fmtPc(pcS(s.finos,s.bm10))}</td><td class="n">${f0(s.rMM)}</td><td class="n" style="font-weight:700;color:var(--ink)">${f0(s.total)}</td></tr>`});
+  const t=prdSaldo(c,c.ref);
+  h+=`<tr class="tot"><td>Total</td><td class="n">${f0(t.rBM)}</td><td class="n">${f0(t.b1)}</td><td class="n">${f0(t.po)}</td><td class="n">${f0(t.b2)}</td><td class="n">${f0(t.finos)}</td><td class="n">${f0(t.bm10)}</td><td class="n hm">${fmtPc(pcS(t.finos,t.bm10))}</td><td class="n">${f0(t.rMM)}</td><td class="n">${f0(t.total)}</td></tr></tbody></table>`;
   return h;
 }
 function prdMeses(){
@@ -460,6 +509,8 @@ $('#prdBody').addEventListener('click',e=>{
   const bd=t.closest('g.bd[data-dia]');if(bd){PR.dia=bd.dataset.dia;renderPrdDia();$('#prdDiaBox').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});return}
   const pp=t.closest('[data-prdpar]');if(pp){F.key='custom';F.from=F.to=pp.dataset.prdpar;saveF();renderAll();go('par');return}
   const mr=t.closest('tr[data-prdmes]');if(mr)return prdLoad(mr.dataset.prdmes);
+  const sgb=t.closest('#prdSaldoSeg button');if(sgb){PR.sm=sgb.dataset.v;$('#prdSaldoIn').innerHTML=prdSaldoBloco(PR.c);return}
+  if(t.closest('[data-sldtab]')){PR.stab=!PR.stab;$('#prdSaldoIn').innerHTML=prdSaldoBloco(PR.c);return}
   const bmb=t.closest('#prdBarMat button,#prdBarEq button');if(bmb){
     if(bmb.closest('#prdBarMat')){PR.bm=bmb.dataset.v;if(PR.bm!=='RACHAO')PR.be='AMB'}else PR.be=bmb.dataset.v;
     $('#prdBarsBloco').innerHTML=prdBarrasBloco(PR.c);$$('#prdBarsBloco .swipe').forEach(s=>s.classList.add('in'));return}

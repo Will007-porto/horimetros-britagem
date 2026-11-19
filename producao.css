@@ -2,9 +2,9 @@
    Reaproveita os componentes do site (.k, .box, .tb, .dayctl, .seg); aqui só o que é novo. */
 
 /* Cores dos materiais: 4 primeiros tons da paleta categórica validada (claro e escuro escolhidos, não invertidos) */
-:root{--m1:#2a78d6;--m2:#eb6834;--m3:#1baf7a;--m4:#eda100;--ok:#1E7A50;--okbg:#E3F4EC;--at:#9A5B00;--atbg:#FDF1DC;--cr:#A12C2C;--crbg:#FBE4E4}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--m1:#3987e5;--m2:#d95926;--m3:#199e70;--m4:#c98500;--ok:#5DD39E;--okbg:rgba(46,158,107,.16);--at:#F7C77A;--atbg:rgba(242,169,59,.14);--cr:#F08A8A;--crbg:rgba(214,69,69,.16)}}
-:root[data-theme="dark"]{--m1:#3987e5;--m2:#d95926;--m3:#199e70;--m4:#c98500;--ok:#5DD39E;--okbg:rgba(46,158,107,.16);--at:#F7C77A;--atbg:rgba(242,169,59,.14);--cr:#F08A8A;--crbg:rgba(214,69,69,.16)}
+:root{--mfin:#8A6BB8;--m1:#2a78d6;--m2:#eb6834;--m3:#1baf7a;--m4:#eda100;--ok:#1E7A50;--okbg:#E3F4EC;--at:#9A5B00;--atbg:#FDF1DC;--cr:#A12C2C;--crbg:#FBE4E4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--mfin:#A68BD6;--m1:#3987e5;--m2:#d95926;--m3:#199e70;--m4:#c98500;--ok:#5DD39E;--okbg:rgba(46,158,107,.16);--at:#F7C77A;--atbg:rgba(242,169,59,.14);--cr:#F08A8A;--crbg:rgba(214,69,69,.16)}}
+:root[data-theme="dark"]{--mfin:#A68BD6;--m1:#3987e5;--m2:#d95926;--m3:#199e70;--m4:#c98500;--ok:#5DD39E;--okbg:rgba(46,158,107,.16);--at:#F7C77A;--atbg:rgba(242,169,59,.14);--cr:#F08A8A;--crbg:rgba(214,69,69,.16)}
 
 .prdtools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .prdtools .dayctl select{min-width:190px;text-transform:capitalize}
@@ -154,3 +154,31 @@ svg.ch g.bd:hover .bg{fill:var(--line)}
 .prdbarf{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .prdbarf .seg button i{width:8px;height:8px;border-radius:2px}
 @media(max-width:560px){.prdbarf .seg{overflow-x:auto;max-width:100%}.prdbarf .seg button{flex:none}}
+
+/* Saldo de material */
+.sldk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.sldk div{border:1px solid var(--grid);border-radius:12px;padding:12px 14px;background:var(--soft2);min-width:0}
+.sldk span{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);display:block}
+.sldk b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:6px;color:var(--ink);font-variant-numeric:tabular-nums}
+.sldk b small{font-size:12px;color:var(--grey);font-weight:700;margin-left:3px}
+.sldk em{font-style:normal;font-size:12px;color:var(--grey);display:block;margin-top:2px}
+.sld{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.sldt{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--ink2);margin-bottom:5px}.sldt b{color:var(--ink)}.sldt span{font-variant-numeric:tabular-nums;color:var(--grey);font-weight:600}
+.sldb{display:flex;gap:2px;height:30px;border-radius:7px;overflow:hidden;background:var(--line)}
+.sldb i{display:flex;align-items:center;justify-content:center;min-width:2px;font-style:normal;cursor:default}
+.sldb i span{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.sldb i.lok,.leg i.lok{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.28) 0 3px,transparent 3px 7px)}
+@media(max-width:1100px){.sldk{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.sldk{grid-template-columns:1fr}}
+
+/* Relatório de saldo (impressão) */
+#prdRel .rsbox{flex:0 0 auto;display:flex;flex-direction:column;gap:3mm;background:#F3F5F9}
+#prdRel .rsl{background:#fff;padding:2mm 3mm;border:1px solid #D6DCE6}
+#prdRel .rst{display:flex;justify-content:space-between;font-size:8pt;margin-bottom:1.2mm}#prdRel .rst span{color:#6B7487;font-weight:700}
+#prdRel .rsb{display:flex;gap:1px;height:7mm;background:#E6EAF0}
+#prdRel .rsb i{display:flex;align-items:center;justify-content:center;font-style:normal;overflow:hidden}
+#prdRel .rsb i span{font-size:6.5pt;font-weight:700;color:#fff;white-space:nowrap;padding:0 1.5mm}
+#prdRel .rsleg{display:flex;flex-wrap:wrap;gap:1mm 5mm;margin-top:1.2mm;font-size:6.5pt;color:#33415C}
+#prdRel .rsleg i{display:inline-block;width:2.4mm;height:2.4mm;margin-right:1mm;vertical-align:-.3mm}
+#prdRel .rst2 td{text-align:right}#prdRel .rst2 td:first-child{text-align:left;font-weight:700}
+#prdRel .rst2 tr.tt td{background:#EEF2F8;font-weight:800;border-top:1px solid #0B2559}
