@@ -1,0 +1,23 @@
+-- Internet da usina caiu: nada se perde (aplicada em 19/11/2026 como "reprocessar_paradas",
+-- "agenda_reprocessar_paradas" e "reprocessar_paradas_service_role"; bright-api v9 publicada junto)
+--
+-- Problema: a detecção ao vivo (/scan, a cada minuto) só olha o "agora". Paradas que começaram e
+-- terminaram enquanto a placa estava sem internet nunca eram criadas quando os eventos chegavam
+-- depois. E a bright-api descartava eventos mais antigos que o último estado do motor.
+--
+-- reprocessar_paradas(p_desde, p_ate) refaz as paradas de AV10/CV07 a partir da tabela eventos:
+--   mesmas regras do /scan (janelas produtivas = turno sem pausas; AV10 >= 5 min, CV07 >= 3 min;
+--   fecha no religamento ou no fim da janela). Parada aberta fica com o /scan.
+--   Só cria o que falta: se já existe parada do motor cobrindo parte do intervalo, não mexe.
+--   Máximo 31 dias por chamada. Só o banco (cron) e a bright-api (service_role) podem chamar.
+-- Testada em 13/11 (dentro de transação desfeita): 0 criadas com tudo no lugar; apagando 3 paradas,
+--   recriou as 3 com o mesmo início/fim/duração; rodando de novo, 0 (não duplica).
+-- Ao ligar, criou 1 parada que o /scan tinha perdido: AV10 18/11 20:54 → 21:00 (atingiu 5 min
+--   segundos antes da janta). Nos últimos 7 dias havia mais 3 desse tipo, fora da janela de 48 h.
+--
+-- Agenda: cron 'britagem-reprocessar-paradas' a cada 10 min, últimas 48 h.
+--   select cron.schedule('britagem-reprocessar-paradas', '*/10 * * * *',
+--     $$select public.reprocessar_paradas(now() - interval '48 hours', now());$$);
+-- grant execute on function public.reprocessar_paradas(timestamptz, timestamptz) to service_role;
+--
+-- Corpo completo: ver no banco (pg_get_functiondef('public.reprocessar_paradas'::regproc)).

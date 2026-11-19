@@ -6,6 +6,26 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 //   listagens): permitiam alterar justificativas e ler dados sem login.
 // - Dados só são aceitos de placas e motores já cadastrados (tabelas placas e maquinas).
 // - Evento com horário muito no futuro é recusado (travaria o estado do motor).
+//
+// bright-api v8 (horímetro da placa, 2026-11-19)
+// - O horímetro de cada motor passa a vir da PLACA (heartbeat.estados[].horas_acumuladas).
+//   A placa é a fonte da verdade: o valor informado no painel dela vale no Supabase.
+// - Regra: o primeiro valor da placa assume o motor; depois, só sobe. Valor menor só entra
+//   quando vem de um ajuste feito no painel (ajuste_id maior que o último aceito). Assim,
+//   uma placa que volte zerada por falha não derruba o horímetro do Supabase.
+// - O heartbeat NÃO mexe mais em ultimo_estado/ultima_atualizacao (relógio dos eventos).
+// - Motor gerido pela placa não soma horas por par de eventos (evita contagem dupla).
+// - Evento aceita "timestamp" ou "timestamp_evento" (firmware antigo só mandava o segundo,
+//   e o servidor gravava a hora de chegada no lugar da hora real do evento).
+//
+// bright-api v9 (internet caiu, 2026-11-19)
+// - Evento ATRASADO (mais antigo que o último estado do motor) agora é GUARDADO no histórico
+//   (tabela eventos) em vez de descartado. Ele não mexe no estado atual nem no horímetro.
+// - Evento atrasado ou chegando com mais de 5 min de atraso aciona reprocessar_paradas para o
+//   período dele: as paradas que aconteceram durante a queda de internet são criadas na hora.
+//   (Além disso, o cron 'britagem-reprocessar-paradas' roda a cada 10 min nas últimas 48 h.)
+//
+// Publicada no Supabase como versão 26 (verify_jwt = false: a placa não envia login).
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -49,6 +69,8 @@ async function readJsonBody(request: Request): Promise<Record<string, unknown> |
 
 const BRAZIL_TIME_ZONE_OFFSET = '-03:00';
 const MAX_FUTURO_MS = 2 * 60 * 60 * 1000; // tolerância de relógio da placa
+const ATRASO_REPROCESSA_MS = 5 * 60 * 1000; // evento chegando com mais de 5 min de atraso = veio de fila da placa
+const REPROCESSA_MAX_MS = 30 * 24 * 60 * 60 * 1000; // a rotina aceita no máximo 31 dias
 
 function timestampOf(value: unknown): string {
   if (typeof value !== 'string' || value.trim() === '') return new Date().toISOString();
@@ -84,6 +106,21 @@ function dbError(error: { code?: string; message?: string }, operation: string):
 const MONITORED_MOTORS = new Set(['AV10', 'CV07']);
 const STOP_THRESHOLDS_MINUTES: Record<string, number> = { AV10: 5, CV07: 3 };
 
+// Refaz as paradas de AV10/CV07 desde 1 h antes do evento atrasado até agora.
+// Falha aqui não pode derrubar o recebimento do evento: só registra no log (o cron de 10 min cobre).
+async function reprocessarDesde(eventoMs: number): Promise<unknown> {
+  const desdeMs = Math.max(eventoMs - 60 * 60 * 1000, Date.now() - REPROCESSA_MAX_MS);
+  const { data, error } = await supabase.rpc('reprocessar_paradas', {
+    p_desde: new Date(desdeMs).toISOString(),
+    p_ate: new Date().toISOString(),
+  });
+  if (error) {
+    console.error('reprocessar_paradas:', error);
+    return null;
+  }
+  return data;
+}
+
 // Só placas já cadastradas podem enviar dados (cadastro de placa nova é feito no banco).
 async function placaCadastrada(placaId: string): Promise<{ ok: boolean; erro?: Response }> {
   const { data, error } = await supabase.from('placas').select('id').eq('id', placaId).maybeSingle();
@@ -113,40 +150,56 @@ async function heartbeat(body: Record<string, unknown>): Promise<Response> {
 
   const estados = Array.isArray(body.estados) ? body.estados : [];
   let snapshotsAtualizados = 0;
-  const horimetrosConfirmados: Array<{ motor_id: string; horas_acumuladas: number }> = [];
+  const horimetrosConfirmados: Array<{ motor_id: string; horas_acumuladas: number; motivo: string }> = [];
+  const recusados: Array<{ motor_id: string; recebido: number; atual: number; motivo: string }> = [];
   const agora = new Date().toISOString();
 
   for (const item of estados) {
     if (!item || typeof item !== 'object') continue;
     const snapshot = item as Record<string, unknown>;
     const motorId = typeof snapshot.motor_id === 'string' ? snapshot.motor_id.trim() : '';
-    const estado = snapshot.estado;
     const horasRecebidas = Number(snapshot.horas_acumuladas);
-    if (!motorId || (estado !== 'ligado' && estado !== 'desligado')) continue;
+    const ajusteRecebido = Number(snapshot.ajuste_id ?? 0);
+    if (!motorId || !Number.isFinite(horasRecebidas) || horasRecebidas < 0 || horasRecebidas > 1_000_000) continue;
 
     const { data: maquinaAtual, error: maquinaAtualError } = await supabase
       .from('maquinas')
-      .select('horas_acumuladas')
+      .select('horas_acumuladas, ajuste_id, horimetro_placa_em')
       .eq('id', motorId)
       .maybeSingle();
     if (maquinaAtualError) return dbError(maquinaAtualError, 'leitura_horimetro_snapshot');
     if (!maquinaAtual) continue; // motor não cadastrado: ignora
 
-    const horasAtuais = Number(maquinaAtual?.horas_acumuladas ?? 0);
-    const horasSeguras = Number.isFinite(horasRecebidas)
-      ? Math.max(horasAtuais, horasRecebidas)
-      : horasAtuais;
+    const horasAtuais = Number(maquinaAtual.horas_acumuladas ?? 0);
+    const ajusteAtual = Number(maquinaAtual.ajuste_id ?? 0);
+    const primeiraVez = !maquinaAtual.horimetro_placa_em;
+    const ajusteNovo = Number.isFinite(ajusteRecebido) && ajusteRecebido > ajusteAtual;
+
+    let motivo = '';
+    if (primeiraVez) motivo = 'assumido_pela_placa';
+    else if (ajusteNovo) motivo = 'ajuste_no_painel';
+    else if (horasRecebidas >= horasAtuais) motivo = 'contagem';
+    else {
+      recusados.push({ motor_id: motorId, recebido: horasRecebidas, atual: horasAtuais, motivo: 'menor_sem_ajuste' });
+      console.warn(`horímetro menor sem ajuste recusado: ${motorId} ${horasRecebidas} < ${horasAtuais}`);
+      continue;
+    }
+
+    const update: Record<string, unknown> = {
+      horas_acumuladas: horasRecebidas,
+      horimetro_placa_em: agora,
+    };
+    if (ajusteNovo) update.ajuste_id = ajusteRecebido;
+    if (motivo !== 'contagem') {
+      console.log(`horímetro ${motorId}: ${horasAtuais} -> ${horasRecebidas} (${motivo}, ajuste_id ${ajusteRecebido})`);
+    }
 
     const { error: snapshotError } = await supabase
       .from('maquinas')
-      .update({
-        ultimo_estado: estado,
-        ultima_atualizacao: agora,
-        horas_acumuladas: horasSeguras,
-      })
+      .update(update)
       .eq('id', motorId);
-    if (snapshotError) return dbError(snapshotError, 'snapshot_estado');
-    horimetrosConfirmados.push({ motor_id: motorId, horas_acumuladas: horasSeguras });
+    if (snapshotError) return dbError(snapshotError, 'snapshot_horimetro');
+    horimetrosConfirmados.push({ motor_id: motorId, horas_acumuladas: horasRecebidas, motivo });
     snapshotsAtualizados += 1;
   }
 
@@ -156,6 +209,7 @@ async function heartbeat(body: Record<string, unknown>): Promise<Response> {
     placa_id: placaId.trim(),
     conferencia_estados: snapshotsAtualizados,
     horimetros: horimetrosConfirmados,
+    recusados,
   });
 }
 
@@ -176,7 +230,7 @@ async function firmwareEvent(body: Record<string, unknown>): Promise<Response> {
 
   let horaEvento: string;
   try {
-    horaEvento = timestampOf(body.timestamp);
+    horaEvento = timestampOf(body.timestamp ?? body.timestamp_evento);
   } catch (error) {
     return json({ ok: false, error: 'timestamp_invalido', message: String(error) }, 400);
   }
@@ -212,7 +266,7 @@ async function firmwareEvent(body: Record<string, unknown>): Promise<Response> {
 
   const { data: maquina, error: maquinaReadError } = await supabase
     .from('maquinas')
-    .select('id, nome, horas_acumuladas, ultimo_estado, ultima_atualizacao, meta_horas_turno')
+    .select('id, nome, horas_acumuladas, ultimo_estado, ultima_atualizacao, meta_horas_turno, horimetro_placa_em')
     .eq('id', motor)
     .maybeSingle();
   if (maquinaReadError) return dbError(maquinaReadError, 'leitura_maquina');
@@ -226,16 +280,23 @@ async function firmwareEvent(body: Record<string, unknown>): Promise<Response> {
     : NaN;
   const currentTimestamp = new Date(horaEvento).getTime();
 
-  // Eventos antigos reenviados depois de um estado mais novo não podem
-  // voltar a alterar o estado nem acrescentar horas.
+  // v9: evento mais antigo que o último estado (veio atrasado, ex.: fila da placa depois de queda de
+  // internet). Antes era descartado e se perdia. Agora entra no histórico, sem mexer no estado atual
+  // nem no horímetro, e as paradas daquele período são refeitas.
   if (Number.isFinite(previousTimestamp) && currentTimestamp <= previousTimestamp) {
+    const { data: atrasado, error: atrasadoError } = await supabase
+      .from('eventos')
+      .insert({ id_evento: eventId, placa_id: placa, motor_id: motor, estado, timestamp: horaEvento })
+      .select('id, id_evento, placa_id, motor_id, estado, timestamp')
+      .single();
+    if (atrasadoError && atrasadoError.code !== '23505') return dbError(atrasadoError, 'evento_atrasado');
+    const reprocesso = MONITORED_MOTORS.has(motor) ? await reprocessarDesde(currentTimestamp) : null;
     return json({
       ok: true,
-      ignorado: true,
-      motivo: 'evento_atrasado',
-      motor: motor,
-      estado,
-      timestamp: horaEvento,
+      guardado: true,
+      motivo: 'evento_atrasado_guardado_no_historico',
+      evento: atrasado ?? null,
+      reprocesso,
     }, 200);
   }
 
@@ -280,8 +341,10 @@ async function firmwareEvent(body: Record<string, unknown>): Promise<Response> {
     return dbError(eventoError, 'evento_motor');
   }
 
+  // Motor com horímetro gerido pela placa: as horas vêm do heartbeat, não do par de eventos.
+  const geridoPelaPlaca = Boolean(maquina?.horimetro_placa_em);
   const wasRunning = maquina?.ultimo_estado === 'ligado';
-  const isStopping = wasRunning && estado === 'desligado';
+  const isStopping = wasRunning && estado === 'desligado' && !geridoPelaPlaca;
   const elapsedHours = isStopping && Number.isFinite(previousTimestamp)
     ? Math.max(0, (currentTimestamp - previousTimestamp) / 3_600_000)
     : 0;
@@ -300,12 +363,18 @@ async function firmwareEvent(body: Record<string, unknown>): Promise<Response> {
 
   if (machineWriteError) return dbError(machineWriteError, 'atualizacao_maquina');
 
+  // v9: evento chegando com mais de 5 min de atraso veio da fila da placa: refaz as paradas do período.
+  const reprocesso = MONITORED_MOTORS.has(motor) && Date.now() - currentTimestamp > ATRASO_REPROCESSA_MS
+    ? await reprocessarDesde(currentTimestamp)
+    : null;
+
   return json({
     ok: true,
     duplicado: false,
     evento,
     maquina: machineRow,
     horas_acrescentadas: elapsedHours,
+    ...(reprocesso ? { reprocesso } : {}),
   }, 201);
 }
 
@@ -548,7 +617,7 @@ Deno.serve(async (request: Request) => {
 
   const path = pathOf(request);
   if (request.method === 'GET' && (path === '/' || path === '/health')) {
-    return json({ ok: true, service: 'bright-api', version: 'v7-seguranca' });
+    return json({ ok: true, service: 'bright-api', version: 'v9-eventos-atrasados' });
   }
   if (request.method !== 'POST') {
     return ROTAS_DESATIVADAS.has(path)
