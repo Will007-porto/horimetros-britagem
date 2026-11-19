@@ -59,6 +59,7 @@ Mesmo ligado, quem se cadastrar sozinho não vê nada (não está liberado em `u
 
 ```
 index.html                         site completo (HTML + CSS + JS)
+manifest.webmanifest, sw.js, icons/ aplicativo instalável (PWA)
 producao.js / producao.css         aba Produção (acompanhamento diário)
 producao-rel.js                    exportar relatório no modelo da planilha (PDF)
 assets/                            logos
@@ -88,6 +89,16 @@ supabase/migrations/               SQL das tabelas, funções e permissões
 - Mostra o dia de produção inteiro (07:30 → 07:30), com as faixas dos turnos e pausas.
 - **Filtro de turno**: o eixo mostra só a janela do turno escolhido (1º 07:30 → 18:30, 2º 18:30 → 04:00; sábado 07:30 → 16:00 e 16:00 → 23:00) e horas, aproveitamento e paradas contam só dentro dela.
 - **Paradas** aparecem só nas linhas de **AV10** e **CV07** (os motores que o scanner monitora): vermelho cheio = justificada, hachurado = sem justificativa, contorno tracejado = em andamento. Clicar numa parada abre a justificativa.
+
+## Aplicativo (PWA)
+
+O painel pode ser instalado no celular ou no computador como aplicativo (ícone "Britagem").
+- **Android / Chrome / Edge:** botão **Instalar app** no topo (ou menu do navegador → Instalar app).
+- **iPhone (Safari):** Compartilhar → **Adicionar à Tela de Início** (o botão Instalar explica).
+- Atalhos do ícone (segurar o ícone no Android): Produção, Paradas e Gantt (`/?aba=prd`, `par`, `gan`).
+- `sw.js`: telas do painel com rede primeiro (sempre a versão nova quando há internet; sem internet abre a última guardada); bibliotecas da CDN guardadas; **Supabase e `/app/` nunca passam pelo cache**.
+- Versão nova do `sw.js` não assume sozinha: aparece o aviso "Nova versão do painel disponível" e só recarrega quando o usuário toca em **Atualizar** (uma vez só). Ao mudar `sw.js`, troque a constante `VERSAO`.
+- Ícones em `icons/` (símbolo da Tripoloni sobre o azul do painel), `manifest.webmanifest` na raiz.
 
 ## Atualização automática (sem recarregar)
 
