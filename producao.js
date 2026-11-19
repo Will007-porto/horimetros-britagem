@@ -26,7 +26,7 @@ try{PR.tend=localStorage.getItem('hb_tend')==='1'}catch(e){}
    ou 'mat' = soma dos materiais, como a planilha antiga (conta os finos duas vezes). */
 PR.vis='liq';try{if(localStorage.getItem('hb_prdvis')==='mat')PR.vis='mat'}catch(e){}
 const visLiq=()=>PR.vis!=='mat';
-const TXT_TOT=()=>visLiq()?{real:'Britado acumulado',prog:'Meta de britado do mês',dia:'Britado no dia',col:'Britado',leg:'Britado acumulado (rachão do BM10 + BMM05)',sub:'meta de rachão = meta do britado'}
+const TXT_TOT=()=>visLiq()?{real:'Britado acumulado',prog:'Meta de britado do mês',dia:'Britado no dia',col:'Britado',leg:'Britado acumulado (rachão do BM10 + BMM05)',sub:'meta de rachão + metas dos finos'}
   :{real:'Realizado acumulado',prog:'Programado do mês',dia:'Total do dia',col:'Total',leg:'Realizado acumulado (soma dos materiais)',sub:'soma das metas de todos os materiais'};
 
 /* Tendência: mantém o ritmo já feito no mês (toneladas por dia programado, sábado com o peso dele)
@@ -56,6 +56,10 @@ async function prdLoad(mes,force,silencioso){
 function prdCalc(x,mes){
   const m=x.mes||null,n=diasNoMes(mes),peso=m?+m.peso_sabado:0.7369,pctBM=m?+m.pct_bm10:0.5;
   const meta={RACHAO:m?(+m.meta_rachao_irati)+(+m.meta_rachao_palmeira):0,BRITA01:m?+m.meta_brita01:0,PO:m?+m.meta_po:0,BRITA02:m?+m.meta_brita02:0};
+  /* Visão sem dupla contagem: para produzir os finos é preciso britar rachão, então a meta do rachão britado
+     = meta de rachão para uso + metas de Brita 01, Pó e Brita 02. Na soma dos materiais, cada meta fica separada. */
+  const metaRachUso=meta.RACHAO,metaFinos=meta.BRITA01+meta.PO+meta.BRITA02;
+  if(visLiq())meta.RACHAO=metaRachUso+metaFinos;
   const metaT=visLiq()?meta.RACHAO:MATS.reduce((a,[k])=>a+meta[k],0);
   const tipo={};(x.dias||[]).forEach(d=>tipo[d.dia]=d.tipo);
   const days=[];
@@ -67,11 +71,14 @@ function prdCalc(x,mes){
   let pa=0,ra=0;
   days.forEach(o=>{o.meta={};MATS.forEach(([k])=>o.meta[k]=W?meta[k]*o.w/W:0);o.metaT=W?metaT*o.w/W:0;pa+=o.metaT;ra+=o.tot;o.prevAc=pa;o.realAc=ra});
   const feitos=days.filter(o=>o.tem),ref=feitos.length?feitos[feitos.length-1].d:null;
-  const c={m,n,peso,pctBM,meta,metaT,days,byD,W,ref,diasCom:feitos.length};
+  const c={m,n,peso,pctBM,meta,metaT,metaRachUso,metaFinos,days,byD,W,ref,diasCom:feitos.length};
   Object.assign(c,prdAte(c,ref));
   c.diasProg=days.filter(o=>o.w>0).length;
   c.diasRest=days.filter(o=>o.w>0&&(!ref||o.d>ref)).length;
-  c.eqMeta={BM10:meta.RACHAO*pctBM,BMM05:meta.RACHAO*(1-pctBM)};
+  /* Meta por equipamento: os finos saem todos do BM10, então na visão sem dupla contagem a meta dos finos
+     vai inteira para o BM10; o BMM05 fica só com a parte dele da meta de rachão para uso. */
+  c.eqMeta=visLiq()?{BM10:metaRachUso*pctBM+metaFinos,BMM05:metaRachUso*(1-pctBM)}:{BM10:meta.RACHAO*pctBM,BMM05:meta.RACHAO*(1-pctBM)};
+  c.fracEq=e=>meta.RACHAO?c.eqMeta[e]/meta.RACHAO:(e==='BM10'?pctBM:1-pctBM);
   return c;
 }
 /* Acumulados do mês até um dia (o painel usa o último dia lançado; o relatório usa o dia escolhido) */
@@ -150,8 +157,8 @@ function renderPrd(anima){
 
   /* equipamentos + meses */
   h+=`<div class="two">
-    <div class="box rv"><button class="boxh">${icoBox('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h10v2M7 13h4"/>')}<div><div class="tt">Rachão por equipamento</div><div class="kk">BM10 × BMM05 · meta ${Math.round(c.pctBM*100)}% / ${Math.round((1-c.pctBM)*100)}%</div></div>${chevS}</button>
-      <div class="cwrap"><div class="cinner"><div class="boxb"><div class="pmat eq">${EQS.map(([e,n,s])=>{const r=c.eqReal[e],mt=c.eqMeta[e],dd=c.eqDias[e],pv=c.prev.RACHAO*(e==='BM10'?c.pctBM:1-c.pctBM);
+    <div class="box rv"><button class="boxh">${icoBox('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h10v2M7 13h4"/>')}<div><div class="tt">Rachão por equipamento</div><div class="kk">BM10 × BMM05 · meta ${Math.round(c.fracEq('BM10')*100)}% / ${Math.round(c.fracEq('BMM05')*100)}%${visLiq()?' (finos no BM10)':''}</div></div>${chevS}</button>
+      <div class="cwrap"><div class="cinner"><div class="boxb"><div class="pmat eq">${EQS.map(([e,n,s])=>{const r=c.eqReal[e],mt=c.eqMeta[e],dd=c.eqDias[e],pv=c.prev.RACHAO*c.fracEq(e);
         return `<div class="pm"><div class="pmh"><i style="background:var(--m1)"></i>${n} · ${s}</div><b>${f0(r)}<small>t</small></b><div class="pmsub">${mt?`de ${f0(mt)} t · ${pc1(r/mt)} do mês`:'sem meta'}</div>
         <div class="bul"><div class="bulf" style="width:${mt?Math.min(100,r/mt*100):0}%;background:var(--m1)"></div>${mt&&pv?`<div class="bult" style="left:${Math.min(100,pv/mt*100)}%"></div>`:''}</div>
         <div class="pmrow"><span>Saldo vs meta</span><b>${f0(r-mt)} t</b></div><div class="pmrow"><span>Média por dia trabalhado</span><b>${dd?f0(r/dd):'—'} t</b></div><div class="pmrow"><span>Dias trabalhados</span><b>${dd}</b></div></div>`}).join('')}</div>
@@ -173,7 +180,7 @@ function prdTabelaDia(c,o){
   MATS.forEach(([k,n,col])=>{const a=o.tu[1][k],b=o.tu[2][k],r=o.real[k],mt=o.meta[k];
     h+=`<tr><td class="m"><span class="sw" style="background:${col}"></span>${n}</td><td class="n">${cel(a)}</td><td class="n">${cel(b)}</td><td class="n" style="font-weight:700;color:var(--ink)">${a==null&&b==null?cel(null):f0(r)}</td><td class="n hm">${mt?f0(mt):'—'}</td><td class="n">${mt&&(a!=null||b!=null)?stAd(r/mt):'—'}</td></tr>`;
     if(k==='RACHAO')EQS.forEach(([e,en,es])=>{const x=o.eqTu[1][e],y=o.eqTu[2][e];if(x==null&&y==null)return;
-      h+=`<tr class="sb"><td>${en} · ${es}</td><td class="n">${cel(x)}</td><td class="n">${cel(y)}</td><td class="n">${f0((x||0)+(y||0))}</td><td class="n hm">${mt?f0(mt*(e==='BM10'?c.pctBM:1-c.pctBM)):'—'}</td><td class="n"></td></tr>`})});
+      h+=`<tr class="sb"><td>${en} · ${es}</td><td class="n">${cel(x)}</td><td class="n">${cel(y)}</td><td class="n">${f0((x||0)+(y||0))}</td><td class="n hm">${mt?f0(mt*c.fracEq(e)):'—'}</td><td class="n"></td></tr>`})});
   const somaT=t=>visLiq()?(o.tu[t].RACHAO||0):MATS.reduce((a,[k])=>a+(o.tu[t][k]||0),0),t1=somaT(1),t2=somaT(2);
   h+=`<tr class="tot"><td>${visLiq()?'Britado (rachão)':'Total'}</td><td class="n">${f0(t1)}</td><td class="n">${f0(t2)}</td><td class="n">${f0(o.tot)}</td><td class="n hm">${o.metaT?f0(o.metaT):'—'}</td><td class="n">${o.metaT&&o.tem?stAd(o.tot/o.metaT):'—'}</td></tr></tbody></table>`;
   return h;
@@ -256,7 +263,7 @@ function prdBarrasBloco(c){
 }
 /* valor, meta e cor de um dia conforme o filtro */
 function prdSerie(c,bm,be){
-  const pct=e=>e==='BM10'?c.pctBM:1-c.pctBM;
+  const pct=e=>c.fracEq(e);
   return c.days.map(o=>{
     if(bm==='T')return {o,v:o.tot,m:o.metaT};
     if(bm==='RACHAO'&&be!=='AMB')return {o,v:o.eq[be],m:o.meta.RACHAO*pct(be)};
@@ -294,7 +301,7 @@ function prdBarrasMat(c,bm,be){
     s+='</g>';
     if(i%stp===0)s+=`<text class="ax" x="${x+cw/2}" y="${H-8}" text-anchor="middle" ${o.d===PR.dia?'fill="var(--ink)" style="font-weight:700"':''}>${ddmm(o.d)}</text>`});
   const leg=dois?`<span><i style="background:${corEq.BM10}"></i>BM10 · Primário</span><span><i style="background:${corEq.BMM05}"></i>BMM05 · Lokotrack</span>`:`<span><i style="background:${be!=='AMB'?corEq[be]:col}"></i>${MATN[bm]}${be!=='AMB'?' · '+be:''}</span>`;
-  return s+'</svg>'+`<div class="leg">${leg}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>Meta do dia${bm==='RACHAO'&&be!=='AMB'?` (${Math.round((be==='BM10'?c.pctBM:1-c.pctBM)*100)}% da meta de rachão)`:''}</span><span>▲ % = atendimento da meta do dia</span></div>`;
+  return s+'</svg>'+`<div class="leg">${leg}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>Meta do dia${bm==='RACHAO'&&be!=='AMB'?` (${Math.round(c.fracEq(be)*100)}% da meta de ${visLiq()?'britado':'rachão'})`:''}</span><span>▲ % = atendimento da meta do dia</span></div>`;
 }
 function prdBarras(c){
   const n=c.days.length,L=48,W=Math.max(L+n*18,largGraf(false)),H=230,T=12,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
@@ -400,7 +407,7 @@ function prdSaldoTabela(c){
 function prdMeses(){
   const ms=((PR.x&&PR.x.meses)||[]).slice().reverse();
   if(!ms.length)return '<div class="pempty"><b>Nenhum mês cadastrado</b></div>';
-  return `<table class="tb"><thead><tr><th>Mês</th><th class="n">Programado</th><th class="n">Realizado</th><th class="n">% da meta</th></tr></thead><tbody>${ms.map(m0=>{const m=visLiq()?{...m0,meta:+m0.meta_britado||0,real:+m0.real_britado||0}:m0;const p=m.meta?m.real/m.meta:null;
+  return `<table class="tb"><thead><tr><th>Mês</th><th class="n">Programado</th><th class="n">Realizado</th><th class="n">% da meta</th></tr></thead><tbody>${ms.map(m0=>{const m=visLiq()?{...m0,meta:+m0.meta||0,real:+m0.real_britado||0}:m0;const p=m.meta?m.real/m.meta:null;
     return `<tr data-prdmes="${m.mes}" style="cursor:pointer" ${m.mes===PR.mes?'class="sel"':''}><td class="m" style="text-transform:capitalize">${esc(mesTxt(m.mes))}</td><td class="n">${f0(m.meta)} t</td><td class="n">${f0(m.real)} t</td><td class="n">${p!=null?pc1(p):'—'}<span class="mini"><i style="width:${p?Math.min(100,p*100):0}%;background:var(--m1)"></i></span></td></tr>`}).join('')}</tbody></table><p class="note">Clique num mês para abrir.</p>`;
 }
 

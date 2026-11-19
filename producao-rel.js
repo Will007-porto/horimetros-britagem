@@ -50,7 +50,7 @@ function rmMontar(dia){
 
   /* página 1: visão geral */
   let p1=H1+rmSec('Visão geral do mês')+`<div class="rmg5">`
-    +rmCard(visLiq()?'Meta de britado':'Programado do mês',f0(c.metaT),visLiq()?'meta de rachão = britado (t)':'meta total de produção (t)')
+    +rmCard(visLiq()?'Meta de britado':'Programado do mês',f0(c.metaT),visLiq()?'meta de rachão + metas dos finos (t)':'meta total de produção (t)')
     +rmCard(visLiq()?'Britado acumulado':'Realizado acumulado',f0(a.realT),visLiq()?'rachão BM10 + BMM05 (t)':'produzido até o momento (t)')
     +rmCard('% atingimento do mês',rmPc(c.metaT?a.realT/c.metaT:null),`Previsto até ${ddmm(dia)}: ${rmPc(c.metaT?a.prevT/c.metaT:null)}`)
     +rmCard('Saldo vs meta',f0(saldo),'positivo = acima · negativo = abaixo (t)',{cor:rmSaldoCor(saldo)})
@@ -98,11 +98,11 @@ function rmMontar(dia){
       <div class="rmg3">${rmCard('Saldo vs meta (t)',f0(r-m),'',{cor:rmSaldoCor(r-m)})}${rmCard('Média/dia (t)',d?f0(r/d):'—','')}${rmCard('Dias trab.',String(d),'')}</div></div>`}).join('')}</div>`;
   const mdR=o.meta.RACHAO;
   p4+=rmSec(`Produção do dia - ${dmy(dia)}`)+`<div class="rmg5">`+rmCard('TOTAL DO DIA',f0(o.eq.BM10+o.eq.BMM05),`meta do dia ${f0(mdR)} t · ${rmPc(mdR?(o.eq.BM10+o.eq.BMM05)/mdR:null)} da meta`,{top:RM.navy})
-    +EQS.map(([e,n])=>{const m=mdR*(e==='BM10'?c.pctBM:1-c.pctBM);return rmCard(n,f0(o.eq[e]),`meta ${f0(m)} t · ${rmPc(m?o.eq[e]/m:null)}`,{top:RM.eq[e]})}).join('')+`</div>`;
+    +EQS.map(([e,n])=>{const m=mdR*c.fracEq(e);return rmCard(n,f0(o.eq[e]),`meta ${f0(m)} t · ${rmPc(m?o.eq[e]/m:null)}`,{top:RM.eq[e]})}).join('')+`</div>`;
 
   /* página 5: evolução por equipamento */
-  let b1=0,b2=0,mm=0;const a1=[],a2=[],am=[];c.days.forEach(x=>{b1+=x.eq.BM10;b2+=x.eq.BMM05;mm+=x.meta.RACHAO*c.pctBM;a1.push(ate(x)?b1:null);a2.push(ate(x)?b2:null);am.push(mm)});
-  const igual=Math.abs(c.pctBM-.5)<1e-9;
+  let b1=0,b2=0,mm=0;const a1=[],a2=[],am=[];c.days.forEach(x=>{b1+=x.eq.BM10;b2+=x.eq.BMM05;mm+=x.meta.RACHAO*c.fracEq('BM10');a1.push(ate(x)?b1:null);a2.push(ate(x)?b2:null);am.push(mm)});
+  const igual=Math.abs(c.fracEq('BM10')-.5)<1e-9;
   let p5=H4+rmSec('Evolução da produção')+`<div class="rmg2 rmpan">`
     +rmLinhas({W:520,H:340,series:[{v:a1,c:RM.eq.BM10,w:2.4},{v:a2,c:RM.eq.BMM05,w:2.4},{v:am,c:RM.cinza,w:1.6,d:'5 4'}],dias,titulo:'Produção acumulada - BM10 vs BMM05 (t)',leg:[{t:'BM10 acumulado',c:RM.eq.BM10},{t:'BMM05 acumulado',c:RM.eq.BMM05},{t:igual?'Meta acum. por equipamento':'Meta acum. BM10',c:RM.cinza,d:'5 4'}]})
     +rmColunas({W:520,H:340,grupos:dias.map(ddmm),series:[{t:'BM10 dia',c:RM.eq.BM10,v:c.days.map(x=>ate(x)?x.eq.BM10:0)},{t:'BMM05 dia',c:RM.eq.BMM05,v:c.days.map(x=>ate(x)?x.eq.BMM05:0)}],titulo:'Produção diária - BM10 vs BMM05 (t)',rot:true})+`</div>`;
