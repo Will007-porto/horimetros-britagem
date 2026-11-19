@@ -156,7 +156,7 @@ svg.ch g.bd:hover .bg{fill:var(--line)}
 @media(max-width:560px){.prdbarf .seg{overflow-x:auto;max-width:100%}.prdbarf .seg button{flex:none}}
 
 /* Saldo de material */
-.sldk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.sldk{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:14px}
 .sldk div{border:1px solid var(--grid);border-radius:12px;padding:12px 14px;background:var(--soft2);min-width:0}
 .sldk span{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);display:block}
 .sldk b{display:block;font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:6px;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -181,4 +181,15 @@ svg.ch g.bd:hover .bg{fill:var(--line)}
 #prdRel .rsleg{display:flex;flex-wrap:wrap;gap:1mm 5mm;margin-top:1.2mm;font-size:6.5pt;color:#33415C}
 #prdRel .rsleg i{display:inline-block;width:2.4mm;height:2.4mm;margin-right:1mm;vertical-align:-.3mm}
 #prdRel .rst2 td{text-align:right}#prdRel .rst2 td:first-child{text-align:left;font-weight:700}
+#prdRel .rsnota{font-size:6.5pt;color:#6B7487;margin-top:1mm}
 #prdRel .rst2 tr.tt td{background:#EEF2F8;font-weight:800;border-top:1px solid #0B2559}
+
+/* Diagrama de Sankey do saldo */
+.sldsk{margin-top:14px}
+svg.sk .skl{font:700 12.5px var(--sans)}
+svg.sk .sks{font:600 11px var(--sans);font-variant-numeric:tabular-nums}
+svg.sk .skf{cursor:default;transition:fill-opacity .15s ease-out}
+svg.sk .skf:hover{fill-opacity:.7}
+#prdRel .rssk{padding:3mm}
+#prdRel svg.sk{background:#fff;width:100%;height:auto}
+#prdRel svg.sk .skl{font:700 11px var(--sans)}#prdRel svg.sk .sks{font:600 10px var(--sans)}

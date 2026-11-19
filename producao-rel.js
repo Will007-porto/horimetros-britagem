@@ -117,51 +117,44 @@ function prdTendAte(c,mat,dia){
   return {taxa,feito,proj:c.days.map(o=>{if(o.d<dia)return null;if(o.d>dia)ac+=taxa*o.w;return ac}),get fim(){return ac}};
 }
 /* ---------- Relatório de SALDO (balanço de material) ----------
-   BM10 britado = rachão que ficou rachão + finos do secundário (Brita 01, Pó, Brita 02 vêm todos do BM10).
-   BMM05 (Lokotrack) só faz rachão. Britado total = BM10 + BMM05. */
-const RS={rBM:'#0B2A5B',rMM:'#5B7FC4',finos:'#8A6BB8',b1:RM.mat.BRITA01,po:RM.mat.PO,b2:RM.mat.BRITA02};
-function rmBarra(titulo,total,segs){
-  const tot=segs.reduce((a,x)=>a+x.v,0)||1;
-  return `<div class="rsl"><div class="rst"><b>${titulo}</b><span>${f0(total)} t</span></div><div class="rsb">${segs.filter(x=>x.v>0).map(x=>{const p=x.v*100/tot;
-    return `<i style="width:${p}%;background:${x.c}">${p>=8?`<span>${x.n} ${f0(x.v)} t · ${fmtPc(p)}</span>`:''}</i>`}).join('')}</div>
-    <div class="rsleg">${segs.map(x=>`<span><i style="background:${x.c}"></i>${x.n}: <b>${f0(x.v)} t</b> (${fmtPc(x.v*100/tot)})</span>`).join('')}</div></div>`;
-}
+   O rachão do BM10 é tudo o que o BM10 britou; os finos (Brita 01, Pó, Brita 02) saem de dentro dele e a
+   sobra vai para o estoque. BMM05 só faz rachão (estoque). Britado = rachão BM10 + BMM05. */
+const RS={rBM:'#0B2A5B',rMM:'#5B7FC4',finos:'#8A6BB8',b1:RM.mat.BRITA01,po:RM.mat.PO,b2:RM.mat.BRITA02,ant:'#98A2B3'};
 function rmCardsSaldo(s){
-  return `<div class="rmg5">`+rmCard('Britado total',f0(s.total),'BM10 + BMM05 (t)')
-    +rmCard('BM10 · primário',f0(s.bm10),`${fmtPc(pcS(s.bm10,s.total))} do britado`)
-    +rmCard('Ficou rachão (BM10)',f0(s.rBM),`${fmtPc(pcS(s.rBM,s.bm10))} do BM10`)
-    +rmCard('Virou finos (secundário)',f0(s.finos),`${fmtPc(pcS(s.finos,s.bm10))} do BM10`)
-    +rmCard('BMM05 · Lokotrack',f0(s.rMM),`${fmtPc(pcS(s.rMM,s.total))} do britado`)+`</div>`;
+  return `<div class="rmg5">`+rmCard('Britado total',f0(s.total),'rachão BM10 + BMM05 (t)')
+    +rmCard('Rachão do BM10',f0(s.rBM),`${fmtPc(pcS(s.rBM,s.total))} do britado`)
+    +rmCard('Virou finos',f0(s.finos),s.consumo?'passou do rachão britado':`${fmtPc(pcS(s.finos,s.rBM))} do rachão do BM10`)
+    +rmCard('Sobrou do BM10 (estoque)',fSin(s.saldoBM),s.consumo?'consumiu estoque anterior':`${fmtPc(pcS(s.sobra,s.rBM))} do rachão do BM10`,{cor:s.saldoBM<0?RM.red:RM.txt})
+    +rmCard('Estoque de rachão',fSin(s.saldoEst),`sobra BM10 + BMM05 (${f0(s.rMM)} t)`,{cor:s.saldoEst<0?RM.red:RM.txt})+`</div>`;
 }
-/* colunas empilhadas por dia: rachão do BM10, finos, BMM05 */
+/* colunas empilhadas por dia */
 function rmEmpilhado({W=1060,H=230,dias,series,titulo}){
   const L=52,R=10,T=34,B=40,iw=W-L-R,ih=H-T-B,n=dias.length,gw=iw/n,bw=Math.min(18,gw*.7);
   const tot=dias.map((_,i)=>series.reduce((a,s)=>a+(s.v[i]||0),0)),max=Math.max(1,...tot),st=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/st)*st,Y=v=>ih*v/top;
   let s=`<svg viewBox="0 0 ${W} ${H}" class="rmg"><text x="${W/2}" y="14" text-anchor="middle" class="tt">${titulo}</text>`;
-  s+=`<g transform="translate(${W/2},27)">${series.map((l,i)=>`<g transform="translate(${(i-(series.length-1)/2)*150},0)"><rect x="-60" y="-8" width="9" height="9" fill="${l.c}"/><text x="-47" y="0" class="lg">${l.t}</text></g>`).join('')}</g>`;
+  s+=`<g transform="translate(${W/2},27)">${series.map((l,i)=>`<g transform="translate(${(i-(series.length-1)/2)*170},0)"><rect x="-70" y="-8" width="9" height="9" fill="${l.c}"/><text x="-57" y="0" class="lg">${l.t}</text></g>`).join('')}</g>`;
   for(let k=0;k<=4;k++){const v=top*k/4,y=T+ih-Y(v);s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#E6EAF0"/><text x="${L-6}" y="${y+3}" text-anchor="end" class="ax">${f0(v)}</text>`}
   dias.forEach((d,i)=>{const x=L+gw*i+(gw-bw)/2;let y=T+ih;series.forEach(se=>{const h=Y(se.v[i]||0);if(h>0){y-=h;s+=`<rect x="${x}" y="${y+.5}" width="${bw}" height="${Math.max(.5,h-1)}" fill="${se.c}"/>`}});
     s+=`<text transform="translate(${L+gw*i+gw/2+3},${T+ih+8}) rotate(-60)" text-anchor="end" class="ax">${ddmm(d)}</text>`});
   return s+'</svg>';
 }
 function rmSaldoMontar(dia){
-  const c=PR.c,o=c.byD[dia],sm=prdSaldo(c,dia),sd=prdSaldo(c,dia,true);
-  const H=rmHead('BALANÇO DE MATERIAL · SALDO','BM10 = rachão que ficou rachão + finos do secundário · BMM05 (Lokotrack)',c,dia);
-  const barras=s=>rmBarra('Britado total',s.total,[{n:'Rachão BM10',v:s.rBM,c:RS.rBM},{n:'Finos (secundário)',v:s.finos,c:RS.finos},{n:'Rachão BMM05',v:s.rMM,c:RS.rMM}])
-    +rmBarra('BM10 · primário',s.bm10,[{n:'Ficou rachão',v:s.rBM,c:RS.rBM},{n:'Virou finos',v:s.finos,c:RS.finos}])
-    +rmBarra('Finos do secundário',s.finos,[{n:'Brita 01',v:s.b1,c:RS.b1},{n:'Pó',v:s.po,c:RS.po},{n:'Brita 02',v:s.b2,c:RS.b2}]);
+  const c=PR.c,o=c.byD[dia],sm=prdSaldo(c,dia);
+  const H=rmHead('BALANÇO DE MATERIAL · SALDO','Finos saem do rachão do BM10 · a sobra vai para o estoque · BMM05 (Lokotrack)',c,dia);
+  const sk=s=>sankeySaldo(s,{W:1040,min:1040,H:250,lm:180,rm:220,cores:{bm10:'#0B2559',bmm05:RS.rMM,ant:RS.ant,rach:RS.rBM,sec:RS.finos,b1:RS.b1,po:RS.po,b2:RS.b2,txt:'#1B2B4B',sub:'#6B7487',faixa:.45}});
   /* dia por turno */
-  const tu=t=>{const r=(o.eqTu[t]||{}).BM10||0,m=(o.eqTu[t]||{}).BMM05||0,b1=(o.tu[t]||{}).BRITA01||0,po=(o.tu[t]||{}).PO||0,b2=(o.tu[t]||{}).BRITA02||0,fi=b1+po+b2;return {r,m,b1,po,b2,fi,bm:r+fi,tot:r+fi+m}};
-  const lt=(n,x,cl='')=>`<tr class="${cl}"><td>${n}</td><td>${f0(x.r)}</td><td>${f0(x.b1)}</td><td>${f0(x.po)}</td><td>${f0(x.b2)}</td><td>${f0(x.fi)}</td><td><b>${f0(x.bm)}</b></td><td>${fmtPc(pcS(x.fi,x.bm))}</td><td>${f0(x.m)}</td><td><b>${f0(x.tot)}</b></td></tr>`;
-  const t1=tu(1),t2=tu(2),td={r:t1.r+t2.r,m:t1.m+t2.m,b1:t1.b1+t2.b1,po:t1.po+t2.po,b2:t1.b2+t2.b2,fi:t1.fi+t2.fi,bm:t1.bm+t2.bm,tot:t1.tot+t2.tot};
-  const cab=`<thead><tr><th></th><th>Rachão BM10</th><th>Brita 01</th><th>Pó</th><th>Brita 02</th><th>Finos</th><th>BM10 total</th><th>% finos</th><th>BMM05</th><th>Britado</th></tr></thead>`;
-  let p1=H+rmSec(`Mês até ${dmy(dia)}`)+rmCardsSaldo(sm)+`<div class="rmpan rsbox">${barras(sm)}</div>`
-    +rmSec(`Dia ${dmy(dia)} · por turno`)+`<table class="rmt rst2">${cab}<tbody>${lt('1º turno',t1)}${lt('2º turno',t2)}${lt('Total do dia',td,'tt')}</tbody></table>`;
-  /* página 2: dia a dia */
+  const tu=t=>{const r=(o.eqTu[t]||{}).BM10||0,m=(o.eqTu[t]||{}).BMM05||0,b1=(o.tu[t]||{}).BRITA01||0,po=(o.tu[t]||{}).PO||0,b2=(o.tu[t]||{}).BRITA02||0,fi=b1+po+b2;return {rBM:r,rMM:m,b1,po,b2,finos:fi,saldoBM:r-fi,saldoEst:r-fi+m,total:r+m}};
+  const sm2=(a,b)=>({rBM:a.rBM+b.rBM,rMM:a.rMM+b.rMM,b1:a.b1+b.b1,po:a.po+b.po,b2:a.b2+b.b2,finos:a.finos+b.finos,saldoBM:a.saldoBM+b.saldoBM,saldoEst:a.saldoEst+b.saldoEst,total:a.total+b.total});
+  const neg=v=>v<0?` style="color:${RM.red}"`:'';
+  const lt=(n,x,cl='')=>`<tr class="${cl}"><td>${n}</td><td>${f0(x.rBM)}</td><td>${f0(x.b1)}</td><td>${f0(x.po)}</td><td>${f0(x.b2)}</td><td>${f0(x.finos)}</td><td>${x.rBM?fmtPc(pcS(x.finos,x.rBM)):'—'}</td><td${neg(x.saldoBM)}>${fSin(x.saldoBM)}</td><td>${f0(x.rMM)}</td><td${neg(x.saldoEst)}><b>${fSin(x.saldoEst)}</b></td><td><b>${f0(x.total)}</b></td></tr>`;
+  const t1=tu(1),t2=tu(2);
+  const cab=`<thead><tr><th></th><th>Rachão BM10</th><th>Brita 01</th><th>Pó</th><th>Brita 02</th><th>Finos</th><th>% finos</th><th>Sobra BM10</th><th>BMM05</th><th>Estoque rachão</th><th>Britado</th></tr></thead>`;
+  let p1=H+rmSec(`Mês até ${dmy(dia)}`)+rmCardsSaldo(sm)+`<div class="rmpan rsbox rssk">${sk(sm)}</div>`
+    +rmSec(`Dia ${dmy(dia)} · por turno`)+`<table class="rmt rst2">${cab}<tbody>${lt('1º turno',t1)}${lt('2º turno',t2)}${lt('Total do dia',sm2(t1,t2),'tt')}</tbody></table>`;
   const dias=c.days.filter(x=>x.d<=dia),ser=dias.map(x=>prdSaldo(c,x.d,true));
-  const graf=rmEmpilhado({W:1060,H:220,dias:dias.map(x=>x.d),titulo:'Saldo por dia (t)',series:[{t:'Rachão BM10',c:RS.rBM,v:ser.map(s=>s.rBM)},{t:'Finos (secundário)',c:RS.finos,v:ser.map(s=>s.finos)},{t:'Rachão BMM05',c:RS.rMM,v:ser.map(s=>s.rMM)}]});
-  const linhas=dias.filter(x=>x.tem).map(x=>{const s=prdSaldo(c,x.d,true);return lt(`${ddmm(x.d)} ${WDN[wd(x.d)]}`,{r:s.rBM,m:s.rMM,b1:s.b1,po:s.po,b2:s.b2,fi:s.finos,bm:s.bm10,tot:s.total})}).join('');
-  let p2=H+rmSec('Saldo dia a dia')+`<div class="rmpan" style="flex:0 0 auto">${graf}</div><table class="rmt rst2">${cab}<tbody>${linhas}${lt('Total do mês',{r:sm.rBM,m:sm.rMM,b1:sm.b1,po:sm.po,b2:sm.b2,fi:sm.finos,bm:sm.bm10,tot:sm.total},'tt')}</tbody></table>`;
+  const graf=rmEmpilhado({W:1060,H:220,dias:dias.map(x=>x.d),titulo:'Saldo por dia (t)',series:[{t:'Virou finos',c:RS.finos,v:ser.map(s=>s.daBM10)},{t:'Sobrou do BM10 (estoque)',c:RS.rBM,v:ser.map(s=>s.sobra)},{t:'BMM05 (estoque)',c:RS.rMM,v:ser.map(s=>s.rMM)}]});
+  const linhas=dias.filter(x=>x.tem).map(x=>lt(`${ddmm(x.d)} ${WDN[wd(x.d)]}`,prdSaldo(c,x.d,true))).join('');
+  let p2=H+rmSec('Saldo dia a dia')+`<div class="rmpan" style="flex:0 0 auto">${graf}</div><table class="rmt rst2">${cab}<tbody>${linhas}${lt('Total do mês',sm,'tt')}</tbody></table><div class="rsnota">Sobra negativa (em vermelho) = o secundário fez mais finos do que o BM10 britou naquele dia: consumiu rachão do estoque.</div>`;
   const pe=n=>`<div class="rmf"><span>Construtora Tripoloni Ltda. · Britagem Irati</span><span>Painel Horímetros Britagem · gerado em ${dtFmt.format(Date.now())}</span><span>página ${n} de 2</span></div>`;
   return [p1,p2].map((p,i)=>`<section class="rmp">${p}${pe(i+1)}</section>`).join('');
 }
