@@ -50,7 +50,7 @@ function rmMontar(dia){
 
   /* página 1: visão geral */
   let p1=H1+rmSec('Visão geral do mês')+`<div class="rmg5">`
-    +rmCard(visLiq()?'Meta de britado':'Programado do mês',f0(c.metaT),visLiq()?'rachão para uso + rachão para os finos (t)':'meta total de produção (t)')
+    +rmCard(visLiq()?'Meta de britado':'Programado do mês',f0(c.metaT),visLiq()?'meta de rachão cadastrada (t)':'meta total de produção (t)')
     +rmCard(visLiq()?'Britado acumulado':'Realizado acumulado',f0(a.realT),visLiq()?'rachão BM10 + BMM05 (t)':'produzido até o momento (t)')
     +rmCard('% atingimento do mês',rmPc(c.metaT?a.realT/c.metaT:null),`Previsto até ${ddmm(dia)}: ${rmPc(c.metaT?a.prevT/c.metaT:null)}`)
     +rmCard('Saldo vs meta',f0(saldo),'positivo = acima · negativo = abaixo (t)',{cor:rmSaldoCor(saldo)})
