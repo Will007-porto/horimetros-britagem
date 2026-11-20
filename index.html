@@ -865,7 +865,11 @@ const Hd=(id,d)=>F.tu==='all'?(HD[id]&&HD[id][d]||0):((HJ[id]&&HJ[id][d]&&HJ[id]
 const avail=d=>{const a=AV[d]||{};return Object.keys(a).filter(tuOK).reduce((s,k)=>s+a[k],0)};
 const usedJ=(id,d,tu)=>{const x=(HJ[id]&&HJ[id][d])||{};return Object.keys(x).filter(k=>tu?String(k)===String(tu):tuOK(k)).reduce((s,k)=>s+x[k],0)};
 const aprov=(id,tu)=>{let u=0,a=0;DAYS.forEach(d=>{const av=AV[d]||{};Object.keys(av).filter(k=>tu?String(k)===String(tu):tuOK(k)).forEach(k=>{a+=av[k];u+=usedJ(id,d,k)})});return a?u/a:null};
-const turnoOf=sec=>{const w=JW.find(w=>sec>=w.a-1&&sec<w.b+1);return w?w.tu:null};
+/* Turno de um instante: primeiro a janela exata (início incluído, fim excluído: 18:30 já é 2º turno);
+   se cair numa pausa (almoço/janta), vale o turno que a contém; a folga de 1 s nas bordas só entra por último. */
+const turnoOf=sec=>{let w=JW.find(w=>sec>=w.a&&sec<w.b);if(w)return w.tu;
+  const sp={};JW.forEach(x=>{const k=x.d+'|'+x.tu,o=sp[k];if(!o)sp[k]={a:x.a,b:x.b,tu:x.tu};else{o.a=Math.min(o.a,x.a);o.b=Math.max(o.b,x.b)}});
+  w=Object.values(sp).find(t=>sec>=t.a&&sec<t.b)||JW.find(w=>sec>=w.a-1&&sec<w.b+1);return w?w.tu:null};
 const perH=m=>DAYS.reduce((a,d)=>a+(Hd(m.id,d)||0),0);
 /* partidas do motor no dia: com filtro de turno, só as que aconteceram dentro do horário daquele turno */
 const PTd=(id,d)=>F.tu==='all'?((PT[id]&&PT[id][d])||0):((PTJ[id]&&PTJ[id][d]&&PTJ[id][d][F.tu])||0);
