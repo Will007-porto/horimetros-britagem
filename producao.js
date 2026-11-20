@@ -26,7 +26,17 @@ try{PR.tend=localStorage.getItem('hb_tend')==='1'}catch(e){}
    ou 'mat' = soma dos materiais, como a planilha antiga (conta os finos duas vezes). */
 PR.vis='liq';try{if(localStorage.getItem('hb_prdvis')==='mat')PR.vis='mat'}catch(e){}
 const visLiq=()=>PR.vis!=='mat';
-const TXT_TOT=()=>visLiq()?{real:'Britado acumulado',prog:'Meta de britado do mês',dia:'Britado no dia',col:'Britado',leg:'Britado acumulado (rachão do BM10 + BMM05)',sub:'meta de rachão + metas dos finos'}
+/* Rachão que precisa ir para o secundário para cumprir as metas dos finos. 1 t de rachão vira os três finos ao
+   mesmo tempo, no mix das balanças (fração de cada fino no total de finos, média ponderada do histórico).
+   Então o material mais exigente (meta ÷ mix) define o volume: é o gargalo. O excedente dos outros vai para o estoque.
+   Sem mix (sem histórico), cai na soma simples das metas. */
+function rachParaFinos(mt,mix){
+  const ks=['BRITA01','PO','BRITA02'],soma=ks.reduce((a,k)=>a+(+mt[k]||0),0);
+  if(!mix||!ks.every(k=>+mix[k]>0))return {t:soma,garg:null,soma};
+  let t=0,garg=null;ks.forEach(k=>{const v=(+mt[k]||0)/(+mix[k]);if(v>t){t=v;garg=k}});
+  return {t,garg,soma};
+}
+const TXT_TOT=()=>visLiq()?{real:'Britado acumulado',prog:'Meta de britado do mês',dia:'Britado no dia',col:'Britado',leg:'Britado acumulado (rachão do BM10 + BMM05)',sub:'rachão para uso + rachão para os finos'}
   :{real:'Realizado acumulado',prog:'Programado do mês',dia:'Total do dia',col:'Total',leg:'Realizado acumulado (soma dos materiais)',sub:'soma das metas de todos os materiais'};
 
 /* Tendência: mantém o ritmo já feito no mês (toneladas por dia programado, sábado com o peso dele)
@@ -58,7 +68,7 @@ function prdCalc(x,mes){
   const meta={RACHAO:m?(+m.meta_rachao_irati)+(+m.meta_rachao_palmeira):0,BRITA01:m?+m.meta_brita01:0,PO:m?+m.meta_po:0,BRITA02:m?+m.meta_brita02:0};
   /* Visão sem dupla contagem: para produzir os finos é preciso britar rachão, então a meta do rachão britado
      = meta de rachão para uso + metas de Brita 01, Pó e Brita 02. Na soma dos materiais, cada meta fica separada. */
-  const metaRachUso=meta.RACHAO,metaFinos=meta.BRITA01+meta.PO+meta.BRITA02;
+  const metaRachUso=meta.RACHAO,rpf=rachParaFinos(meta,x.mix),metaFinos=rpf.t;
   if(visLiq())meta.RACHAO=metaRachUso+metaFinos;
   const metaT=visLiq()?meta.RACHAO:MATS.reduce((a,[k])=>a+meta[k],0);
   const tipo={};(x.dias||[]).forEach(d=>tipo[d.dia]=d.tipo);
@@ -71,7 +81,7 @@ function prdCalc(x,mes){
   let pa=0,ra=0;
   days.forEach(o=>{o.meta={};MATS.forEach(([k])=>o.meta[k]=W?meta[k]*o.w/W:0);o.metaT=W?metaT*o.w/W:0;pa+=o.metaT;ra+=o.tot;o.prevAc=pa;o.realAc=ra});
   const feitos=days.filter(o=>o.tem),ref=feitos.length?feitos[feitos.length-1].d:null;
-  const c={m,n,peso,pctBM,meta,metaT,metaRachUso,metaFinos,days,byD,W,ref,diasCom:feitos.length};
+  const c={m,n,peso,pctBM,meta,metaT,metaRachUso,metaFinos,garg:rpf.garg,mix:x.mix||null,days,byD,W,ref,diasCom:feitos.length};
   Object.assign(c,prdAte(c,ref));
   c.diasProg=days.filter(o=>o.w>0).length;
   c.diasRest=days.filter(o=>o.w>0&&(!ref||o.d>ref)).length;
@@ -113,7 +123,7 @@ function renderPrd(anima){
   /* visão geral do mês */
   const ad=c.prevT?c.realT/c.prevT:null,saldo=c.realT-c.metaT;
   h+=`<div class="kpis">`
-    +kt(c.metaT,TXT_TOT().prog,'var(--navy2)',`${c.diasProg} dias programados · ${TXT_TOT().sub}`,'t')
+    +kt(c.metaT,TXT_TOT().prog,'var(--navy2)',`${c.diasProg} dias programados · ${TXT_TOT().sub}${visLiq()&&c.garg?` (${f0(c.metaRachUso)} + ${f0(c.metaFinos)} t, gargalo: ${MATN[c.garg]} com ${fmtPc(c.mix[c.garg]*100)} do mix)`:''}`,'t')
     +kt(c.realT,TXT_TOT().real,'var(--m1)',c.metaT?`${pc1(c.realT/c.metaT)} da meta do mês`:'sem meta cadastrada','t')
     +kt(ad!=null?ad*100:0,'Aderência ao previsto',ad==null?'var(--off)':ad>=1?'var(--green)':ad>=.9?'var(--orange)':'var(--red)',ad!=null?`${ad>=1?'▲ no ritmo':ad>=.9?'● atenção':'▼ abaixo'} · previsto até ${ddmm(ref)}: ${f0(c.prevT)} t`:'sem previsto até agora','%',1)
     +kt(saldo,'Saldo vs meta do mês',saldo>=0?'var(--green)':'var(--red)',saldo>=0?'meta do mês superada':`faltam ${f0(-saldo)} t em ${c.diasRest} ${c.diasRest===1?'dia programado':'dias programados'}`,'t')
@@ -407,7 +417,7 @@ function prdSaldoTabela(c){
 function prdMeses(){
   const ms=((PR.x&&PR.x.meses)||[]).slice().reverse();
   if(!ms.length)return '<div class="pempty"><b>Nenhum mês cadastrado</b></div>';
-  return `<table class="tb"><thead><tr><th>Mês</th><th class="n">Programado</th><th class="n">Realizado</th><th class="n">% da meta</th></tr></thead><tbody>${ms.map(m0=>{const m=visLiq()?{...m0,meta:+m0.meta||0,real:+m0.real_britado||0}:m0;const p=m.meta?m.real/m.meta:null;
+  return `<table class="tb"><thead><tr><th>Mês</th><th class="n">Programado</th><th class="n">Realizado</th><th class="n">% da meta</th></tr></thead><tbody>${ms.map(m0=>{const m=visLiq()?{...m0,meta:(+m0.meta_britado||0)+(m0.meta_po!=null?rachParaFinos({BRITA01:m0.meta_b1,PO:m0.meta_po,BRITA02:m0.meta_b2},PR.x.mix).t:(+m0.meta||0)-(+m0.meta_britado||0)),real:+m0.real_britado||0}:m0;const p=m.meta?m.real/m.meta:null;
     return `<tr data-prdmes="${m.mes}" style="cursor:pointer" ${m.mes===PR.mes?'class="sel"':''}><td class="m" style="text-transform:capitalize">${esc(mesTxt(m.mes))}</td><td class="n">${f0(m.meta)} t</td><td class="n">${f0(m.real)} t</td><td class="n">${p!=null?pc1(p):'—'}<span class="mini"><i style="width:${p?Math.min(100,p*100):0}%;background:var(--m1)"></i></span></td></tr>`}).join('')}</tbody></table><p class="note">Clique num mês para abrir.</p>`;
 }
 
