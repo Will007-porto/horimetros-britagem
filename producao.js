@@ -22,8 +22,9 @@ const chevS='<span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/
 
 let PR={mes:null,x:null,c:null,err:null,busy:false,dia:null,mat:'T',par:{},tab:false,tend:false};
 try{PR.tend=localStorage.getItem('hb_tend')==='1'}catch(e){}
-/* Visão do total: 'liq' = sem dupla contagem (britado = rachão do BM10 + BMM05; os finos saem do rachão do BM10)
-   ou 'mat' = soma dos materiais, como a planilha antiga (conta os finos duas vezes). */
+/* Visão do total: 'liq' = ESTOQUE, o que foi produzido de fato sem contar duas vezes (britado = rachão do BM10 + BMM05
+   = rachão que foi para o estoque + finos; os finos saem do rachão do BM10)
+   ou 'mat' = PRODUTIVIDADE, o que passou em cada etapa da planta (soma rachão + finos, como a planilha antiga). */
 PR.vis='liq';try{if(localStorage.getItem('hb_prdvis')==='mat')PR.vis='mat'}catch(e){}
 const visLiq=()=>PR.vis!=='mat';
 /* Rachão que precisa ir para o secundário para cumprir as metas dos finos. 1 t de rachão vira os três finos ao
@@ -37,7 +38,7 @@ function rachParaFinos(mt,mix){
   return {t,garg,soma};
 }
 const TXT_TOT=()=>visLiq()?{real:'Britado acumulado',prog:'Meta de britado do mês',dia:'Britado no dia',col:'Britado',leg:'Britado acumulado (rachão do BM10 + BMM05)',sub:'rachão para uso + rachão para os finos'}
-  :{real:'Realizado acumulado',prog:'Programado do mês',dia:'Total do dia',col:'Total',leg:'Realizado acumulado (soma dos materiais)',sub:'soma das metas de todos os materiais'};
+  :{real:'Realizado acumulado',prog:'Programado do mês',dia:'Total do dia',col:'Total',leg:'Realizado acumulado (produtividade: soma de todas as etapas)',sub:'soma das metas de todos os materiais'};
 
 /* Tendência: mantém o ritmo já feito no mês (toneladas por dia programado, sábado com o peso dele)
    e projeta nos dias programados que faltam. Devolve o acumulado projetado dia a dia. */
@@ -271,7 +272,7 @@ function prdBarrasBloco(c){
   const bm=PR.bm||'T',be=bm==='RACHAO'?(PR.be||'AMB'):'AMB';
   const segM=segHtml('prdBarMat',[['T','Total'],...MATS.map(([k,n,col])=>[k,`<i style="background:${col}"></i>${n}`])],bm);
   const segE=bm==='RACHAO'?segHtml('prdBarEq',[['AMB','Os dois'],['BM10','BM10 · Primário'],['BMM05','BMM05 · Lokotrack']],be):'';
-  return `<div class="prdbarf">${segM}${segE}</div><div class="scrollx">${bm==='T'?(visLiq()?prdBarrasMat(c,'RACHAO','AMB'):prdBarras(c)):prdBarrasMat(c,bm,be)}</div>${prdAtendResumo(c,bm,be)}`;
+  return `<div class="prdbarf">${segM}${segE}</div><div class="scrollx">${bm==='T'?prdBarras(c):prdBarrasMat(c,bm,be)}</div>${prdAtendResumo(c,bm,be)}`;
 }
 /* valor, meta e cor de um dia conforme o filtro */
 function prdSerie(c,bm,be){
@@ -285,7 +286,7 @@ function prdSerie(c,bm,be){
 function prdAtendResumo(c,bm,be){
   const ser=prdSerie(c,bm,be).filter(x=>x.o.tem&&x.m>0);if(!ser.length)return '';
   const v=ser.reduce((a,x)=>a+x.v,0),m=ser.reduce((a,x)=>a+x.m,0),ok=ser.filter(x=>x.v>=x.m).length;
-  const nome=bm==='T'?(visLiq()?'britado: rachão do BM10 + BMM05':'soma dos materiais'):bm==='RACHAO'&&be!=='AMB'?`rachão no ${be}`:MATN[bm].toLowerCase();
+  const nome=bm==='T'?(visLiq()?'estoque: rachão para estoque + finos (= britado)':'produtividade: soma de todas as etapas'):bm==='RACHAO'&&be!=='AMB'?`rachão no ${be}`:MATN[bm].toLowerCase();
   return `<p class="note">Atendimento da meta nos dias programados lançados (${esc(nome)}): ${stAd(v/m)} · ${f0(v)} t de ${f0(m)} t · <b>${ok}</b> de ${ser.length} ${ser.length===1?'dia':'dias'} na meta ou acima.</p>`;
 }
 /* Um material só (ou o rachão por equipamento): barras simples, meta do material, % por dia */
@@ -315,7 +316,13 @@ function prdBarrasMat(c,bm,be){
   const leg=dois?`<span><i style="background:${corEq.BM10}"></i>BM10 · Primário</span><span><i style="background:${corEq.BMM05}"></i>BMM05 · Lokotrack</span>`:`<span><i style="background:${be!=='AMB'?corEq[be]:col}"></i>${MATN[bm]}${be!=='AMB'?' · '+be:''}</span>`;
   return s+'</svg>'+`<div class="leg">${leg}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>Meta do dia${bm==='RACHAO'&&be!=='AMB'?` (${Math.round(c.fracEq(be)*100)}% da meta de ${visLiq()?'britado':'rachão'})`:''}</span><span>▲ % = atendimento da meta do dia</span></div>`;
 }
+/* Barras por dia. Produtividade: um bloco por material (rachão inteiro + finos).
+   Estoque: um bloco por destino, sem contar duas vezes: rachão que foi para o estoque (britado − finos) + Brita 01 + Pó + Brita 02;
+   a altura total é o britado do dia. */
+const SEG_EST=['EST','Rachão para estoque',MATC.RACHAO];
+const finosDia=o=>(o.real.BRITA01||0)+(o.real.PO||0)+(o.real.BRITA02||0);
 function prdBarras(c){
+  const liq=visLiq(),SEGS=liq?[SEG_EST,...MATS.filter(([k])=>k!=='RACHAO')]:MATS,vS=(o,k)=>k==='EST'?Math.max(0,o.tot-finosDia(o)):o.real[k],cS=k=>k==='EST'?SEG_EST[2]:MATC[k];
   const n=c.days.length,L=48,W=Math.max(L+n*18,largGraf(false)),H=230,T=12,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
   const max=Math.max(1,...c.days.map(o=>Math.max(o.tot,o.metaT))),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
   const Y=v=>ih*v/top;
@@ -323,15 +330,15 @@ function prdBarras(c){
   [0,.5,1].forEach(f=>{const y=T+ih-Y(top*f);s+=`<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+3}" text-anchor="end">${f0(top*f)}</text>`});
   const stp=Math.max(1,Math.ceil(46/cw));
   c.days.forEach((o,i)=>{const x=L+i*cw,bw=Math.min(30,cw*.66),bx=x+(cw-bw)/2;let y=T+ih;
-    const tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]}${o.t?' · '+o.t:''}</div><b>${o.tem?f0(o.tot)+' t':'Sem lançamento'}</b>${MATS.filter(([k])=>o.real[k]>0).map(([k,nm])=>`<div class='tl'><span>${nm}</span><b>${f0(o.real[k])} t</b></div>`).join('')}${o.metaT?`<div class='tl'><span>Meta do dia</span><b>${f0(o.metaT)} t</b></div>`:''}`;
+    const tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]}${o.t?' · '+o.t:''}</div><b>${o.tem?f0(o.tot)+' t'+(liq?' britado':''):'Sem lançamento'}</b>${SEGS.filter(([k])=>vS(o,k)>0).map(([k,nm])=>`<div class='tl'><span>${nm}</span><b>${f0(vS(o,k))} t</b></div>`).join('')}${liq&&o.tem&&o.tot-finosDia(o)<0?`<div class='tl'><span>Consumiu do estoque</span><b>${f0(finosDia(o)-o.tot)} t</b></div>`:''}${o.metaT?`<div class='tl'><span>Meta do dia</span><b>${f0(o.metaT)} t</b></div>`:''}`;
     s+=`<g class="bd" data-dia="${o.d}" data-tip="${esc(tip)}"><rect class="bg" x="${x}" y="${T}" width="${cw}" height="${ih}" fill="transparent" rx="3"/>`;
-    const segs=MATS.filter(([k])=>o.real[k]>0);
-    segs.forEach(([k],j)=>{const hh=Y(o.real[k]);const g=j<segs.length-1?2:0,top1=j===segs.length-1;const hv=Math.max(1,hh-g);y-=hh;
-      s+=top1?`<path d="M${bx} ${y+hv+g}V${y+g+Math.min(4,hv)}q0 -4 4 -4h${bw-8}q4 0 4 4V${y+hv+g}Z" fill="${MATC[k]}" transform="translate(0,${-g})"/>`:`<rect x="${bx}" y="${y+g}" width="${bw}" height="${hv}" fill="${MATC[k]}"/>`});
+    const segs=SEGS.filter(([k])=>vS(o,k)>0);
+    segs.forEach(([k],j)=>{const hh=Y(vS(o,k));const g=j<segs.length-1?2:0,top1=j===segs.length-1;const hv=Math.max(1,hh-g);y-=hh;
+      s+=top1?`<path d="M${bx} ${y+hv+g}V${y+g+Math.min(4,hv)}q0 -4 4 -4h${bw-8}q4 0 4 4V${y+hv+g}Z" fill="${cS(k)}" transform="translate(0,${-g})"/>`:`<rect x="${bx}" y="${y+g}" width="${bw}" height="${hv}" fill="${cS(k)}"/>`});
     if(o.metaT){const ym=T+ih-Y(o.metaT);s+=`<line x1="${x+cw*.08}" x2="${x+cw*.92}" y1="${ym}" y2="${ym}" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>`}
     s+='</g>';
     if(i%stp===0)s+=`<text class="ax" x="${x+cw/2}" y="${H-8}" text-anchor="middle" ${o.d===PR.dia?'fill="var(--ink)" style="font-weight:700"':''}>${ddmm(o.d)}</text>`});
-  return s+'</svg>'+`<div class="leg">${MATS.map(([,n,col])=>`<span><i style="background:${col}"></i>${n}</span>`).join('')}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>Meta do dia</span><span style="color:var(--muted)">Clique num dia para ver o detalhe</span></div>`;
+  return s+'</svg>'+`<div class="leg">${SEGS.map(([k,n])=>`<span><i style="background:${cS(k)}"></i>${n}</span>`).join('')}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>${liq?'Meta de britado do dia':'Meta do dia'}</span><span style="color:var(--muted)">Clique num dia para ver o detalhe</span></div>`;
 }
 function prdTabela(c){
   let h=`<table class="tb"><thead><tr><th>Dia</th>${MATS.map(([,n])=>`<th class="n">${n}</th>`).join('')}<th class="n">${TXT_TOT().col}</th><th class="n">Meta</th><th class="n">Desvio</th></tr></thead><tbody>`;

@@ -45,7 +45,7 @@ function rmColunas({W=520,H=230,grupos,series,titulo,rot,valores}){
 function rmMontar(dia){
   const c=PR.c,o=c.byD[dia],a=prdAte(c,dia),dias=c.days.map(x=>x.d),ate=x=>x.d<=dia;
   const saldo=a.realT-c.metaT,ad=a.prevT?a.realT/a.prevT:null;
-  const H1=rmHead('ACOMPANHAMENTO DIÁRIO DA PRODUÇÃO',visLiq()?'Pedreira Tripoloni - Britagem · total sem dupla contagem (britado = rachão BM10 + BMM05)':'Pedreira Tripoloni - Britagem · soma dos materiais',c,dia);
+  const H1=rmHead('ACOMPANHAMENTO DIÁRIO DA PRODUÇÃO',visLiq()?'Pedreira Tripoloni - Britagem · visão estoque (britado = rachão BM10 + BMM05, sem contar os finos duas vezes)':'Pedreira Tripoloni - Britagem · visão produtividade (soma de todas as etapas)',c,dia);
   const tn=PR.tend?prdTendAte(c,'T',dia):null;
 
   /* página 1: visão geral */
