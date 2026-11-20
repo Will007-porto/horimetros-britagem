@@ -740,7 +740,9 @@ async function load(force,silencioso){
   try{
     if(!D)showState('load');
     if(!silencioso)prog(55);
-    D=await rpc('painel_dados');ULT_OK=Date.now();ULT_ERRO=null;cacheGravar();
+    const novo=await rpc('painel_dados');ULT_OK=Date.now();ULT_ERRO=null;
+    if(silencioso&&D&&mesmoDado(novo,D)){D.gerado=novo.gerado;stampTick();return}
+    D=novo;cacheGravar();
     hideState();if(!silencioso)prog(100);renderAll(silencioso);
   }catch(e){
     if(!silencioso)prog(100);
@@ -757,16 +759,24 @@ async function load(force,silencioso){
    - Tempo real (Supabase Realtime) nas paradas, produção e status das máquinas: chegou mudança, busca de novo.
    - Reserva: a cada 60 s com a aba visível (horas e status vêm dos eventos, que não são escutados um a um).
    - Aba escondida: desliga o tempo real e o relógio; ao voltar, atualiza na hora.
-   - Formulário aberto ou campo em edição: não mexe na tela; atualiza assim que fechar. */
+   - Formulário aberto ou campo em edição: não mexe na tela; atualiza assim que fechar.
+   - Usuário mexendo (mouse, toque, rolagem, teclado) nos últimos 45 s: espera ficar parado para aplicar.
+   - A placa grava eventos várias vezes por minuto: o tempo real agenda no máximo uma leitura a cada 30 s,
+     e a tela só é redesenhada quando os dados realmente mudaram. */
 const POLL_MS=60000;let PEND=false,RT=null,RT_OK=false,RT_TIMER=null,ULT_SALVO=0;
-const ocupado=()=>['drw','gdrw','login'].some(id=>$('#'+id).classList.contains('open'))||!!document.querySelector('.dd.open')
+let ULT_MEXEU=0;const QUIETO_MS=45000,RT_MIN_MS=30000;
+['pointerdown','pointermove','wheel','keydown','touchstart','scroll'].forEach(ev=>addEventListener(ev,()=>{ULT_MEXEU=Date.now()},{passive:true,capture:true}));
+/* Compara duas leituras ignorando o carimbo de hora do servidor */
+const semCarimbo=o=>JSON.stringify(o,(k,v)=>k==='gerado'?undefined:v);
+const mesmoDado=(a,b)=>{try{return semCarimbo(a)===semCarimbo(b)}catch(e){return false}};
+const ocupado=()=>(Date.now()-ULT_MEXEU<QUIETO_MS)||['drw','gdrw','login'].some(id=>$('#'+id).classList.contains('open'))||!!document.querySelector('.dd.open')
   ||(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
 async function atualizarSilencioso(){
   if(!D||!EU.autorizado||document.visibilityState!=='visible')return;
   if(ocupado()){PEND=true;return}
   PEND=false;await load(false,true);
   if(PANE==='val'&&typeof valLoad==='function')valLoad(true);
-  if(PANE==='par')parLoad(true);
+  if(PANE==='par')parLoad(true,true);
   if(PANE==='gan')ganEnsure(true,true);
   if(PANE==='prd'&&typeof prdLoad==='function')prdLoad(null,true,true);
 }
@@ -786,7 +796,10 @@ function rtDesligar(){if(RT){sb.removeChannel(RT);RT=null;RT_OK=false;stampTick(
 function rtEvento(t,p){
   const r=p.new&&Object.keys(p.new).length?p.new:(p.old||{});
   if(Date.now()-ULT_SALVO>4000)rtAvisoEdicao(t,r);
-  clearTimeout(RT_TIMER);RT_TIMER=setTimeout(atualizarSilencioso,1500);
+  /* Salvamento do próprio usuário: aplica rápido. Mudança vinda da placa ou de outro usuário: no máximo uma leitura a cada 30 s. */
+  const espera=Date.now()-ULT_SALVO<6000?1500:Math.max(1500,RT_MIN_MS-(Date.now()-ULT_OK));
+  if(RT_TIMER&&espera>1500)return;
+  clearTimeout(RT_TIMER);RT_TIMER=setTimeout(()=>{RT_TIMER=null;atualizarSilencioso()},espera);
 }
 /* Registro aberto num formulário mudou por outro usuário: avisa em vez de trocar o que está sendo digitado */
 function rtAvisoEdicao(t,r){
@@ -998,17 +1011,19 @@ const eqsDaArea=area=>area==='LOKOTRACK'?CAT.eqp.filter(e=>e.v==='LOKOTRACK'):CA
 const motsDaArea=area=>{const eqs=eqsDaArea(area);return CAT.mot.filter(m=>(!m.ar||m.ar.includes(area))&&(!m.a||eqs.some(e=>motAplicaEq(m,e.t))))};
 const ERR_APP={quando_no_futuro:'O horário escolhido ainda não chegou.',muito_perto_do_inicio:'Escolha um horário pelo menos 2 minutos depois do início da parada.',muito_perto_do_fim:'Escolha um horário pelo menos 1 minuto antes do fim da parada.',maquina_ja_voltou:'A máquina já religou antes desse horário: atualize a tela, a parada já foi fechada.',tente_de_novo:'Já existe uma divisão nesse mesmo segundo. Escolha outro horário.',parada_nao_encontrada:'Parada não encontrada. Atualize a tela.',nao_autorizado:'Seu usuário não tem permissão para isso.',sem_permissao:'Seu usuário não tem permissão para isso.',sem_area:'Seu usuário ainda não tem setor definido.',fora_da_sua_area:'Essa parada não é do seu setor.',parada_de_outro_turno:'Essa parada é do outro turno: quem justifica é o operador daquele turno.',fora_do_turno:'Essa parada é de um turno que já fechou: só o supervisor pode justificar.',ja_justificada:'Essa parada já foi justificada por outra pessoa.',motivo_invalido:'Motivo inválido.',motivo_fora_da_area:'Esse motivo não vale para este setor.',motivo_nao_se_aplica:'Esse motivo não vale para esse equipamento.',equipamento_fora_da_area:'Esse equipamento não é deste setor.',equipamento_invalido:'Escolha o equipamento.',obs_obrigatoria:'Escreva na observação o motivo da correção (mínimo 3 letras).',texto_longo:'Texto muito longo (máx. 500).',nao_justificada:'Essa parada não está justificada.',parada_nao_encontrada:'Essa parada não existe mais.',nao_aguarda_confirmacao:'Essa parada já foi validada por outra pessoa.',acao_invalida:'Ação inválida.'};
 function errApp(e){const m=(e&&(e.message||e.code))||String(e);const k=Object.keys(ERR_APP).find(k=>m.includes(k));if(k)return ERR_APP[k];if(/JWT|auth|permission denied/i.test(m))return 'Sua sessão expirou. Entre de novo.';if(/fetch|network/i.test(m))return 'Sem resposta do servidor. Confira a internet e tente de novo.';return 'Erro: '+m}
-async function parLoad(force){
+async function parLoad(force,silencioso){
   if(!D)return;
   const key=PMODE?'pend':`${F.from}|${F.to}`;
   if(PQ.key===key&&PQ.rows&&!force){renderPar();return}
   if(!isDay(F.from)||!isDay(F.to))return;
-  PQ.busy=true;PQ.err=null;if(PQ.key!==key){PQ.rows=null;PSEL.clear();PLIM=60}PQ.key=key;renderPar();
+  const quieto=silencioso&&PQ.key===key&&PQ.rows;
+  if(!quieto){PQ.busy=true;PQ.err=null;if(PQ.key!==key){PQ.rows=null;PSEL.clear();PLIM=60}PQ.key=key;renderPar()}
   try{const [d]=await Promise.all([rpc('painel_paradas',{p_desde:F.from,p_ate:F.to,p_pendentes:PMODE}),ensureCat()]);
-    if(PQ.key!==key)return;PQ.rows=(d.rows||[]).map(normRow);
+    if(PQ.key!==key)return;const rows=(d.rows||[]).map(normRow);
+    if(quieto&&mesmoDado(rows,PQ.rows))return;PQ.rows=rows;
     const ids=new Set(PQ.rows.map(r=>r.id));[...PSEL].forEach(i=>{if(!ids.has(i))PSEL.delete(i)});
-  }catch(e){if(PQ.key===key)PQ.err=e}
-  finally{if(PQ.key===key){PQ.busy=false;renderPar()}}
+  }catch(e){if(PQ.key===key&&!quieto)PQ.err=e;if(quieto)return}
+  PQ.busy=false;if(PQ.key===key)renderPar()
 }
 const isDay=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'');
 function parRows(){const ids=new Set(M.map(m=>m.id));return (PQ.rows||[]).filter(r=>{if(r.tu===undefined)r.tu=turnoOf(r.iniMs/1000);return (ids.has(r.mo)||!MALL.some(m=>m.id===r.mo)&&!F.sel)&&(F.tu==='all'||String(r.tu)===F.tu)})}
@@ -1188,7 +1203,8 @@ async function ganEnsure(force,silencioso){
   if(GDATA[GDAY]&&!force){renderGan();return}
   const want=GDAY;if(!(silencioso&&GDATA[want]))$('#cGan').innerHTML='<span class="sr">Carregando</span><div class="skel" style="width:80%"></div><div class="skel" style="width:60%"></div>';
   try{
-    GDATA[want]=await rpc('painel_gantt',{p_dia:want});if(GDAY===want)renderGan();
+    const g=await rpc('painel_gantt',{p_dia:want});if(silencioso&&GDATA[want]&&mesmoDado(g,GDATA[want]))return;
+    GDATA[want]=g;if(GDAY===want)renderGan();
   }catch(e){if(GDAY===want)$('#cGan').innerHTML=`<div class="gmsg">Não foi possível buscar este dia (${esc(e&&(e.message||e.code)||'erro')}). <button class="pbtn" style="display:inline-flex;margin-left:8px" onclick="ganEnsure(true)">Tentar de novo</button></div>`}
 }
 function ganRows(){

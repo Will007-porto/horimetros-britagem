@@ -55,12 +55,14 @@ async function prdLoad(mes,force,silencioso){
   if(!D)return;mes=mes||PR.mes||mesDe(D.hoje);
   if(PR.mes===mes&&PR.x&&!force){renderPrd();return}
   if(PR.mes!==mes){PR.x=null;PR.c=null;PR.tab=false}
-  PR.mes=mes;PR.busy=true;PR.err=null;if(!PR.x)renderPrd();
+  PR.mes=mes;PR.busy=true;PR.err=null;if(!PR.x)renderPrd();let igual=false;
   try{const x=await rpc('prod_dados',{p_mes:mes});if(PR.mes!==mes)return;
+    /* Atualização automática sem mudança nos dados: não redesenha */
+    if(silencioso&&PR.x&&typeof mesmoDado==='function'&&mesmoDado(x,PR.x)){igual=true;return}
     PR.x=x;PR.c=prdCalc(x,mes);if(force)PR.par={};
     if(!PR.dia||mesDe(PR.dia)!==mes)PR.dia=PR.c.ref||(mesDe(D.hoje)===mes?D.hoje:mes);
   }catch(e){if(PR.mes===mes)PR.err=e}
-  finally{if(PR.mes===mes){PR.busy=false;renderPrd(!silencioso)}}
+  finally{if(PR.mes===mes){PR.busy=false;if(!igual)renderPrd(!silencioso)}}
 }
 
 function prdCalc(x,mes){
