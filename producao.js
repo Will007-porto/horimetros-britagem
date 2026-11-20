@@ -77,8 +77,9 @@ function prdCalc(x,mes){
   const tipo={};(x.dias||[]).forEach(d=>tipo[d.dia]=d.tipo);
   const days=[];
   for(let i=0;i<n;i++){const d=addDays(mes,i),t=tipo[d]||null;
-    days.push({d,t,w:t==='X'?1:t==='XX'?peso:0,real:{RACHAO:0,BRITA01:0,PO:0,BRITA02:0},tu:{1:{},2:{}},eq:{BM10:0,BMM05:0},eqTu:{1:{},2:{}},tem:false,tot:0})}
+    days.push({d,t,w:t==='X'?1:t==='XX'?peso:0,real:{RACHAO:0,BRITA01:0,PO:0,BRITA02:0},tu:{1:{},2:{}},eq:{BM10:0,BMM05:0},eqTu:{1:{},2:{}},h:{AV10:0,CV07:0},tem:false,tot:0})}
   const W=days.reduce((a,o)=>a+o.w,0),byD=Object.fromEntries(days.map(o=>[o.d,o]));
+  (x.horas||[]).forEach(([d,mo,hh])=>{const o=byD[d];if(o&&o.h[mo]!=null)o.h[mo]=+hh||0});
   (x.lanc||[]).forEach(l=>{const o=byD[l.dia];if(!o)return;const t=+l.t||0;o.tem=true;o.real[l.material]+=t;o.totMat=(o.totMat||0)+t;if(!visLiq()||l.material==='RACHAO')o.tot+=t;
     o.tu[l.turno][l.material]=(o.tu[l.turno][l.material]||0)+t;if(l.material==='RACHAO'){o.eq[l.equipamento]+=t;o.eqTu[l.turno][l.equipamento]=t}});
   let pa=0,ra=0;
@@ -163,6 +164,10 @@ function renderPrd(anima){
     <div class="cwrap"><div class="cinner"><div class="boxb"><div id="prdBarsBloco">${prdBarrasBloco(c)}</div>
       <div class="prdtab"><button type="button" class="fclear" data-prdtab>${PR.tab?'Esconder a tabela dia a dia':'Ver a tabela dia a dia'}</button></div>
       <div class="scrollx" id="prdTab">${PR.tab?prdTabela(c):''}</div></div></div></div></div>`;
+
+  /* toneladas × horas trabalhadas (só na visão Produtividade) */
+  if(!visLiq())h+=`<div class="box rv"><button class="boxh">${icoBox('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')}<div><div class="tt">Toneladas por hora trabalhada</div><div class="kk">Horas ligado do AV10 (primário · BM10) e do CV07 (secundário · finos) × toneladas lançadas</div></div>${chevS}</button>
+    <div class="cwrap"><div class="cinner"><div class="boxb" id="prdHoraIn">${prdHoraBloco(c)}</div></div></div></div>`;
 
   /* saldo de material: BM10 = rachão que ficou rachão + finos do secundário; BMM05 à parte */
   h+=`<div class="box rv" id="prdSaldoBox"><button class="boxh">${icoBox('<path d="M4 6h16M4 12h10M4 18h6"/><path d="M17 15l3 3-3 3"/>')}<div><div class="tt">Saldo de material</div><div class="kk">Britado = BM10 (rachão + finos do secundário) + BMM05</div></div>${chevS}</button>
@@ -423,6 +428,64 @@ function prdSaldoTabela(c){
   h+=lin('Total',prdSaldo(c,c.ref),' class="tot"')+'</tbody></table><p class="note">Sobra negativa (em vermelho) = naquele dia o secundário fez mais finos do que o BM10 britou: consumiu rachão do estoque.</p>';
   return h;
 }
+/* ---------- toneladas × horas trabalhadas ----------
+   Primário: rachão lançado no BM10 ÷ horas ligado do AV10 (alimentador do BM10).
+   Secundário: Brita 01 + Pó + Brita 02 ÷ horas ligado do CV07.
+   Horas = dia de produção 07:30 → 07:30, intervalos ligados acima de 16h cortados (mesma regra do mapa de operação).
+   Só entram na conta os dias com produção lançada E horas registradas. */
+const ETH=[{m:'AV10',nome:'Primário · BM10',sub:'rachão do BM10 ÷ horas do AV10',lt:'Rachão BM10',t:o=>o.eq.BM10,cor:'var(--m1)'},
+           {m:'CV07',nome:'Secundário · finos',sub:'Brita 01 + Pó + Brita 02 ÷ horas do CV07',lt:'Finos',t:o=>finosDia(o),cor:'var(--m3)'}];
+const fH=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+function prdHoraEt(c,e,ate){
+  const ds=c.days.filter(o=>!ate||o.d<=ate);
+  const pts=ds.filter(o=>o.tem&&o.h[e.m]>0&&e.t(o)>0).map(o=>({o,h:o.h[e.m],t:e.t(o)}));
+  const T=pts.reduce((a,p)=>a+p.t,0),H=pts.reduce((a,p)=>a+p.h,0),n=pts.length;
+  let r=null;if(n>=3){const mh=H/n,mt=T/n;let sxy=0,sxx=0,syy=0;pts.forEach(p=>{sxy+=(p.h-mh)*(p.t-mt);sxx+=(p.h-mh)**2;syy+=(p.t-mt)**2});r=sxx&&syy?sxy/Math.sqrt(sxx*syy):null}
+  const semH=ds.filter(o=>o.tem&&e.t(o)>0&&!(o.h[e.m]>0)).map(o=>o.d),semT=ds.filter(o=>o.h[e.m]>0&&!(o.tem&&e.t(o)>0)).map(o=>o.d);
+  /* fora do padrão: rendeu mais de 1,5× ou menos da metade da média do mês (costuma ser hora perdida pelo sensor ou lançamento trocado) */
+  const th=H?T/H:0,fora=th?pts.filter(p=>p.t/p.h>th*1.5||p.t/p.h<th*.5):[];fora.forEach(p=>p.fora=true);
+  return {pts,T,H,n,th,r,semH,semT,fora,hDia:n?H/n:0};
+}
+const rCorr=r=>r==null?'poucos dias para medir':Math.abs(r)>=.8?'forte':Math.abs(r)>=.5?'moderada':'fraca';
+function prdHoraScatter(e,k,W){
+  const H=230,L=46,R=12,T=14,Bo=34,iw=W-L-R,ih=H-T-Bo;
+  const maxH=Math.max(4,...k.pts.map(p=>p.h)),topH=Math.min(24,Math.ceil(maxH/4)*4)||4;
+  const maxT=Math.max(1,...k.pts.map(p=>p.t),k.th*topH*.6),st=Math.pow(10,Math.floor(Math.log10(maxT)))/2,topT=Math.ceil(maxT/st)*st;
+  const X=h=>L+iw*Math.min(h,topH)/topH,Y=t=>T+ih-ih*Math.min(t,topT)/topT;
+  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="max-width:${W}px" role="img" aria-label="${esc(`${e.nome}: toneladas por horas, ${fH(k.th)} t/h no mês`)}">`;
+  [0,.5,1].forEach(f=>{const y=Y(topT*f);s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+3}" text-anchor="end">${f0(topT*f)}</text>`});
+  for(let hh=0;hh<=topH;hh+=topH/4){const x=X(hh);s+=`<text class="ax" x="${x}" y="${T+ih+15}" text-anchor="middle">${f0(hh)}h</text>`}
+  s+=`<text class="ax" x="${L+iw/2}" y="${H-3}" text-anchor="middle">horas ligado no dia</text>`;
+  if(k.th){const hEnd=Math.min(topH,topT/k.th);s+=`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(hEnd)}" y2="${Y(k.th*hEnd)}" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="5 4" opacity=".55"/>`
+    +`<text x="${X(hEnd)-4}" y="${Y(k.th*hEnd)+(hEnd<topH?14:-6)}" text-anchor="end" style="font:700 10.5px var(--mono)" fill="var(--ink)">${fH(k.th)} t/h</text>`}
+  k.pts.forEach(p=>{const o=p.o,tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]} · ${e.nome}</div><b>${fH(p.t/p.h)} t/h</b><div class='tl'><span>${e.lt}</span><b>${f0(p.t)} t</b></div><div class='tl'><span>Horas ${e.m}</span><b>${fH(p.h)} h</b></div><div class='tl'><span>Média do mês</span><b>${fH(k.th)} t/h</b></div>${p.fora?`<div class='tl'><span>Fora do padrão</span><b>conferir horas e lançamento</b></div>`:''}`;
+    s+=`<g class="bd" data-dia="${o.d}" data-tip="${esc(tip)}" style="cursor:pointer"><circle cx="${X(p.h)}" cy="${Y(p.t)}" r="9" fill="transparent"/><circle cx="${X(p.h)}" cy="${Y(p.t)}" r="${o.d===PR.dia?6:4.5}" fill="${p.fora?'var(--card)':e.cor}" fill-opacity="${p.fora?1:.85}" stroke="${o.d===PR.dia?'var(--ink)':p.fora?e.cor:'var(--card)'}" stroke-width="${p.fora?2:1.5}"/></g>`});
+  return s+'</svg>';
+}
+function prdHoraBloco(c){
+  const ks=ETH.map(e=>[e,prdHoraEt(c,e,c.ref)]);
+  if(!ks.some(([,k])=>k.n))return `<div class="pempty"><b>Sem dias com produção e horas registradas neste mês</b>As horas vêm do sensor de liga/desliga do AV10 e do CV07.</div>`;
+  const W=Math.max(280,Math.min(620,largGraf(true)-16));
+  let h=`<div class="hrg">${ks.map(([e,k])=>`<div class="hrc"><div class="pmh"><i style="background:${e.cor}"></i>${e.nome}</div>
+    <div class="hrk"><div><span>Toneladas por hora</span><b>${k.n?fH(k.th):'—'}<small>t/h</small></b><em>${e.sub}</em></div>
+      <div><span>Horas trabalhadas</span><b>${fH(k.H)}<small>h</small></b><em>${k.n} ${k.n===1?'dia':'dias'} · média ${fH(k.hDia)} h/dia</em></div>
+      <div><span>Toneladas</span><b>${f0(k.T)}<small>t</small></b><em>${k.fora.length?`${k.fora.length} ${k.fora.length===1?'dia':'dias'} fora do padrão (anel vazio no gráfico)`:'todos os dias dentro do padrão'}</em></div>
+      <div><span>Correlação t × h</span><b>${k.r==null?'—':fH(k.r*k.r*100)+'<small>%</small>'}</b><em>${k.r==null?rCorr(k.r):`${rCorr(k.r)} · R² (quanto das toneladas as horas explicam)`}</em></div></div>
+    ${k.n?prdHoraScatter(e,k,W):''}
+    ${k.fora.length?`<p class="note">Fora do padrão (mais de 1,5× ou menos da metade da média): ${k.fora.map(p=>`${ddmm(p.o.d)} (${f0(p.t/p.h)} t/h)`).join(', ')}. Costuma ser hora perdida pelo sensor ou lançamento trocado: vale conferir.</p>`:''}
+    ${k.semH.length?`<p class="note warnt">${k.semH.length} ${k.semH.length===1?'dia':'dias'} com produção mas sem horas do ${e.m} (${k.semH.map(ddmm).join(', ')}): ficaram fora da conta. Provável sensor sem sinal.</p>`:''}</div>`).join('')}</div>`;
+  h+=`<p class="note">Cada ponto é um dia: quanto mais à direita, mais horas ligado; quanto mais alto, mais toneladas. Pontos acima da linha tracejada renderam acima da média do mês; abaixo, renderam menos por hora (equipamento ligado em vazio, alimentação irregular, material diferente). Clique num ponto para abrir o dia.</p>`;
+  h+=`<div class="prdtab"><button type="button" class="fclear" data-hortab>${PR.htab?'Esconder a tabela dia a dia':'Ver a tabela dia a dia'}</button></div><div class="scrollx">${PR.htab?prdHoraTabela(c):''}</div>`;
+  return h;
+}
+function prdHoraTabela(c){
+  const [p,s]=ETH,th=(t,hh)=>hh>0&&t>0?fH(t/hh):'—',hf=v=>v>0?fH(v):'—';
+  let h=`<table class="tb"><thead><tr><th>Dia</th><th class="n">Horas AV10</th><th class="n">Rachão BM10</th><th class="n">t/h primário</th><th class="n">Horas CV07</th><th class="n">Finos</th><th class="n">t/h secundário</th></tr></thead><tbody>`;
+  c.days.filter(o=>(o.tem||o.h.AV10>0||o.h.CV07>0)&&(!c.ref||o.d<=c.ref)).forEach(o=>{
+    h+=`<tr><td class="m">${ddmm(o.d)}<span class="sub">${WDN[wd(o.d)]}</span></td><td class="n">${hf(o.h.AV10)}</td><td class="n">${o.tem?f0(p.t(o)):'—'}</td><td class="n" style="font-weight:700">${th(p.t(o),o.h.AV10)}</td><td class="n">${hf(o.h.CV07)}</td><td class="n">${o.tem?f0(s.t(o)):'—'}</td><td class="n" style="font-weight:700">${th(s.t(o),o.h.CV07)}</td></tr>`});
+  const a=prdHoraEt(c,p,c.ref),b=prdHoraEt(c,s,c.ref);
+  return h+`<tr class="tot"><td>Mês (dias com os dois)</td><td class="n">${fH(a.H)}</td><td class="n">${f0(a.T)}</td><td class="n">${a.n?fH(a.th):'—'}</td><td class="n">${fH(b.H)}</td><td class="n">${f0(b.T)}</td><td class="n">${b.n?fH(b.th):'—'}</td></tr></tbody></table>`;
+}
 function prdMeses(){
   const ms=((PR.x&&PR.x.meses)||[]).slice().reverse();
   if(!ms.length)return '<div class="pempty"><b>Nenhum mês cadastrado</b></div>';
@@ -579,6 +642,7 @@ $('#prdBody').addEventListener('click',e=>{
   const pp=t.closest('[data-prdpar]');if(pp){F.key='custom';F.from=F.to=pp.dataset.prdpar;saveF();renderAll();go('par');return}
   const mr=t.closest('tr[data-prdmes]');if(mr)return prdLoad(mr.dataset.prdmes);
   const sgb=t.closest('#prdSaldoSeg button');if(sgb){PR.sm=sgb.dataset.v;$('#prdSaldoIn').innerHTML=prdSaldoBloco(PR.c);return}
+  if(t.closest('[data-hortab]')){PR.htab=!PR.htab;$('#prdHoraIn').innerHTML=prdHoraBloco(PR.c);$$('#prdHoraIn .swipe').forEach(x=>x.classList.add('in'));return}
   if(t.closest('[data-sldtab]')){PR.stab=!PR.stab;$('#prdSaldoIn').innerHTML=prdSaldoBloco(PR.c);return}
   const bmb=t.closest('#prdBarMat button,#prdBarEq button');if(bmb){
     if(bmb.closest('#prdBarMat')){PR.bm=bmb.dataset.v;if(PR.bm!=='RACHAO')PR.be='AMB'}else PR.be=bmb.dataset.v;
