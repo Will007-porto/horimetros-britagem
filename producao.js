@@ -447,20 +447,26 @@ function prdHoraEt(c,e,ate){
   return {pts,T,H,n,th,r,semH,semT,fora,hDia:n?H/n:0};
 }
 const rCorr=r=>r==null?'poucos dias para medir':Math.abs(r)>=.8?'forte':Math.abs(r)>=.5?'moderada':'fraca';
-function prdHoraScatter(e,k,W){
-  const H=230,L=46,R=12,T=14,Bo=34,iw=W-L-R,ih=H-T-Bo;
-  const maxH=Math.max(4,...k.pts.map(p=>p.h)),topH=Math.min(24,Math.ceil(maxH/4)*4)||4;
-  const maxT=Math.max(1,...k.pts.map(p=>p.t),k.th*topH*.6),st=Math.pow(10,Math.floor(Math.log10(maxT)))/2,topT=Math.ceil(maxT/st)*st;
-  const X=h=>L+iw*Math.min(h,topH)/topH,Y=t=>T+ih-ih*Math.min(t,topT)/topT;
-  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="max-width:${W}px" role="img" aria-label="${esc(`${e.nome}: toneladas por horas, ${fH(k.th)} t/h no mês`)}">`;
-  [0,.5,1].forEach(f=>{const y=Y(topT*f);s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+3}" text-anchor="end">${f0(topT*f)}</text>`});
-  for(let hh=0;hh<=topH;hh+=topH/4){const x=X(hh);s+=`<text class="ax" x="${x}" y="${T+ih+15}" text-anchor="middle">${f0(hh)}h</text>`}
-  s+=`<text class="ax" x="${L+iw/2}" y="${H-3}" text-anchor="middle">horas ligado no dia</text>`;
-  if(k.th){const hEnd=Math.min(topH,topT/k.th);s+=`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(hEnd)}" y2="${Y(k.th*hEnd)}" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="5 4" opacity=".55"/>`
-    +`<text x="${X(hEnd)-4}" y="${Y(k.th*hEnd)+(hEnd<topH?14:-6)}" text-anchor="end" style="font:700 10.5px var(--mono)" fill="var(--ink)">${fH(k.th)} t/h</text>`}
-  k.pts.forEach(p=>{const o=p.o,tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]} · ${e.nome}</div><b>${fH(p.t/p.h)} t/h</b><div class='tl'><span>${e.lt}</span><b>${f0(p.t)} t</b></div><div class='tl'><span>Horas ${e.m}</span><b>${fH(p.h)} h</b></div><div class='tl'><span>Média do mês</span><b>${fH(k.th)} t/h</b></div>${p.fora?`<div class='tl'><span>Fora do padrão</span><b>conferir horas e lançamento</b></div>`:''}`;
-    s+=`<g class="bd" data-dia="${o.d}" data-tip="${esc(tip)}" style="cursor:pointer"><circle cx="${X(p.h)}" cy="${Y(p.t)}" r="9" fill="transparent"/><circle cx="${X(p.h)}" cy="${Y(p.t)}" r="${o.d===PR.dia?6:4.5}" fill="${p.fora?'var(--card)':e.cor}" fill-opacity="${p.fora?1:.85}" stroke="${o.d===PR.dia?'var(--ink)':p.fora?e.cor:'var(--card)'}" stroke-width="${p.fora?2:1.5}"/></g>`});
-  return s+'</svg>';
+/* Barras de t/h por dia: verde = acima da média do mês, laranja = abaixo, vazada = fora do padrão.
+   A escala vai até 2× a média para um dia com hora perdida pelo sensor não achatar os outros; o que passa ganha uma seta no topo. */
+function prdHoraBarras(c,e,k,W){
+  const n=c.days.length,L=40,H=210,T=16,Bo=24,cw=(W-L)/n,ih=H-T-Bo;
+  const byD=Object.fromEntries(k.pts.map(p=>[p.o.d,p]));
+  const maxV=Math.max(1,...k.pts.map(p=>p.t/p.h)),lim=Math.min(maxV,k.th*2||maxV),st=Math.pow(10,Math.floor(Math.log10(lim)))/2,top=Math.ceil(lim/st)*st;
+  const Y=v=>ih*Math.min(v,top)/top;
+  let s=`<svg class="ch swipe" viewBox="0 0 ${W} ${H}" style="max-width:${W}px" role="img" aria-label="${esc(`${e.nome}: toneladas por hora em cada dia, média ${fH(k.th)} t/h`)}">`;
+  [0,.5,1].forEach(f=>{const y=T+ih-Y(top*f);s+=`<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+3}" text-anchor="end">${f0(top*f)}</text>`});
+  const stp=Math.max(1,Math.ceil(40/cw));
+  c.days.forEach((o,i)=>{const x=L+i*cw,bw=Math.max(3,Math.min(22,cw*.68)),bx=x+(cw-bw)/2,p=byD[o.d];
+    if(p){const v=p.t/p.h,hh=Math.max(1,Y(v)),y=T+ih-hh,acima=v>=k.th,cor=acima?'var(--ok)':'var(--at)';
+      const tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]} · ${e.nome}</div><b>${fH(v)} t/h</b><div class='tl'><span>${e.lt}</span><b>${f0(p.t)} t</b></div><div class='tl'><span>Horas ${e.m}</span><b>${fH(p.h)} h</b></div><div class='tl'><span>Média do mês</span><b>${fH(k.th)} t/h</b></div><div class='tl'><span>Diferença</span><b>${v>=k.th?'+':''}${pc1(v/k.th-1)}</b></div>${p.fora?`<div class='tl'><span>Fora do padrão</span><b>conferir horas e lançamento</b></div>`:''}`;
+      s+=`<g class="bd" data-dia="${o.d}" data-tip="${esc(tip)}"><rect class="bg" x="${x}" y="${T}" width="${cw}" height="${ih}" fill="transparent" rx="3"/>`
+        +(p.fora?`<rect x="${bx+1}" y="${y+1}" width="${bw-2}" height="${Math.max(1,hh-1)}" fill="none" stroke="${cor}" stroke-width="2" stroke-dasharray="3 2" rx="2"/>`
+               :`<rect x="${bx}" y="${y}" width="${bw}" height="${hh}" fill="${cor}" rx="3" ${o.d===PR.dia?'stroke="var(--ink)" stroke-width="1.5"':''}/>`)
+        +(v>top?`<text x="${x+cw/2}" y="${T-4}" text-anchor="middle" style="font:700 10px var(--mono)" fill="${cor}">▲${f0(v)}</text>`:'')+'</g>'}
+    if(i%stp===0)s+=`<text class="ax" x="${x+cw/2}" y="${H-7}" text-anchor="middle" ${o.d===PR.dia?'fill="var(--ink)" style="font-weight:700"':''}>${ddmm(o.d).slice(0,2)}</text>`});
+  if(k.th){const ym=T+ih-Y(k.th);s+=`<line x1="${L}" x2="${W}" y1="${ym}" y2="${ym}" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="5 4" opacity=".7"/><text x="${W-2}" y="${ym-5}" text-anchor="end" style="font:700 10.5px var(--mono)" fill="var(--ink)">média ${fH(k.th)} t/h</text>`}
+  return s+`</svg><div class="leg"><span><i style="background:var(--ok)"></i>Acima da média</span><span><i style="background:var(--at)"></i>Abaixo da média</span>${k.fora.length?`<span><i style="background:transparent;outline:2px dashed var(--grey);outline-offset:-2px"></i>Fora do padrão</span>`:''}</div>`;
 }
 function prdHoraBloco(c){
   const ks=ETH.map(e=>[e,prdHoraEt(c,e,c.ref)]);
@@ -469,12 +475,12 @@ function prdHoraBloco(c){
   let h=`<div class="hrg">${ks.map(([e,k])=>`<div class="hrc"><div class="pmh"><i style="background:${e.cor}"></i>${e.nome}</div>
     <div class="hrk"><div><span>Toneladas por hora</span><b>${k.n?fH(k.th):'—'}<small>t/h</small></b><em>${e.sub}</em></div>
       <div><span>Horas trabalhadas</span><b>${fH(k.H)}<small>h</small></b><em>${k.n} ${k.n===1?'dia':'dias'} · média ${fH(k.hDia)} h/dia</em></div>
-      <div><span>Toneladas</span><b>${f0(k.T)}<small>t</small></b><em>${k.fora.length?`${k.fora.length} ${k.fora.length===1?'dia':'dias'} fora do padrão (anel vazio no gráfico)`:'todos os dias dentro do padrão'}</em></div>
+      <div><span>Toneladas</span><b>${f0(k.T)}<small>t</small></b><em>${k.fora.length?`${k.fora.length} ${k.fora.length===1?'dia':'dias'} fora do padrão (barra tracejada)`:'todos os dias dentro do padrão'}</em></div>
       <div><span>Correlação t × h</span><b>${k.r==null?'—':fH(k.r*k.r*100)+'<small>%</small>'}</b><em>${k.r==null?rCorr(k.r):`${rCorr(k.r)} · R² (quanto das toneladas as horas explicam)`}</em></div></div>
-    ${k.n?prdHoraScatter(e,k,W):''}
+    ${k.n?prdHoraBarras(c,e,k,W):''}
     ${k.fora.length?`<p class="note">Fora do padrão (mais de 1,5× ou menos da metade da média): ${k.fora.map(p=>`${ddmm(p.o.d)} (${f0(p.t/p.h)} t/h)`).join(', ')}. Costuma ser hora perdida pelo sensor ou lançamento trocado: vale conferir.</p>`:''}
     ${k.semH.length?`<p class="note warnt">${k.semH.length} ${k.semH.length===1?'dia':'dias'} com produção mas sem horas do ${e.m} (${k.semH.map(ddmm).join(', ')}): ficaram fora da conta. Provável sensor sem sinal.</p>`:''}</div>`).join('')}</div>`;
-  h+=`<p class="note">Cada ponto é um dia: quanto mais à direita, mais horas ligado; quanto mais alto, mais toneladas. Pontos acima da linha tracejada renderam acima da média do mês; abaixo, renderam menos por hora (equipamento ligado em vazio, alimentação irregular, material diferente). Clique num ponto para abrir o dia.</p>`;
+  h+=`<p class="note">Cada barra é um dia: toneladas lançadas ÷ horas ligado. Verde rendeu acima da média do mês, laranja abaixo (equipamento ligado em vazio, alimentação irregular, material diferente). Dias sem barra não tiveram produção ou horas registradas. Clique numa barra para abrir o dia.</p>`;
   h+=`<div class="prdtab"><button type="button" class="fclear" data-hortab>${PR.htab?'Esconder a tabela dia a dia':'Ver a tabela dia a dia'}</button></div><div class="scrollx">${PR.htab?prdHoraTabela(c):''}</div>`;
   return h;
 }
