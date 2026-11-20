@@ -263,8 +263,13 @@ function prdCurva(c,mat){
   if(rr.length){s+=`<path class="ln" d="${rr.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.r).toFixed(1)).join('')}" stroke="${col}"/>`;
     const li=rr.length-1;s+=`<circle cx="${X(li)}" cy="${Y(rr[li].r)}" r="4.5" fill="${col}" stroke="var(--card)" stroke-width="2"/><text class="vl" x="${X(li)+9}" y="${Y(rr[li].r)-6}" fill="var(--ink)">${f0(rr[li].r)}</text>`}
   if(tn){const tp=tn.proj.map((v,i)=>v==null?null:[X(i),Y(v)]).filter(Boolean);
-    s+=`<path class="ln" d="${tp.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('')}" stroke="${col}" stroke-dasharray="2 5" stroke-width="2.5" opacity=".85"/>`;
-    const q=tp[tp.length-1];s+=`<circle cx="${q[0]}" cy="${q[1]}" r="4" fill="var(--card)" stroke="${col}" stroke-width="2"/><text class="vl" x="${q[0]+8}" y="${q[1]+(Math.abs(q[1]-Y(pts[n-1].p))<14?16:4)}" fill="var(--ink)">tend. ${f0(tn.fim)}</text>`}
+    /* Ao ligar o botão, a linha é desenhada aos poucos da esquerda para a direita (uma máscara que se abre),
+       e o ponto final com o valor aparece quando ela chega. Sem animação se o sistema pede movimento reduzido. */
+    const q=tp[tp.length-1],anim=PR.tendAnim&&!matchMedia('(prefers-reduced-motion:reduce)').matches,DUR=1.4;PR.tendAnim=false;
+    const cid='tclip'+Date.now(),x0=tp[0][0]-3,wF=q[0]-x0+12;
+    if(anim)s+=`<clipPath id="${cid}"><rect x="${x0}" y="0" width="0" height="${H}"><animate attributeName="width" from="0" to="${wF}" dur="${DUR}s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines=".3 .1 .3 1"/></rect></clipPath>`;
+    s+=`<path class="ln" d="${tp.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('')}" stroke="${col}" stroke-dasharray="2 5" stroke-width="2.5" opacity=".85"${anim?` clip-path="url(#${cid})"`:''}/>`;
+    s+=`<g${anim?' opacity="0"':''}>${anim?`<animate attributeName="opacity" from="0" to="1" begin="${DUR-.15}s" dur=".35s" fill="freeze"/>`:''}<circle cx="${q[0]}" cy="${q[1]}" r="4" fill="var(--card)" stroke="${col}" stroke-width="2"/><text class="vl" x="${q[0]+8}" y="${q[1]+(Math.abs(q[1]-Y(pts[n-1].p))<14?16:4)}" fill="var(--ink)">tend. ${f0(tn.fim)}</text></g>`}
   pts.forEach((p,i)=>{const dif=p.r-p.p,pj=tn&&tn.proj[i]!=null&&!p.ok?tn.proj[i]:null;
     s+=`<g class="dy" data-tip="${esc(`<div class='m'>${ddmm(p.d)} · ${WDN[wd(p.d)]}</div><div class='tl'><span>Previsto acumulado</span><b>${f0(p.p)} t</b></div>${p.ok?`<div class='tl'><span>Realizado acumulado</span><b>${f0(p.r)} t</b></div><div class='tl'><span>Diferença</span><b>${dif>=0?'+':''}${f0(dif)} t</b></div>`:''}${pj!=null?`<div class='tl'><span>Tendência acumulada</span><b>${f0(pj)} t</b></div>`:''}`)}"><line class="hl" x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${T+ih}"/><rect class="hv" x="${L+iw*i/n}" y="${T}" width="${iw/n}" height="${ih}"/></g>`});
   s+='</svg>';
@@ -654,7 +659,7 @@ $('#prdBody').addEventListener('click',e=>{
     if(bmb.closest('#prdBarMat')){PR.bm=bmb.dataset.v;if(PR.bm!=='RACHAO')PR.be='AMB'}else PR.be=bmb.dataset.v;
     $('#prdBarsBloco').innerHTML=prdBarrasBloco(PR.c);$$('#prdBarsBloco .swipe').forEach(s=>s.classList.add('in'));return}
   if(t.closest('[data-prdtab]')){PR.tab=!PR.tab;$('#prdTab').innerHTML=PR.tab?prdTabela(PR.c):'';t.closest('[data-prdtab]').textContent=PR.tab?'Esconder a tabela dia a dia':'Ver a tabela dia a dia';return}
-  if(t.closest('[data-prdtend]')){PR.tend=!PR.tend;try{localStorage.setItem('hb_tend',PR.tend?'1':'0')}catch(e){}const b=t.closest('[data-prdtend]');b.classList.toggle('on',PR.tend);b.setAttribute('aria-pressed',PR.tend);$('#prdCurva').innerHTML=prdCurva(PR.c,PR.mat);$$('#prdCurva .swipe').forEach(s=>s.classList.add('in'));return}
+  if(t.closest('[data-prdtend]')){PR.tend=!PR.tend;PR.tendAnim=PR.tend;try{localStorage.setItem('hb_tend',PR.tend?'1':'0')}catch(e){}const b=t.closest('[data-prdtend]');b.classList.toggle('on',PR.tend);b.setAttribute('aria-pressed',PR.tend);$('#prdCurva').innerHTML=prdCurva(PR.c,PR.mat);$$('#prdCurva .swipe').forEach(s=>s.classList.add('in'));return}
   const sb=t.closest('#prdMatSeg button');if(sb){PR.mat=sb.dataset.v;$$('#prdMatSeg button').forEach(b=>b.classList.toggle('on',b===sb));$('#prdCurva').innerHTML=prdCurva(PR.c,PR.mat);$$('#prdCurva .swipe').forEach(s=>s.classList.add('in'));return}
 });
 $('#prdBody').addEventListener('change',e=>{if(e.target.id==='prdDia'){PR.dia=e.target.value;renderPrdDia()}});
