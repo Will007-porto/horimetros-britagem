@@ -107,8 +107,15 @@ function rmMontar(dia){
     +rmLinhas({W:520,H:340,series:[{v:a1,c:RM.eq.BM10,w:2.4},{v:a2,c:RM.eq.BMM05,w:2.4},{v:am,c:RM.cinza,w:1.6,d:'5 4'}],dias,titulo:'Produção acumulada - BM10 vs BMM05 (t)',leg:[{t:'BM10 acumulado',c:RM.eq.BM10},{t:'BMM05 acumulado',c:RM.eq.BMM05},{t:igual?'Meta acum. por equipamento':'Meta acum. BM10',c:RM.cinza,d:'5 4'}]})
     +rmColunas({W:520,H:340,grupos:dias.map(ddmm),series:[{t:'BM10 dia',c:RM.eq.BM10,v:c.days.map(x=>ate(x)?x.eq.BM10:0)},{t:'BMM05 dia',c:RM.eq.BMM05,v:c.days.map(x=>ate(x)?x.eq.BMM05:0)}],titulo:'Produção diária - BM10 vs BMM05 (t)',rot:true})+`</div>`;
 
-  const pe=(n)=>`<div class="rmf"><span>Construtora Tripoloni Ltda. · Britagem Irati</span><span>Painel Horímetros Britagem · gerado em ${dtFmt.format(Date.now())}</span><span>página ${n} de 5</span></div>`;
-  return [p1,p2,p3,p4,p5].map((p,i)=>`<section class="rmp">${p}${pe(i+1)}</section>`).join('');
+  /* Balanço de material: de onde vem cada tonelada (finos saem do rachão do BM10; a sobra e o BMM05 vão para o estoque) */
+  const sm=prdSaldo(c,dia),sd=prdSaldo(c,dia,true);
+  const sk=(x,h)=>sankeySaldo(x,{W:1040,min:1040,H:h,lm:180,rm:220,cores:{bm10:'#0B2559',bmm05:RS.rMM,ant:RS.ant,rach:RS.rBM,sec:RS.finos,b1:RS.b1,po:RS.po,b2:RS.b2,txt:'#1B2B4B',sub:'#6B7487',faixa:.45}});
+  const H6=rmHead('BALANÇO DE MATERIAL','Finos saem do rachão do BM10 · a sobra vai para o estoque · BMM05 (Lokotrack)',c,dia);
+  let p6=H6+rmSec(`Mês até ${dmy(dia)}`)+rmCardsSaldo(sm)+`<div class="rmpan rsbox rssk">${sk(sm,215)}</div>`
+    +rmSec(`Dia ${dmy(dia)}`)+(sd.total||sd.finos?`<div class="rmpan rsbox rssk">${sk(sd,175)}</div>`:'<div class="rsnota">Sem produção lançada neste dia.</div>');
+
+  const pe=(n)=>`<div class="rmf"><span>Construtora Tripoloni Ltda. · Britagem Irati</span><span>Painel Horímetros Britagem · gerado em ${dtFmt.format(Date.now())}</span><span>página ${n} de 6</span></div>`;
+  return [p1,p2,p3,p4,p5,p6].map((p,i)=>`<section class="rmp">${p}${pe(i+1)}</section>`).join('');
 }
 /* Tendência calculada só com o que existia até o dia do relatório */
 function prdTendAte(c,mat,dia){
