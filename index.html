@@ -156,6 +156,8 @@ table.tb{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
 .tright{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .stamp{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;text-align:right;line-height:1.5}
 .stamp b{color:var(--ink2);font-weight:600}
+#btnRef.novo{border-color:var(--P);color:var(--P);position:relative}
+#btnRef.novo::after{content:'';position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 2px var(--bg,#fff)}
 .aovivo{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:1px;box-shadow:0 0 0 0 rgba(46,158,107,.5);animation:pulse 2s infinite}
 /* state banner */
 .state{margin:24px 36px 0;border:1px solid var(--grid);border-left:5px solid var(--orange);background:var(--card);border-radius:12px;padding:18px 20px;display:none}
@@ -741,8 +743,8 @@ async function load(force,silencioso){
     if(!D)showState('load');
     if(!silencioso)prog(55);
     const novo=await rpc('painel_dados');ULT_OK=Date.now();ULT_ERRO=null;
-    if(silencioso&&D&&mesmoDado(novo,D)){D.gerado=novo.gerado;stampTick();return}
-    D=novo;cacheGravar();
+    if(silencioso&&D&&mesmoDado(novo,D)){D.gerado=novo.gerado;NOVO=false;stampTick();return}
+    D=novo;NOVO=false;cacheGravar();
     hideState();if(!silencioso)prog(100);renderAll(silencioso);
   }catch(e){
     if(!silencioso)prog(100);
@@ -760,21 +762,28 @@ async function load(force,silencioso){
    - Reserva: a cada 60 s com a aba visível (horas e status vêm dos eventos, que não são escutados um a um).
    - Aba escondida: desliga o tempo real e o relógio; ao voltar, atualiza na hora.
    - Formulário aberto ou campo em edição: não mexe na tela; atualiza assim que fechar.
-   - Usuário mexendo (mouse, toque, rolagem, teclado) nos últimos 45 s: espera ficar parado para aplicar.
+   - Com o usuário usando a tela, nada é redesenhado sozinho: o painel só confere se há dados novos e
+     destaca o botão "Atualizar". Aplica sozinho apenas depois de 5 min sem mexer ou ao voltar para a aba.
    - A placa grava eventos várias vezes por minuto: o tempo real agenda no máximo uma leitura a cada 30 s,
      e a tela só é redesenhada quando os dados realmente mudaram. */
 const POLL_MS=60000;let PEND=false,RT=null,RT_OK=false,RT_TIMER=null,ULT_SALVO=0;
-let ULT_MEXEU=0;const QUIETO_MS=45000,RT_MIN_MS=30000;
+let ULT_MEXEU=0,NOVO=false;const QUIETO_MS=300000,RT_MIN_MS=30000;
 ['pointerdown','pointermove','wheel','keydown','touchstart','scroll'].forEach(ev=>addEventListener(ev,()=>{ULT_MEXEU=Date.now()},{passive:true,capture:true}));
 /* Compara duas leituras ignorando o carimbo de hora do servidor */
 const semCarimbo=o=>JSON.stringify(o,(k,v)=>k==='gerado'?undefined:v);
 const mesmoDado=(a,b)=>{try{return semCarimbo(a)===semCarimbo(b)}catch(e){return false}};
-const ocupado=()=>(Date.now()-ULT_MEXEU<QUIETO_MS)||['drw','gdrw','login'].some(id=>$('#'+id).classList.contains('open'))||!!document.querySelector('.dd.open')
+const ocupado=()=>['drw','gdrw','login'].some(id=>$('#'+id).classList.contains('open'))||!!document.querySelector('.dd.open')
   ||(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
 async function atualizarSilencioso(){
   if(!D||!EU.autorizado||document.visibilityState!=='visible')return;
   if(ocupado()){PEND=true;return}
-  PEND=false;await load(false,true);
+  PEND=false;
+  if(Date.now()-ULT_MEXEU<QUIETO_MS){
+    /* Em uso: só confere. Dados diferentes → destaca o botão Atualizar, sem tocar na tela. */
+    try{const novo=await rpc('painel_dados');ULT_OK=Date.now();ULT_ERRO=null;if(mesmoDado(novo,D))D.gerado=novo.gerado;else NOVO=true}
+    catch(e){ULT_ERRO=!navigator.onLine||/fetch|network/i.test((e&&e.message)||'')?'sem conexão':'falha ao atualizar'}
+    stampTick();return}
+  await load(false,true);
   if(PANE==='val'&&typeof valLoad==='function')valLoad(true);
   if(PANE==='par')parLoad(true,true);
   if(PANE==='gan')ganEnsure(true,true);
@@ -795,6 +804,7 @@ function rtLigar(){
 function rtDesligar(){if(RT){sb.removeChannel(RT);RT=null;RT_OK=false;stampTick()}}
 function rtEvento(t,p){
   const r=p.new&&Object.keys(p.new).length?p.new:(p.old||{});
+  if(/^producao_/.test(t)&&Date.now()-ULT_SALVO>6000&&Date.now()-ULT_MEXEU<QUIETO_MS){NOVO=true;stampTick()}
   if(Date.now()-ULT_SALVO>4000)rtAvisoEdicao(t,r);
   /* Salvamento do próprio usuário: aplica rápido. Mudança vinda da placa ou de outro usuário: no máximo uma leitura a cada 30 s. */
   const espera=Date.now()-ULT_SALVO<6000?1500:Math.max(1500,RT_MIN_MS-(Date.now()-ULT_OK));
@@ -820,7 +830,8 @@ function stampTick(){
   const e=$('#stamp');if(!e)return;
   if(!ULT_OK){e.innerHTML=D?'Atualizando…':'Carregando…';return}
   const s=Math.max(0,Math.round((Date.now()-ULT_OK)/1000)),txt=s<10?'agora':s<60?`há ${s} s`:s<3600?`há ${Math.floor(s/60)} min`:`há ${Math.floor(s/3600)} h`;
-  e.innerHTML=`Atualizado <b>${txt}</b><br>${ULT_ERRO?`<span style="color:var(--orange)">${esc(ULT_ERRO)} · tentando de novo</span>`:RT_OK?'<span class="aovivo"></span>ao vivo':'atualiza sozinho'}`;
+  const bR=$('#btnRef');if(bR){bR.classList.toggle('novo',NOVO);bR.title=NOVO?'Há dados novos: toque para mostrar':'Buscar os dados mais recentes agora'}
+  e.innerHTML=`Atualizado <b>${txt}</b><br>${NOVO?'<span style="color:var(--P)">dados novos · toque em Atualizar</span>':ULT_ERRO?`<span style="color:var(--orange)">${esc(ULT_ERRO)} · tentando de novo</span>`:RT_OK?'<span class="aovivo"></span>ao vivo':'atualiza sozinho'}`;
   e.title=`Última leitura: ${dtFmt.format(ULT_OK)}${D&&D.gerado?` (dados do servidor de ${dtFmt.format(Date.parse(D.gerado))})`:''}. Atualiza sozinho, sem recarregar a página.`;
 }
 setInterval(()=>{if(document.visibilityState==='visible')stampTick()},5000);
