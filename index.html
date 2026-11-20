@@ -232,6 +232,7 @@ svg.ch rect.gp{cursor:pointer}svg.ch rect.gp:hover{stroke:var(--ink);stroke-widt
 .pempty b{color:var(--ink);display:block;font-size:15px;margin-bottom:4px}
 .pempty .btn1{margin-top:12px}
 .ptools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px}
+.ptabs{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .tabs{display:inline-flex;gap:2px;background:var(--soft2);border:1px solid var(--grid);border-radius:10px;padding:3px;flex-wrap:wrap}
 .tabs button{border:0;background:none;font:600 12.5px var(--sans);color:var(--grey);padding:7px 12px;border-radius:7px;cursor:pointer;display:flex;gap:7px;align-items:center}
 .tabs button span{font:600 10.5px var(--mono);background:var(--line);color:var(--grey);border-radius:999px;padding:1px 7px}
@@ -584,7 +585,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
     <div class="box rv" id="boxPL"><button class="boxh"><div class="ico"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg></div><div><div class="tt">Paradas e justificativas</div><div class="kk">Marque uma ou várias para justificar de uma vez</div></div><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></button>
       <div class="cwrap"><div class="cinner"><div class="boxb">
         <div class="ptools">
-          <div class="tabs" id="pTabs"></div>
+          <div class="ptabs"><div class="tabs" id="pArea" role="group" aria-label="Filtrar por área"></div><div class="tabs" id="pTabs"></div></div>
           <label class="pmode"><input type="checkbox" id="pMode"> Todas as pendentes, de qualquer data</label>
         </div>
         <div class="scrollx"><table class="tb ptb" id="tP"></table></div>
@@ -994,6 +995,8 @@ function renderHor(){
 
 /* ---------- PARADAS (eventos_parada + justificativa) ---------- */
 let PQ={key:null,rows:null,busy:false,err:null},PTAB='todas',PSEL=new Set(),PLIM=60,PSORT={k:'ini',d:-1},PMODE=false;
+/* Filtro por área na tela de paradas (Primário, Secundário, Lokotrack), lembrado no navegador */
+let PAREA='all';try{const a=localStorage.getItem('hb_parea');if(['PRIMARIO','SECUNDARIO','LOKOTRACK'].includes(a))PAREA=a}catch(e){}
 const SEP=' › ';
 const areaOf=r=>{const e=(r.est||'').toLowerCase();if(e.startsWith('prim'))return 'PRIMARIO';if(e.startsWith('sec'))return 'SECUNDARIO';if(e.startsWith('lok'))return 'LOKOTRACK';return /^(AV|BM)/.test(r.mo||'')?'PRIMARIO':'SECUNDARIO'};
 const AREA_N={PRIMARIO:'Primário',SECUNDARIO:'Secundário',LOKOTRACK:'Lokotrack'};
@@ -1037,7 +1040,8 @@ async function parLoad(force,silencioso){
   PQ.busy=false;if(PQ.key===key)renderPar()
 }
 const isDay=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'');
-function parRows(){const ids=new Set(M.map(m=>m.id));return (PQ.rows||[]).filter(r=>{if(r.tu===undefined)r.tu=turnoOf(r.iniMs/1000);return (ids.has(r.mo)||!MALL.some(m=>m.id===r.mo)&&!F.sel)&&(F.tu==='all'||String(r.tu)===F.tu)})}
+function parRows(){return parRowsBase().filter(r=>PAREA==='all'||areaOf(r)===PAREA)}
+function parRowsBase(){const ids=new Set(M.map(m=>m.id));return (PQ.rows||[]).filter(r=>{if(r.tu===undefined)r.tu=turnoOf(r.iniMs/1000);return (ids.has(r.mo)||!MALL.some(m=>m.id===r.mo)&&!F.sel)&&(F.tu==='all'||String(r.tu)===F.tu)})}
 function renderPar(){
   if(!D)return;
   const ps=D.ps||{};const b=$('#navBadge');b.hidden=!ps.pend;b.textContent=ps.pend>999?'999+':ps.pend;
@@ -1046,16 +1050,18 @@ function renderPar(){
     $('#kP').innerHTML='';$('#cP1').innerHTML=$('#cP2').innerHTML='';$('#pTabs').innerHTML='';$('#pMore').innerHTML='';$('#bulk').classList.remove('show');
     $('#tP').innerHTML=`<tbody><tr><td>${PQ.err?`<div class="pempty"><b>Não foi possível carregar as paradas</b>${esc(PQ.err.code||PQ.err.message||'erro')}<br><button class="btn1" onclick="parLoad(true)">Tentar de novo</button></div>`:'<span class="sr">Carregando paradas</span><div class="skel" style="width:80%"></div><div class="skel" style="width:55%"></div>'}</td></tr></tbody>`;
     $('#nP').textContent='';return}
-  const all=parRows();
+  const base=parRowsBase(),all=PAREA==='all'?base:base.filter(r=>areaOf(r)===PAREA);
+  const cA={all:base.length,PRIMARIO:0,SECUNDARIO:0,LOKOTRACK:0};base.forEach(r=>cA[areaOf(r)]++);
+  $('#pArea').innerHTML=[['all','Todas as áreas'],['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack']].map(([k,l])=>`<button type="button" data-area="${k}" class="${PAREA===k?'on':''}" aria-pressed="${PAREA===k}">${l}<span>${f0(cA[k])}</span></button>`).join('');
   const cnt={todas:all.length,ag:0,ab:0,ok:0,hi:0};all.forEach(r=>cnt[r.s]++);
   const hClosed=all.filter(r=>r.min!=null).reduce((a,r)=>a+r.min,0)/60;
   const hAg=all.filter(r=>r.s==='ag'&&r.min!=null).reduce((a,r)=>a+r.min,0)/60;
-  const per=PMODE?'todas as datas':rLabel();
+  const per=(PMODE?'todas as datas':rLabel())+(PAREA!=='all'?' · '+AREA_N[PAREA]:'');
   $('#kP').innerHTML=kt(all.length,'Paradas','var(--P)',per)
     +kt(cnt.ag,'Aguardando justificativa','var(--orange)',`${f1(hAg)}h paradas sem motivo`)
     +kt((all.length-cnt.hi)?Math.round(cnt.ok*100/(all.length-cnt.hi)):0,'Justificadas','var(--green)',`${cnt.ok} de ${all.length-cnt.hi}${cnt.hi?` · ${cnt.hi} no histórico`:''}`,'%')
     +kt(hClosed,'Horas paradas','var(--navy2)',cnt.ab?`+ ${cnt.ab} ainda abertas`:'paradas encerradas','h',1);
-  const kAnim=PQ.animK!==PQ.key+'|'+F.tu+'|'+(F.sel||[]).join()+'|'+F.st;PQ.animK=PQ.key+'|'+F.tu+'|'+(F.sel||[]).join()+'|'+F.st;
+  const kAnim=PQ.animK!==PQ.key+'|'+F.tu+'|'+(F.sel||[]).join()+'|'+F.st+'|'+PAREA;PQ.animK=PQ.key+'|'+F.tu+'|'+(F.sel||[]).join()+'|'+F.st+'|'+PAREA;
   $$('#kP [data-count]').forEach(c=>{if(kAnim)countUp(c);else{const v=+c.dataset.count||0,dc=+c.dataset.dec||0;c.textContent=dc?v.toLocaleString('pt-BR',{minimumFractionDigits:dc,maximumFractionDigits:dc}):Math.round(v).toLocaleString('pt-BR')}});$$('#kP .rv').forEach(e=>e.classList.add('in'));
   // gráfico 1: por equipamento
   const C={ag:'var(--orange)',ok:'var(--green)',hi:'var(--off)'};const eqs=[...new Set(all.map(r=>r.mo))].sort();const eqn=D.eqn||{};
@@ -1085,7 +1091,7 @@ function renderPar(){
     <td>${r.cat?`<span class="why">${esc(c2||c1)}</span><span class="wsub">${esc(c2?c1:'')}${r.txt&&r.txt!=='Sem observações.'?`${c2?' · ':''}${esc(r.txt)}`:''}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
     <td class="hm">${esc(r.por||'')}${r.em?`<span class="sub">${dtFmt.format(Date.parse(r.em))}</span>`:''}</td>
     <td class="n" style="white-space:nowrap">${podeDividir(r)?`<button class="act" data-dividir="${esc(r.id)}" title="Separar esta parada em duas a partir de um horário">Dividir</button>`:''}${r.s==='ok'||r.s==='hi'?`<button class="act" data-hist="${esc(r.id)}" title="Quem justificou, validou ou alterou">Histórico</button>`:''}<button class="act ${r.s==='ok'?'':'pri'}" data-jus="${esc(r.id)}">${r.s==='ok'?'Corrigir':'Justificar'}</button></td></tr>`});
-  if(!vis.length)h+=`<tr><td colspan="10"><div class="pempty"><b>${PTAB==='ag'?'Nada aguardando justificativa':'Nenhuma parada aqui'}</b>${PTAB==='ag'&&cnt.ok?'Tudo justificado neste filtro.':(PMODE?'':`Período: ${esc(rLabel())}.`)}${!PMODE&&ps.pend?`<br><button class="btn1" data-pend>Ver todas as ${f0(ps.pend)} pendentes</button>`:''}</div></td></tr>`;
+  if(!vis.length)h+=`<tr><td colspan="10"><div class="pempty"><b>${PTAB==='ag'?'Nada aguardando justificativa':'Nenhuma parada aqui'}${PAREA!=='all'?' no '+AREA_N[PAREA].toLowerCase():''}</b>${PTAB==='ag'&&cnt.ok?'Tudo justificado neste filtro.':(PMODE?'':`Período: ${esc(rLabel())}.`)}${!PMODE&&ps.pend?`<br><button class="btn1" data-pend>Ver todas as ${f0(ps.pend)} pendentes</button>`:''}</div></td></tr>`;
   $('#tP').innerHTML=h+'</tbody>';
   $('#pMore').innerHTML=rows.length>PLIM?`<button class="more btn2" style="margin-top:12px" id="pMoreB">Mostrar mais ${Math.min(60,rows.length-PLIM)} de ${rows.length-PLIM} restantes</button>`:'';
   $('#nP').innerHTML=`Situações: <b>Aberta</b> = o equipamento ainda não voltou a ligar; <b>Aguardando</b> = parada encerrada sem motivo; <b>Justificada</b> = motivo registrado; <b>Histórico</b> = parada de antes de 01/11 sem motivo conhecido (não entra no % de justificadas, mas pode ser justificada se alguém lembrar). Os dados e os motivos são os mesmos do aplicativo dos operadores: o que for justificado aqui aparece lá, e vice-versa. O supervisor justifica qualquer data; corrigir uma parada já justificada exige observação e fica no histórico.${PQ.busy?' Atualizando…':''}`;
@@ -1101,6 +1107,7 @@ document.addEventListener('change',e=>{
   if(e.target.id==='pMode'){PMODE=e.target.checked;PSEL.clear();PTAB=PMODE?'ag':'todas';parLoad()}
 });
 document.addEventListener('click',e=>{
+  const ab=e.target.closest('#pArea button');if(ab){PAREA=ab.dataset.area;try{localStorage.setItem('hb_parea',PAREA)}catch(x){}PSEL.clear();PLIM=60;renderPar();return}
   const tb=e.target.closest('#pTabs button');if(tb){PTAB=tb.dataset.t;PLIM=60;renderPar();return}
   const so=e.target.closest('th[data-so]');if(so){const k=so.dataset.so;PSORT=PSORT.k===k?{k,d:-PSORT.d}:{k,d:k==='mo'||k==='s'?1:-1};renderPar();return}
   if(e.target.id==='pMoreB'){PLIM+=60;renderPar();return}
