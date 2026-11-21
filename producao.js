@@ -66,7 +66,10 @@ async function prdLoad(mes,force,silencioso){
   finally{if(PR.mes===mes){PR.busy=false;if(!igual)renderPrd(!silencioso)}}
 }
 
+/* Na visão Estoque o material "Rachão" é o rachão para aplicação (o que virou finos sai da conta) */
+function nomesVis(){const n=visLiq()?'Rachão p/ aplicação':'Rachão';MATS[0][1]=n;MATN.RACHAO=n;if(typeof RMN!=='undefined')RMN.RACHAO=visLiq()?'RACHÃO P/ APLICAÇÃO':'RACHÃO'}
 function prdCalc(x,mes){
+  nomesVis();
   const m=x.mes||null,n=diasNoMes(mes),peso=m?+m.peso_sabado:0.7369,pctBM=m?+m.pct_bm10:0.5;
   const meta={RACHAO:m?(+m.meta_rachao_irati)+(+m.meta_rachao_palmeira):0,BRITA01:m?+m.meta_brita01:0,PO:m?+m.meta_po:0,BRITA02:m?+m.meta_brita02:0};
   /* Visão Estoque: a meta de atendimento é a meta de rachão cadastrada (decisão da gerência em 20/11/2026:
@@ -86,7 +89,7 @@ function prdCalc(x,mes){
      No acumulado do mês a sobra do BM10 nunca fica negativa: se o secundário passou do BM10 britado, consumiu estoque antigo
      do BM10, não o rachão do BMM05. O valor do dia é a variação do acumulado, para a soma dos dias bater com o acumulado. */
   if(visLiq()){let bm=0,mm=0,fi=0,ant=0;days.forEach(o=>{bm+=o.eq.BM10;mm+=o.eq.BMM05;fi+=finosDia(o);
-    const ac=mm+Math.max(0,bm-fi);o.consEst=Math.max(0,fi-bm);o.tot=ac-ant;ant=ac})}
+    const ac=mm+Math.max(0,bm-fi);o.consEst=Math.max(0,fi-bm);o.tot=ac-ant;ant=ac;o.rBruto=o.real.RACHAO;o.real.RACHAO=o.tot})}
   let pa=0,ra=0;
   days.forEach(o=>{o.meta={};MATS.forEach(([k])=>o.meta[k]=W?meta[k]*o.w/W:0);o.metaT=W?metaT*o.w/W:0;pa+=o.metaT;ra+=o.tot;o.prevAc=pa;o.realAc=ra});
   const feitos=days.filter(o=>o.tem),ref=feitos.length?feitos[feitos.length-1].d:null;
@@ -140,7 +143,7 @@ function renderPrd(anima){
   /* por material */
   h+=`<div class="box rv"><div class="boxh" style="cursor:default">${icoBox('<path d="M3 20h18M6 16l3-8 4 5 3-3 2 6"/>')}<div><div class="tt">Produção por material</div><div class="kk">Realizado × meta do mês${ref&&c.m?` · o traço marca o previsto até ${ddmm(ref)}`:''}</div></div></div>
     <div class="boxb"><div class="pmat">${MATS.map(([k,n,col])=>{const r=c.real[k],mt=c.meta[k],pv=c.prev[k];
-      return `<div class="pm"><div class="pmh"><i style="background:${col}"></i>${visLiq()&&k==='RACHAO'?'Rachão britado (bruto)':n}</div><b>${f0(r)}<small>t</small></b>
+      return `<div class="pm"><div class="pmh"><i style="background:${col}"></i>${n}</div><b>${f0(r)}<small>t</small></b>
         <div class="pmsub">${mt?`de ${f0(mt)} t · ${pc1(r/mt)} do mês`:'sem meta'}</div>
         <div class="bul" role="img" aria-label="${esc(`${n}: ${f0(r)} t de ${f0(mt)} t`)}" data-tip="${esc(`<div class='m'>${n}</div><b>${f0(r)} t realizadas</b><div class='tl'><span>Meta do mês</span><b>${f0(mt)} t</b></div><div class='tl'><span>Previsto até ${ref?ddmm(ref):'—'}</span><b>${f0(pv)} t</b></div><div class='tl'><span>Falta para a meta</span><b>${f0(Math.max(0,mt-r))} t</b></div>`)}"><div class="bulf" style="width:${mt?Math.min(100,r/mt*100):0}%;background:${col}"></div>${mt&&pv?`<div class="bult" style="left:${Math.min(100,pv/mt*100)}%"></div>`:''}</div>
         <div class="pmrow"><span>Aderência ao previsto</span>${pv?stAd(r/pv):'<span>—</span>'}</div></div>`}).join('')}</div></div></div>`;
@@ -199,10 +202,14 @@ function renderPrd(anima){
 function prdTabelaDia(c,o){
   let h=`<table class="tb"><thead><tr><th>Material</th><th class="n">1º turno</th><th class="n">2º turno</th><th class="n">Total</th><th class="n hm">Meta</th><th class="n">vs meta</th></tr></thead><tbody>`;
   const cel=v=>v==null?'<span style="color:var(--muted)">—</span>':f0(v);
-  MATS.forEach(([k,n,col])=>{const a=o.tu[1][k],b=o.tu[2][k],r=o.real[k],mt=o.meta[k];
+  const tuV=(t,k)=>{const v=o.tu[t][k];if(!visLiq()||k!=='RACHAO'||v==null)return v;return v-(o.tu[t].BRITA01||0)-(o.tu[t].PO||0)-(o.tu[t].BRITA02||0)};
+  MATS.forEach(([k,n,col])=>{const a=tuV(1,k),b=tuV(2,k),r=o.real[k],mt=o.meta[k];
     h+=`<tr><td class="m"><span class="sw" style="background:${col}"></span>${n}</td><td class="n">${cel(a)}</td><td class="n">${cel(b)}</td><td class="n" style="font-weight:700;color:var(--ink)">${a==null&&b==null?cel(null):f0(r)}</td><td class="n hm">${mt?f0(mt):'—'}</td><td class="n">${mt&&(a!=null||b!=null)?stAd(r/mt):'—'}</td></tr>`;
     if(k==='RACHAO')EQS.forEach(([e,en,es])=>{const x=o.eqTu[1][e],y=o.eqTu[2][e];if(x==null&&y==null)return;
-      h+=`<tr class="sb"><td>${en} · ${es}</td><td class="n">${cel(x)}</td><td class="n">${cel(y)}</td><td class="n">${f0((x||0)+(y||0))}</td><td class="n hm">${mt?f0(mt*c.fracEq(e)):'—'}</td><td class="n"></td></tr>`})});
+      h+=`<tr class="sb"><td>${en} · ${es}</td><td class="n">${cel(x)}</td><td class="n">${cel(y)}</td><td class="n">${f0((x||0)+(y||0))}</td><td class="n hm">${mt?f0(mt*c.fracEq(e)):'—'}</td><td class="n"></td></tr>`});
+    if(k==='RACHAO'&&visLiq()&&o.tem){const f1=(o.tu[1].BRITA01||0)+(o.tu[1].PO||0)+(o.tu[1].BRITA02||0),f2=(o.tu[2].BRITA01||0)+(o.tu[2].PO||0)+(o.tu[2].BRITA02||0);
+      h+=`<tr class="sb"><td>− Foi para o secundário (finos)</td><td class="n">${f0(-f1)}</td><td class="n">${f0(-f2)}</td><td class="n">${f0(-(f1+f2))}</td><td class="n hm"></td><td class="n"></td></tr>`;
+      if(o.consEst>0)h+=`<tr class="sb"><td>Secundário acima do BM10 no mês (estoque antigo)</td><td class="n"></td><td class="n"></td><td class="n">${f0(o.consEst)}</td><td class="n hm"></td><td class="n"></td></tr>`}});
   const somaT=t=>visLiq()?(o.tu[t].RACHAO||0)-(o.tu[t].BRITA01||0)-(o.tu[t].PO||0)-(o.tu[t].BRITA02||0):MATS.reduce((a,[k])=>a+(o.tu[t][k]||0),0),t1=somaT(1),t2=somaT(2);
   h+=`<tr class="tot"><td>${visLiq()?'Para aplicação (BMM05 + sobra do BM10)':'Total'}</td><td class="n">${f0(t1)}</td><td class="n">${f0(t2)}</td><td class="n">${f0(o.tot)}</td><td class="n hm">${o.metaT?f0(o.metaT):'—'}</td><td class="n">${o.metaT&&o.tem?stAd(o.tot/o.metaT):'—'}</td></tr></tbody></table>`;
   return h;
@@ -305,7 +312,7 @@ function prdAtendResumo(c,bm,be){
 }
 /* Um material só (ou o rachão por equipamento): barras simples, meta do material, % por dia */
 function prdBarrasMat(c,bm,be){
-  const ser=prdSerie(c,bm,be),dois=bm==='RACHAO'&&be==='AMB';
+  const ser=prdSerie(c,bm,be),dois=bm==='RACHAO'&&be==='AMB'&&!visLiq();
   const n=c.days.length,L=48,W=Math.max(L+n*18,largGraf(false)),H=250,T=26,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
   const max=Math.max(1,...ser.map(x=>Math.max(x.v,x.m))),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
   const Y=v=>ih*v/top,col=MATC[bm],corEq={BM10:'var(--m1)',BMM05:'var(--m3)'};
