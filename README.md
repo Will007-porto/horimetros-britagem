@@ -109,6 +109,9 @@ Aba que compara a produção com o relógio do turno, por área (Primário = rac
 - Turnos sem produção lançada na área não entram; turnos com produção mas sem sinal do sensor ficam fora e são listados.
 - Dados: função `efi_dados(p_desde, p_ate)` no Supabase (migração `20261121_efi_dados.sql`).
 
+## Premissas no relatório de produção
+Na visão Estoque, o "Exportar produção" ganha uma 7ª página com as **premissas adotadas** (a mesma página do relatório de saldo, com a conta do mês e a nota de que o rachão por material usa o rachão para aplicação). Na visão Produtividade o relatório continua com 6 páginas.
+
 ## Relatório de saldo (estoque)
 Botão "Exportar saldo" na aba Produção: PDF de 3 páginas (mês até o dia escolhido, saldo dia a dia e **premissas adotadas**). Termos usados: Rachão do primário (BM10), Aplicado no secundário (soma dos finos), Sobrou do primário (estoque), Lokotrack (BMM05) e Estoque de rachão (estoque primário + Lokotrack). A página de premissas mostra a conta do mês (primário − aplicado no secundário = sobra; sobra + Lokotrack = estoque; Lokotrack + sobra do mês nunca negativa = rachão para aplicação ÷ meta de atendimento) e explica origem dos dados, mix das balanças, meta (pesos X/XX, % por equipamento) e o que não entra na conta (estoque inicial, carregamentos, perdas).
 

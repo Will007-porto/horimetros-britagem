@@ -110,12 +110,15 @@ function rmMontar(dia){
   /* Balanço de material: de onde vem cada tonelada (finos saem do rachão do BM10; a sobra e o BMM05 vão para o estoque) */
   const sm=prdSaldo(c,dia),sd=prdSaldo(c,dia,true);
   const sk=(x,h)=>sankeySaldo(x,{W:1040,min:1040,H:h,lm:180,rm:220,cores:{bm10:'#0B2559',bmm05:RS.rMM,ant:RS.ant,rach:RS.rBM,sec:RS.finos,b1:RS.b1,po:RS.po,b2:RS.b2,txt:'#1B2B4B',sub:'#6B7487',faixa:.45}});
-  const H6=rmHead('BALANÇO DE MATERIAL','Finos saem do rachão do BM10 · a sobra vai para o estoque · BMM05 (Lokotrack)',c,dia);
+  const H6=rmHead('BALANÇO DE MATERIAL','Primário (BM10): parte é aplicada no secundário, a sobra vai para o estoque · Lokotrack (BMM05): todo para o estoque',c,dia);
   let p6=H6+rmSec(`Mês até ${dmy(dia)}`)+rmCardsSaldo(sm)+`<div class="rmpan rsbox rssk">${sk(sm,215)}</div>`
     +rmSec(`Dia ${dmy(dia)}`)+(sd.total||sd.finos?`<div class="rmpan rsbox rssk">${sk(sd,175)}</div>`:'<div class="rsnota">Sem produção lançada neste dia.</div>');
 
-  const pe=(n)=>`<div class="rmf"><span>Construtora Tripoloni Ltda. · Britagem Irati</span><span>Painel Horímetros Britagem · gerado em ${dtFmt.format(Date.now())}</span><span>página ${n} de 6</span></div>`;
-  return [p1,p2,p3,p4,p5,p6].map((p,i)=>`<section class="rmp">${p}${pe(i+1)}</section>`).join('');
+  /* Visão Estoque: última página com as premissas adotadas */
+  const pgs=[p1,p2,p3,p4,p5,p6];
+  if(visLiq())pgs.push(rmHead('PREMISSAS ADOTADAS','Visão estoque · atendimento do rachão (rachão para aplicação × meta de rachão)',c,dia)+rmPremissas(c,dia,sm,true));
+  const pe=(n)=>`<div class="rmf"><span>Construtora Tripoloni Ltda. · Britagem Irati</span><span>Painel Horímetros Britagem · gerado em ${dtFmt.format(Date.now())}</span><span>página ${n} de ${pgs.length}</span></div>`;
+  return pgs.map((p,i)=>`<section class="rmp">${p}${pe(i+1)}</section>`).join('');
 }
 /* Tendência calculada só com o que existia até o dia do relatório */
 function prdTendAte(c,mat,dia){
@@ -167,7 +170,7 @@ function rmSaldoMontar(dia){
   return [p1,p2,p3].map((p,i)=>`<section class="rmp">${p}${pe(i+1)}</section>`).join('');
 }
 /* Página de premissas do relatório de saldo: explica de onde vem cada número e a conta do mês */
-function rmPremissas(c,dia,s){
+function rmPremissas(c,dia,s,prod){
   const m=c.m||{},mix=c.mix,pm=k=>mix&&+mix[k]>0?fmtPc(Math.round(+mix[k]*1000)/10):'—';
   let bm=0,mm=0,fi=0;c.days.forEach(o=>{if(o.d<=dia){bm+=o.eq.BM10;mm+=o.eq.BMM05;fi+=(o.real.BRITA01||0)+(o.real.PO||0)+(o.real.BRITA02||0)}});
   const ap=mm+Math.max(0,bm-fi);
@@ -188,7 +191,7 @@ function rmPremissas(c,dia,s){
     ${bl(4,'Aplicado no secundário',`O secundário só recebe rachão do primário. O rachão aplicado no secundário é a soma dos finos produzidos (Brita 01 + Pó + Brita 02). O mix das balanças (Brita 01 ${pm('BRITA01')}, Pó ${pm('PO')}, Brita 02 ${pm('BRITA02')}) soma 100%: 1 t de rachão vira 1 t de finos. Não há desconto de perdas.`)}
     ${bl(5,'Sobrou do primário (estoque)','Rachão do primário − aplicado no secundário. Num dia pode ficar negativa (em vermelho): o secundário recebeu mais do que o primário britou e consumiu rachão já estocado do primário.')}
     ${bl(6,'Estoque de rachão','Estoque primário + Lokotrack. É o balanço físico do período e pode ficar negativo se o secundário consumir estoque formado antes do período.')}
-    ${bl(7,'Rachão para aplicação (atendimento)','Lokotrack + sobra do primário acumulada no mês. A sobra do primário nunca entra negativa: se o secundário passou do que o primário britou, consumiu estoque antigo do primário, não o rachão da Lokotrack. Por isso pode diferir do estoque de rachão.')}
+    ${bl(7,'Rachão para aplicação (atendimento)','Lokotrack + sobra do primário acumulada no mês. A sobra do primário nunca entra negativa: se o secundário passou do que o primário britou, consumiu estoque antigo do primário, não o rachão da Lokotrack. Por isso pode diferir do estoque de rachão.'+(prod?' Neste relatório, o "Rachão p/ aplicação" por material, a curva S e a memória diária usam essa conta; as páginas por equipamento mostram o rachão bruto do primário e da Lokotrack.':''))}
     ${bl(8,'Meta de atendimento',`Meta de rachão cadastrada no mês: ${f0(metaR)} t${pl?` (Irati ${f0(ir)} t + Palmeira ${f0(pl)} t)`:''}. Não soma o rachão necessário para os finos (decisão da gerência em 20/11/2026). A meta do dia é distribuída nos dias programados: dia X peso 1, sábado XX peso ${String(Math.round((c.peso||0)*10000)/10000).replace('.',',')}. Meta por equipamento: primário ${fmtPc(Math.round(c.pctBM*1000)/10)} e Lokotrack ${fmtPc(Math.round((1-c.pctBM)*1000)/10)} da meta de rachão.`)}
     ${bl(9,'O que não está na conta','Estoque inicial do mês (não há medição de pilha), saídas e carregamentos do estoque (o relatório mostra o que ficou disponível, não o que foi expedido), perdas e umidade no secundário. Correções nos lançamentos mudam o relatório na próxima emissão.')}
   </div></div>`;

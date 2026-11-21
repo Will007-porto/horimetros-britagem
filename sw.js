@@ -3,7 +3,7 @@
    - Bibliotecas e fontes (CDN): usa a guardada e atualiza por trás.
    - Supabase (dados e login) e a pasta /app/ (app de teste) passam direto: nunca são guardados aqui.
    - Versão nova NÃO assume sozinha: espera o usuário tocar em "Atualizar" no aviso do painel. */
-const VERSAO = 'hb-2026-11-21d';
+const VERSAO = 'hb-2026-11-21e';
 const CASCA = ['/', '/index.html', '/producao.js', '/producao.css', '/producao-rel.js', '/efi.js', '/manifest.webmanifest',
   '/assets/logo-azul.png', '/assets/logo-branco.png', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-32.png'];
 
