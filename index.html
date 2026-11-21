@@ -231,6 +231,14 @@ svg.ch rect.gp{cursor:pointer}svg.ch rect.gp:hover{stroke:var(--ink);stroke-widt
 .pempty{padding:28px 18px;text-align:center;color:var(--grey);font-size:13.5px;line-height:1.6}
 .pempty b{color:var(--ink);display:block;font-size:15px;margin-bottom:4px}
 .pempty .btn1{margin-top:12px}
+.pzl{display:grid;grid-template-columns:minmax(0,1fr) 108px auto 108px 36px;gap:8px;align-items:center;margin-bottom:8px}
+.pzl .tin{height:44px;font-size:15px}.pzl span{font-size:12px;color:var(--grey)}.pzl .pzx{width:36px;height:36px}
+.pzinfo{font-size:12.5px;color:var(--grey);margin:-2px 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pzm{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--grid);border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:13.5px}
+.pzm input{margin-top:3px;accent-color:var(--navy2)}.pzm em{display:block;font-style:normal;font-size:12px;color:var(--grey);margin-top:2px}
+@media(min-width:1101px){#kG{grid-template-columns:repeat(5,1fr)}}
+@media print{#kG{grid-template-columns:repeat(5,1fr)!important}}
+@media(max-width:560px){.pzl{grid-template-columns:1fr 1fr 36px}.pzl .pzn{grid-column:1/-1}.pzl span{display:none}}
 .ptools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px}
 .ptabs{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .tabs{display:inline-flex;gap:2px;background:var(--soft2);border:1px solid var(--grid);border-radius:10px;padding:3px;flex-wrap:wrap}
@@ -568,6 +576,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
           <button id="gNext" title="Próximo dia"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
           <button class="tog" id="gToday">Hoje</button>
           <button class="tog" id="gMerge" title="Junta períodos separados por menos de 2 minutos">Unir pausas &lt; 2 min</button>
+          <button class="tog" id="gPausa" type="button" hidden title="Ajustar o horário de almoço e janta deste dia">Pausas do dia</button>
         </div>
         <div class="scrollx" id="cGan"></div></div></div></div></div>
   </section>
@@ -1027,7 +1036,7 @@ const eqNome=t=>{const e=CAT.eqp.find(x=>x.t===t);return e?e.n:t};
 const motAplicaEq=(m,tag)=>!m.a||m.a.some(x=>x===tag||(x==='TC'&&tag.startsWith('TC')));
 const eqsDaArea=area=>area==='LOKOTRACK'?CAT.eqp.filter(e=>e.v==='LOKOTRACK'):CAT.eqp.filter(e=>e.v===area||e.v==='GERAL');
 const motsDaArea=area=>{const eqs=eqsDaArea(area);return CAT.mot.filter(m=>(!m.ar||m.ar.includes(area))&&(!m.a||eqs.some(e=>motAplicaEq(m,e.t))))};
-const ERR_APP={quando_no_futuro:'O horário escolhido ainda não chegou.',muito_perto_do_inicio:'Escolha um horário pelo menos 2 minutos depois do início da parada.',muito_perto_do_fim:'Escolha um horário pelo menos 1 minuto antes do fim da parada.',maquina_ja_voltou:'A máquina já religou antes desse horário: atualize a tela, a parada já foi fechada.',tente_de_novo:'Já existe uma divisão nesse mesmo segundo. Escolha outro horário.',parada_nao_encontrada:'Parada não encontrada. Atualize a tela.',nao_autorizado:'Seu usuário não tem permissão para isso.',sem_permissao:'Seu usuário não tem permissão para isso.',sem_area:'Seu usuário ainda não tem setor definido.',fora_da_sua_area:'Essa parada não é do seu setor.',parada_de_outro_turno:'Essa parada é do outro turno: quem justifica é o operador daquele turno.',fora_do_turno:'Essa parada é de um turno que já fechou: só o supervisor pode justificar.',ja_justificada:'Essa parada já foi justificada por outra pessoa.',motivo_invalido:'Motivo inválido.',motivo_fora_da_area:'Esse motivo não vale para este setor.',motivo_nao_se_aplica:'Esse motivo não vale para esse equipamento.',equipamento_fora_da_area:'Esse equipamento não é deste setor.',equipamento_invalido:'Escolha o equipamento.',obs_obrigatoria:'Escreva na observação o motivo da correção (mínimo 3 letras).',texto_longo:'Texto muito longo (máx. 500).',nao_justificada:'Essa parada não está justificada.',parada_nao_encontrada:'Essa parada não existe mais.',nao_aguarda_confirmacao:'Essa parada já foi validada por outra pessoa.',acao_invalida:'Ação inválida.'};
+const ERR_APP={pausa_longa:'Cada pausa pode ter no máximo 3 horas.',horario_invalido:'Confira os horários: início e fim precisam ser diferentes.',mudanca_posterior:'Já existe uma mudança de padrão depois desta data. Fale com o suporte para ajustar.',turno_inexistente:'Este dia não tem esse turno cadastrado.',nao_autorizado:'Só o supervisor pode fazer isso.',quando_no_futuro:'O horário escolhido ainda não chegou.',muito_perto_do_inicio:'Escolha um horário pelo menos 2 minutos depois do início da parada.',muito_perto_do_fim:'Escolha um horário pelo menos 1 minuto antes do fim da parada.',maquina_ja_voltou:'A máquina já religou antes desse horário: atualize a tela, a parada já foi fechada.',tente_de_novo:'Já existe uma divisão nesse mesmo segundo. Escolha outro horário.',parada_nao_encontrada:'Parada não encontrada. Atualize a tela.',nao_autorizado:'Seu usuário não tem permissão para isso.',sem_permissao:'Seu usuário não tem permissão para isso.',sem_area:'Seu usuário ainda não tem setor definido.',fora_da_sua_area:'Essa parada não é do seu setor.',parada_de_outro_turno:'Essa parada é do outro turno: quem justifica é o operador daquele turno.',fora_do_turno:'Essa parada é de um turno que já fechou: só o supervisor pode justificar.',ja_justificada:'Essa parada já foi justificada por outra pessoa.',motivo_invalido:'Motivo inválido.',motivo_fora_da_area:'Esse motivo não vale para este setor.',motivo_nao_se_aplica:'Esse motivo não vale para esse equipamento.',equipamento_fora_da_area:'Esse equipamento não é deste setor.',equipamento_invalido:'Escolha o equipamento.',obs_obrigatoria:'Escreva na observação o motivo da correção (mínimo 3 letras).',texto_longo:'Texto muito longo (máx. 500).',nao_justificada:'Essa parada não está justificada.',parada_nao_encontrada:'Essa parada não existe mais.',nao_aguarda_confirmacao:'Essa parada já foi validada por outra pessoa.',acao_invalida:'Ação inválida.'};
 function errApp(e){const m=(e&&(e.message||e.code))||String(e);const k=Object.keys(ERR_APP).find(k=>m.includes(k));if(k)return ERR_APP[k];if(/JWT|auth|permission denied/i.test(m))return 'Sua sessão expirou. Entre de novo.';if(/fetch|network/i.test(m))return 'Sem resposta do servidor. Confira a internet e tente de novo.';return 'Erro: '+m}
 async function parLoad(force,silencioso){
   if(!D)return;
@@ -1249,7 +1258,7 @@ function renderGan(){
   const X=s=>lw+vw*Math.max(0,Math.min(span,s-A))/span;
   const dentro=([a,b])=>b>A&&a<B,corta=([a,b])=>[Math.max(a,A),Math.min(b,B)];
   const naJanela=([a,b])=>winsF.reduce((t,w)=>t+Math.max(0,Math.min(b,w.b)-Math.max(a,w.a)),0);
-  let s=`<svg class="ch" viewBox="0 0 ${W} ${H}" style="min-width:760px;max-width:${W}px"><defs><pattern id="gpH" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="rgba(214,69,69,.16)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--red)" stroke-width="2.4"/></pattern></defs>`;
+  let s=`<svg class="ch" viewBox="0 0 ${W} ${H}" style="min-width:760px;max-width:${W}px"><defs><pattern id="gpH" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="rgba(214,69,69,.16)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--red)" stroke-width="2.4"/></pattern><pattern id="gpP" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--orange)"/><line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,.55)" stroke-width="2.2"/></pattern></defs>`;
   // faixas dos turnos (janelas produtivas do dia de produção) e pausas entre elas
   const g=g0,wins=winsF;
   const nowS=Date.parse(D.gerado)/1000;
@@ -1264,6 +1273,10 @@ function renderGan(){
   /* eixo: marcas nas horas pares a partir do início do dia de produção (07:30) */
   {const st=span<=46800?3600:7200,h0=+hhmm(A).slice(0,2),m0=+hhmm(A).slice(3,5);let ts=A+((60-m0)%60)*60;if(st===7200&&(h0+(m0?1:0))%2)ts+=3600;
    for(;ts<=B;ts+=st){const x=X(ts),hh=+hhmm(ts).slice(0,2);s+=`<line class="gl" x1="${x}" x2="${x}" y1="${top-6}" y2="${H-6}" ${hh%6?'':'style="stroke:var(--grid)"'}/><text class="ax" x="${x}" y="${top-12}" text-anchor="middle">${String(hh).padStart(2,'0')}h</text>`}}
+  /* Pausas do dia = intervalos entre janelas produtivas do mesmo turno (já vêm do banco com o ajuste do dia, se houver) */
+  const PZ=[];[1,2].forEach(tu=>{const ws=wins.filter(w=>w.tu===tu);for(let i=1;i<ws.length;i++)if(ws[i].a>ws[i-1].b)PZ.push({a:ws[i-1].b,b:ws[i].a,tu})});
+  const naPausa=([a,b])=>PZ.reduce((t,p)=>t+Math.max(0,Math.min(b,p.b)-Math.max(a,p.a)),0);
+  const pzMot={};
   let totAll=0,firstOn=null,lastOff=null,nSeg=0;
   M.forEach((m,j)=>{const y=top+j*(rh+gap);const segs=(by[m.id]||[]).filter(dentro).map(corta);
     const tot=(fT?segs.reduce((a,sg)=>a+naJanela(sg),0):segs.reduce((a,[x,z])=>a+(z-x),0))/3600;totAll+=tot;nSeg+=segs.length;
@@ -1272,7 +1285,12 @@ function renderGan(){
     if(m.nome)s+=`<text class="ax" x="${lw-12}" y="${y+rh/2+10}" text-anchor="end">${esc(m.nome)}</text>`;
     segs.forEach(([a,b])=>{if(firstOn===null||a<firstOn)firstOn=a;if(lastOff===null||b>lastOff)lastOff=b;
       const x=X(a),w=Math.max(1.5,X(b)-x);
-      s+=`<rect class="gb" x="${x}" y="${y+3}" width="${w}" height="${rh-6}" rx="2.5" fill="var(--P)" data-tip="${esc(`<div class='m'>${m.id} · ${ddmm(GDAY)}</div><b>${hhmm(a)} → ${hhmm(b)}</b><div class='tl'><span>Duração</span><b>${hm((b-a)/3600)}</b></div>`)}"/>`});
+      const npz=naPausa([a,b]);if(npz>0)pzMot[m.id]=(pzMot[m.id]||0)+npz;
+      const tipS=`<div class='m'>${m.id} · ${ddmm(GDAY)}</div><b>${hhmm(a)} → ${hhmm(b)}</b><div class='tl'><span>Duração</span><b>${hm((b-a)/3600)}</b></div>${npz>0?`<div class='tl'><span>Rodou na pausa</span><b>${hm(npz/3600)}</b></div>`:''}`;
+      s+=`<rect class="gb" x="${x}" y="${y+3}" width="${w}" height="${rh-6}" rx="2.5" fill="var(--P)" data-tip="${esc(tipS)}"/>`;
+      /* pedaço do período que caiu dentro do almoço/janta: laranja listrado por cima */
+      PZ.forEach(p=>{const pa=Math.max(a,p.a),pb=Math.min(b,p.b);if(pb>pa){const px=X(pa),pw=Math.max(2,X(pb)-px);
+        s+=`<rect class="gb" x="${px}" y="${y+3}" width="${pw}" height="${rh-6}" rx="2" fill="url(#gpP)" data-tip="${esc(`<div class='m'>${m.id} · rodou na pausa</div><b>${hhmm(pa)} → ${hhmm(pb)} · ${hm((pb-pa)/3600)}</b><div class='tl'><span>${p.tu===1?'Almoço':'Janta'} (${p.tu}º turno)</span><b>${hhmm(p.a)} → ${hhmm(p.b)}</b></div>`)}"/>`}})});
     if(GPAR.includes(m.id)){const pr=parGan.filter(p=>p.mo===m.id&&dentro([p.iniMs/1000,p.fimMs?p.fimMs/1000:nowS]));
       pr.forEach(p=>{const a=p.iniMs/1000,b=p.fimMs?p.fimMs/1000:nowS;const x=X(a),w=Math.max(3,X(b)-x),ok=p.s==='ok'||p.s==='hi',ab=p.s==='ab';
         const mot=p.cod?motNome(p.cod)+(p.eqc?' · '+p.eqc:''):(p.cat||'').split(SEP).pop();
@@ -1283,7 +1301,7 @@ function renderGan(){
   });
   if(GDAY===D.hoje){const nx=X(Date.parse(D.gerado)/1000);if(nx>lw&&nx<lw+vw)s+=`<line x1="${nx}" x2="${nx}" y1="${top-4}" y2="${H-6}" stroke="var(--orange)" stroke-width="1.5" stroke-dasharray="4 3"/><text class="vl" x="${nx}" y="${H+8}" text-anchor="middle" fill="var(--orange)">leitura ${hhmm(Date.parse(D.gerado)/1000)}</text>`}
   s+='</svg>';
-  $('#cGan').innerHTML=s+`<div class="leg" style="margin-top:${GDAY===D.hoje?18:12}px"><span><i style="background:var(--P)"></i>Ligado</span><span><i style="background:var(--soft2);border:1px solid var(--grid)"></i>Desligado</span><span><i style="background:rgba(10,46,122,.18)"></i>1º turno</span><span><i style="background:rgba(242,169,59,.35)"></i>2º turno</span><span><i style="background:var(--card);border:1px solid var(--grid)"></i>Fora do turno / pausa</span>${M.some(m=>GPAR.includes(m.id))?'<span><i style="background:var(--red);opacity:.85"></i>Parada justificada</span><span><i style="background:repeating-linear-gradient(45deg,var(--red) 0 2px,rgba(214,69,69,.16) 2px 5px);outline:1.4px solid var(--red)"></i>Parada sem justificativa (AV10 e CV07)</span>':''}${GDAY===D.hoje?'<span><i style="background:var(--orange)"></i>Hora da leitura</span>':''}</div><p class="note">${fT?`<b>Mostrando só o ${F.tu}º turno (${hhmm(A)} → ${hhmm(B)}).</b> Horas e aproveitamento contam só o tempo dentro do turno, sem as pausas. `:''}O dia de produção vai das 07:30 até as 07:30 do dia seguinte: 1º turno 07:30 → 18:30 e 2º turno 18:30 → 04:00 (sábado 07:30 → 16:00 e 16:00 → 23:00). ${GMERGE?'Pausas menores que 2 minutos foram unidas para facilitar a leitura. Desmarque o botão para ver cada liga/desliga.':'Mostrando cada liga/desliga como veio do sensor.'} Intervalos ligados acima de 16h seguidas são cortados (provável placa sem sinal).</p>`;
+  $('#cGan').innerHTML=s+`<div class="leg" style="margin-top:${GDAY===D.hoje?18:12}px"><span><i style="background:var(--P)"></i>Ligado</span><span><i style="background:var(--soft2);border:1px solid var(--grid)"></i>Desligado</span><span><i style="background:rgba(10,46,122,.18)"></i>1º turno</span><span><i style="background:rgba(242,169,59,.35)"></i>2º turno</span><span><i style="background:var(--card);border:1px solid var(--grid)"></i>Fora do turno / pausa</span><span><i style="background:repeating-linear-gradient(45deg,var(--orange) 0 3px,#f7c77a 3px 5px)"></i>Rodou na pausa</span>${M.some(m=>GPAR.includes(m.id))?'<span><i style="background:var(--red);opacity:.85"></i>Parada justificada</span><span><i style="background:repeating-linear-gradient(45deg,var(--red) 0 2px,rgba(214,69,69,.16) 2px 5px);outline:1.4px solid var(--red)"></i>Parada sem justificativa (AV10 e CV07)</span>':''}${GDAY===D.hoje?'<span><i style="background:var(--orange)"></i>Hora da leitura</span>':''}</div><p class="note">${fT?`<b>Mostrando só o ${F.tu}º turno (${hhmm(A)} → ${hhmm(B)}).</b> Horas e aproveitamento contam só o tempo dentro do turno, sem as pausas. `:''}O dia de produção vai das 07:30 até as 07:30 do dia seguinte: 1º turno 07:30 → 18:30 e 2º turno 18:30 → 04:00 (sábado 07:30 → 16:00 e 16:00 → 23:00). ${GMERGE?'Pausas menores que 2 minutos foram unidas para facilitar a leitura. Desmarque o botão para ver cada liga/desliga.':'Mostrando cada liga/desliga como veio do sensor.'} Intervalos ligados acima de 16h seguidas são cortados (provável placa sem sinal).</p>`;
   const ativos=M.filter(m=>(by[m.id]||[]).some(dentro)).length;
   const winsN=wins.map(w=>({...w,b:Math.min(w.b,nowS)})).filter(w=>w.b>w.a);
   const avD=winsN.reduce((a,w)=>a+(w.b-w.a),0);let usedD=0;M.forEach(m=>(by[m.id]||[]).forEach(([a,b])=>winsN.forEach(w=>{usedD+=Math.max(0,Math.min(b,w.b)-Math.max(a,w.a))})));
@@ -1291,8 +1309,11 @@ function renderGan(){
   $('#kG').innerHTML=kt(totAll,fT?`Horas no ${F.tu}º turno`:'Horas no dia','var(--P)',`${ativos} de ${M.length} ativos operaram`,'h',1)
     +`<div class="k rv in"><div class="bar" style="background:var(--green)"></div><b style="font-size:30px">${firstOn!==null?hhmm(firstOn):'—'}</b><span>Primeira partida</span><em>qualquer ativo</em></div>`
     +`<div class="k rv in"><div class="bar" style="background:var(--navy2)"></div><b style="font-size:30px">${lastOff!==null?hhmm(lastOff):'—'}</b><span>${GDAY===D.hoje?'Último registro':'Último desligamento'}</span><em>qualquer ativo</em></div>`
+    +(()=>{const ids=Object.keys(pzMot),tot=ids.reduce((t,k)=>t+pzMot[k],0);return `<div class="k rv in"><div class="bar" style="background:${tot?'var(--orange)':'var(--green)'}"></div><b style="font-size:30px">${tot?hm(tot/3600):'—'}</b><span>Rodou na pausa</span><em>${tot?`${ids.length} ${ids.length===1?'ativo':'ativos'}: ${ids.sort((x,y)=>pzMot[y]-pzMot[x]).slice(0,4).map(k=>`${k} ${hm(pzMot[k]/3600)}`).join(' · ')}`:PZ.length?'ninguém rodou no almoço/janta':'dia sem pausa'}</em></div>`})()
     +`<div class="k rv in"><div class="bar" style="background:var(--orange)"></div><b style="font-size:30px">${apD!=null?apD+'%':'—'}</b><span>Aproveitamento do dia</span><em>${wins.length?`rodando ÷ ${hm(avD/3600)} disponíveis${GDAY===D.hoje?' até agora':''}`:'dia sem turno'}</em></div>`;
-  $('#ganK').textContent=`${ddmm(GDAY)} · ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][wd(GDAY)]}${fT?` · ${F.tu}º turno, ${hhmm(A)} → ${hhmm(B)}`:''}`;
+  const paj=(g0.paj||[]).map(Number);
+  $('#ganK').textContent=`${ddmm(GDAY)} · ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][wd(GDAY)]}${fT?` · ${F.tu}º turno, ${hhmm(A)} → ${hhmm(B)}`:''}${paj.length?` · pausa ajustada no ${paj.map(t=>t+'º').join(' e ')} turno`:''}`;
+  $('#gPausa').hidden=!(typeof ehSup==='function'&&ehSup());
   $('#ganPk').innerHTML=`Dia ${ddmm(GDAY)}`;
   $$('#kG [data-count]').forEach(countUp);$$('#kG .rv').forEach(e=>e.classList.add('in'));
 }
@@ -1449,6 +1470,49 @@ $('#gOk').onclick=async()=>{if(!GO||!GO.onOk||GO.busy)return;GO.busy=true;const 
   try{const r=await GO.onOk();GO.busy=false;b.disabled=false;b.textContent=t;if(r!==false)gClose()}
   catch(e){GO.busy=false;b.disabled=false;b.textContent=t;$('#gErr').textContent=e&&e.userMsg?e.userMsg:errApp(e)}};
 const falha=m=>{const e=new Error(m);e.userMsg=m;return e};
+/* ---- Pausas do dia (supervisor): ajustar almoço/janta de um dia ou mudar o padrão a partir dele ---- */
+const DSEM=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+let PZD=null;
+function pzLinha(tu,p={}){return `<div class="pzl" data-tu="${tu}"><input class="tin pzn" type="text" maxlength="40" value="${esc(p.nome||(tu===1?'Almoço':'Janta'))}" aria-label="Nome da pausa"><input class="tin pzi" type="time" value="${esc(p.inicio||'')}" aria-label="Início"><span>até</span><input class="tin pzf" type="time" value="${esc(p.fim||'')}" aria-label="Fim"><button type="button" class="xbtn pzx" aria-label="Tirar esta pausa">×</button></div>`}
+async function pausasAbrir(){
+  if(typeof ehSup!=='function'||!ehSup())return;
+  const dia=GDAY;
+  gOpen({k:'Gantt · '+ddmm(dia),t:'Pausas do dia',ok:'Salvar pausas',w:560,body:'<span class="sr">Carregando</span><div class="skel" style="width:80%"></div><div class="skel" style="width:55%"></div>'});
+  let r;try{r=await rpc('app_pausas_dia',{p_dia:dia})}catch(e){$('#gB').innerHTML=`<div class="pempty"><b>Não foi possível carregar as pausas</b>${esc(errApp(e))}</div>`;$('#gOk').hidden=true;return}
+  if(GDAY!==dia)return;
+  PZD={dia,tur:(r||[]).map(t=>({...t,orig:JSON.stringify((t.pausas||[]).map(p=>[p.nome,p.inicio,p.fim]))}))};
+  if(!PZD.tur.length){$('#gB').innerHTML='<div class="pempty"><b>Este dia não tem turno cadastrado</b></div>';$('#gOk').hidden=true;return}
+  const dsem=DSEM[wd(dia)];
+  $('#gB').innerHTML=PZD.tur.map(t=>`<div class="fs" data-tub="${t.turno}"><h4>${t.turno}º turno · ${t.inicio} → ${t.fim}</h4>
+      <div class="pzinfo">${t.origem==='dia'?`<span class="pill ag">Ajustada neste dia</span>${t.por?` por ${esc(t.por)}`:''}${t.em?` em ${dtFmt.format(Date.parse(t.em))}`:''} <button type="button" class="fclear" data-pzlimpa="${t.turno}">Voltar ao padrão</button>`:'<span class="pill off">Padrão</span> horário de sempre deste dia da semana'}</div>
+      <div class="pzlist">${(t.pausas||[]).map(p=>pzLinha(t.turno,p)).join('')}</div>
+      <button type="button" class="fclear" data-pzadd="${t.turno}">+ Adicionar pausa</button></div>`).join('')
+    +`<div class="fs"><h4>Vale para</h4>
+      <label class="pzm"><input type="radio" name="pzModo" value="dia" checked> <span><b>Só neste dia</b> (${dmy(dia)})<em>Ex.: hoje o almoço foi adiantado. Os outros dias não mudam.</em></span></label>
+      <label class="pzm"><input type="radio" name="pzModo" value="padrao"> <span><b>Mudar o padrão</b> de toda ${dsem} a partir de ${dmy(dia)}<em>Os dias anteriores continuam com o horário antigo. Dias ajustados à parte não mudam.</em></span></label></div>
+    <div class="fhint">Sem nenhuma pausa no turno = o turno todo conta como disponível. O aproveitamento, o Gantt e o destaque "rodou na pausa" passam a usar estes horários.</div>`;
+  GO.onOk=pausasSalvar;$('#gOk').hidden=false;
+}
+async function pausasSalvar(){
+  if(!PZD)return;
+  const modo=($('#gB input[name=pzModo]:checked')||{}).value||'dia',tarefas=[];
+  for(const t of PZD.tur){const box=$(`#gB [data-tub="${t.turno}"]`);if(!box)continue;
+    const ps=[...box.querySelectorAll('.pzl')].map(l=>({nome:l.querySelector('.pzn').value.trim(),inicio:l.querySelector('.pzi').value,fim:l.querySelector('.pzf').value}));
+    for(const p of ps){if(!/^\d{2}:\d{2}$/.test(p.inicio)||!/^\d{2}:\d{2}$/.test(p.fim)||p.inicio===p.fim)throw falha(`Confira os horários do ${t.turno}º turno: preencha início e fim de cada pausa.`)}
+    const mudou=JSON.stringify(ps.map(p=>[p.nome,p.inicio,p.fim]))!==t.orig;
+    if(modo==='padrao'||mudou)tarefas.push({turno:t.turno,ps})}
+  if(!tarefas.length){toast('Nada mudou nas pausas.');return}
+  for(const x of tarefas)await rpc('app_pausas_salvar',{p_dia:PZD.dia,p_turno:x.turno,p_pausas:x.ps,p_modo:modo});
+  toast(modo==='padrao'?`Padrão de ${DSEM[wd(PZD.dia)]} alterado a partir de ${dmy(PZD.dia)}.`:`Pausas de ${dmy(PZD.dia)} salvas.`);
+  await pausasRecarregar();
+}
+async function pausasRecarregar(){delete GDATA[PZD.dia];try{await load(false,true)}catch(e){}await ganEnsure(true);try{if(typeof parLoad==='function')parLoad(true,true)}catch(e){}}
+$('#gPausa').onclick=pausasAbrir;
+$('#gB').addEventListener('click',async e=>{
+  const ad=e.target.closest('[data-pzadd]');if(ad){const tu=+ad.dataset.pzadd;const l=$(`#gB [data-tub="${tu}"] .pzlist`);if(l.children.length>=4){toast('No máximo 4 pausas por turno.');return}l.insertAdjacentHTML('beforeend',pzLinha(tu,{}));l.lastElementChild.querySelector('.pzi').focus();return}
+  const x=e.target.closest('.pzx');if(x){x.closest('.pzl').remove();return}
+  const lp=e.target.closest('[data-pzlimpa]');if(lp&&PZD&&!GO.busy){GO.busy=true;lp.disabled=true;try{await rpc('app_pausas_salvar',{p_dia:PZD.dia,p_turno:+lp.dataset.pzlimpa,p_pausas:null,p_modo:'limpar'});toast(`Pausas de ${dmy(PZD.dia)} voltaram ao padrão.`);GO.busy=false;gClose();await pausasRecarregar()}catch(er){GO.busy=false;lp.disabled=false;$('#gErr').textContent=errApp(er)}return}
+});
 
 /* ---------- histórico de uma parada ---------- */
 const ACAO_N={FRACIONOU:'Dividiu a parada',JUSTIFICOU:'Justificou',ALTEROU:'Alterou',CORRIGIU:'Corrigiu',CONFIRMOU:'Validou',CONTESTOU:'Contestou'};

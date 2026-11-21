@@ -97,6 +97,9 @@ Quando até um horário foi um motivo e depois foi outro: botão **Dividir** na 
 - **Filtro de turno**: o eixo mostra só a janela do turno escolhido (1º 07:30 → 18:30, 2º 18:30 → 04:00; sábado 07:30 → 16:00 e 16:00 → 23:00) e horas, aproveitamento e paradas contam só dentro dela.
 - **Paradas** aparecem só nas linhas de **AV10** e **CV07** (os motores que o scanner monitora): vermelho cheio = justificada, hachurado = sem justificativa, contorno tracejado = em andamento. Clicar numa parada abre a justificativa.
 
+- **Rodou na pausa:** o pedaço de cada barra que caiu no almoço ou na janta aparece em laranja listrado (passe o mouse para ver o horário e a duração). O indicador "Rodou na pausa" soma o tempo e lista os ativos.
+- **Pausas do dia (supervisor):** botão no Gantt para ajustar o almoço/janta do dia escolhido. "Só neste dia" grava em `pausas_dia` (ex.: almoço adiantado); "Mudar o padrão a partir deste dia" troca `pausas_config` e guarda o padrão antigo em `pausas_hist` com `valido_ate` = véspera, para os dias anteriores não mudarem. `janelas_produtivas` escolhe: ajuste do dia > padrão histórico > padrão atual, então aproveitamento, Gantt e turno das paradas acompanham. O aplicativo Android lê só `pausas_config` (padrão atual) para sugerir "refeição"; ajustes de um dia não chegam à sugestão do app.
+
 ## Aplicativo (PWA)
 
 O painel pode ser instalado no celular ou no computador como aplicativo (ícone "Britagem").
