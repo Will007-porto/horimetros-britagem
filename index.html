@@ -650,7 +650,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
         <button type="button" id="prdNext" title="Próximo mês"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
       <div class="stamp" id="prdStamp"></div>
-      <div class="seg" id="prdVis" title="Estoque: o que foi produzido de fato (britado = rachão para estoque + finos, sem contar duas vezes). Produtividade: o que passou em cada etapa da planta (soma rachão + finos)."><button type="button" data-v="liq">Estoque</button><button type="button" data-v="mat">Produtividade</button></div>
+      <div class="seg" id="prdVis" title="Estoque: atendimento do rachão (BMM05 + o que sobrou do BM10 depois do secundário = rachão disponível para aplicação) contra a meta de rachão. Produtividade: o que passou em cada etapa da planta (soma rachão + finos)."><button type="button" data-v="liq">Estoque</button><button type="button" data-v="mat">Produtividade</button></div>
       <div class="prdacts"><button type="button" class="btn2" id="prdExport" title="Relatório de produção no modelo da planilha (PDF), até o dia escolhido em Produção do dia">Exportar produção</button><button type="button" class="btn2" id="prdExportSaldo" title="Relatório de saldo: BM10 (rachão + finos do secundário) e BMM05, até o dia escolhido">Exportar saldo</button><button type="button" class="btn2" id="prdMetas" hidden>Metas do mês</button><button type="button" class="btn1" id="prdLancar" hidden>Lançar produção</button></div>
     </div>
     <div id="prdBody"></div>

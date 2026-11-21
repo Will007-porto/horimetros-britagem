@@ -45,21 +45,21 @@ function rmColunas({W=520,H=230,grupos,series,titulo,rot,valores}){
 function rmMontar(dia){
   const c=PR.c,o=c.byD[dia],a=prdAte(c,dia),dias=c.days.map(x=>x.d),ate=x=>x.d<=dia;
   const saldo=a.realT-c.metaT,ad=a.prevT?a.realT/a.prevT:null;
-  const H1=rmHead('ACOMPANHAMENTO DIÁRIO DA PRODUÇÃO',visLiq()?'Pedreira Tripoloni - Britagem · visão estoque (britado = rachão BM10 + BMM05, sem contar os finos duas vezes)':'Pedreira Tripoloni - Britagem · visão produtividade (soma de todas as etapas)',c,dia);
+  const H1=rmHead('ACOMPANHAMENTO DIÁRIO DA PRODUÇÃO',visLiq()?'Pedreira Tripoloni - Britagem · visão estoque (atendimento do rachão: BMM05 + sobra do BM10 depois do secundário)':'Pedreira Tripoloni - Britagem · visão produtividade (soma de todas as etapas)',c,dia);
   const tn=PR.tend?prdTendAte(c,'T',dia):null;
 
   /* página 1: visão geral */
   let p1=H1+rmSec('Visão geral do mês')+`<div class="rmg5">`
-    +rmCard(visLiq()?'Meta de britado':'Programado do mês',f0(c.metaT),visLiq()?'meta de rachão cadastrada (t)':'meta total de produção (t)')
-    +rmCard(visLiq()?'Britado acumulado':'Realizado acumulado',f0(a.realT),visLiq()?'rachão BM10 + BMM05 (t)':'produzido até o momento (t)')
+    +rmCard(visLiq()?'Meta de atendimento':'Programado do mês',f0(c.metaT),visLiq()?'meta de rachão cadastrada (t)':'meta total de produção (t)')
+    +rmCard(visLiq()?'Rachão p/ aplicação':'Realizado acumulado',f0(a.realT),visLiq()?'BMM05 + sobra do BM10 (t)':'produzido até o momento (t)')
     +rmCard('% atingimento do mês',rmPc(c.metaT?a.realT/c.metaT:null),`Previsto até ${ddmm(dia)}: ${rmPc(c.metaT?a.prevT/c.metaT:null)}`)
     +rmCard('Saldo vs meta',f0(saldo),'positivo = acima · negativo = abaixo (t)',{cor:rmSaldoCor(saldo)})
     +rmCard('Aderência à meta',rmPc(ad),`vs programado até ${ddmm(dia)} · faltam ${f0(Math.max(0,a.prevT-a.realT))} t`,{cor:rmAdCor(ad)})+`</div>`;
   p1+=rmSec('Produção realizada por material')+`<div class="rmg4">${MATS.map(([k])=>rmCard(RMN[k],f0(a.real[k]),`de ${f0(c.meta[k])} t programado · ${rmPc(c.meta[k]?a.real[k]/c.meta[k]:null)} do mês`,{top:RM.mat[k]})).join('')}</div>`;
-  p1+=rmSec(`Produção do dia · ${dmy(dia)}`)+`<div class="rmg5">`+rmCard(visLiq()?'BRITADO NO DIA':'TOTAL DO DIA',f0(o.tot),`meta do dia ${f0(o.metaT)} t · ${rmPc(o.metaT?o.tot/o.metaT:null)} da meta`,{top:RM.navy})
+  p1+=rmSec(`Produção do dia · ${dmy(dia)}`)+`<div class="rmg5">`+rmCard(visLiq()?'PARA APLICAÇÃO NO DIA':'TOTAL DO DIA',f0(o.tot),`meta do dia ${f0(o.metaT)} t · ${rmPc(o.metaT?o.tot/o.metaT:null)} da meta`,{top:RM.navy})
     +MATS.map(([k])=>rmCard(RMN[k],f0(o.real[k]),`meta ${f0(o.meta[k])} t · ${rmPc(o.meta[k]?o.real[k]/o.meta[k]:null)}`,{top:RM.mat[k]})).join('')+`</div>`;
   let pa=0,ra=0;const pAc=[],rAc=[];c.days.forEach(x=>{pa+=x.metaT;ra+=x.tot;pAc.push(pa);rAc.push(ate(x)?ra:null)});
-  const sAc=[{v:pAc,c:RM.cinza,w:2},{v:rAc,c:RM.navy,w:2.4,m:true}],lAc=[{t:visLiq()?'Meta de britado acum.':'Meta Acumulada',c:RM.cinza},{t:visLiq()?'Britado acumulado':'Realizado Acumulado',c:RM.navy}];
+  const sAc=[{v:pAc,c:RM.cinza,w:2},{v:rAc,c:RM.navy,w:2.4,m:true}],lAc=[{t:visLiq()?'Meta de atendimento acum.':'Meta Acumulada',c:RM.cinza},{t:visLiq()?'Rachão p/ aplicação acum.':'Realizado Acumulado',c:RM.navy}];
   if(tn){sAc.push({v:tn.proj,c:RM.navy,w:2,d:'2 4'});lAc.push({t:`Tendência: ${f0(tn.fim)} t`,c:RM.navy,d:'2 4'})}
   p1+=rmSec('Análises')+`<div class="rmg2 rmpan">`
     +rmColunas({W:520,H:262,grupos:MATS.map(([k])=>RMN[k]),series:[{t:'Meta até hoje',c:RM.cinza,v:MATS.map(([k])=>a.prev[k])},{t:'Realizado',c:RM.navy,v:MATS.map(([k])=>a.real[k])}],titulo:'Meta até hoje × Realizado - por material (t)',valores:true})
@@ -81,7 +81,7 @@ function rmMontar(dia){
 
   /* página 3: memória diária */
   const meio=Math.ceil(c.days.length/2);
-  const tab=lista=>`<table class="rmt"><thead><tr><th>Data</th>${MATS.map(([k])=>`<th>${RMN[k]}</th>`).join('')}<th>${visLiq()?'Britado dia':'Total dia'}</th><th>Meta dia</th><th>Desvio</th></tr></thead><tbody>${lista.map(x=>{const f=ate(x)&&x.tem,dv=x.tot-x.metaT,bar=f&&x.metaT?Math.min(100,x.tot/Math.max(x.metaT,1)*100):f?100:0;
+  const tab=lista=>`<table class="rmt"><thead><tr><th>Data</th>${MATS.map(([k])=>`<th>${RMN[k]}</th>`).join('')}<th>${visLiq()?'Aplicação dia':'Total dia'}</th><th>Meta dia</th><th>Desvio</th></tr></thead><tbody>${lista.map(x=>{const f=ate(x)&&x.tem,dv=x.tot-x.metaT,bar=f&&x.metaT?Math.max(0,Math.min(100,x.tot/Math.max(x.metaT,1)*100)):f?100:0;
     return `<tr><td>${ddmm(x.d)}</td>${MATS.map(([k])=>`<td>${f?(x.real[k]?f0(x.real[k]):'–'):''}</td>`).join('')}<td class="tb2"><i style="width:${bar}%"></i><span>${f?f0(x.tot):''}</span></td><td>${x.metaT?f0(x.metaT):'–'}</td><td style="color:${f?rmSaldoCor(dv):RM.sub}">${f?f0(dv):''}</td></tr>`}).join('')}</tbody></table>`;
   const H3=H1;
   let p3=H3+rmSec('Memória diária - quantidades realizadas por dia (t)')+`<div class="rmg2 rmpan rmmem">${tab(c.days.slice(0,meio))}${tab(c.days.slice(meio))}</div>`;

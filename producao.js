@@ -22,8 +22,8 @@ const chevS='<span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/
 
 let PR={mes:null,x:null,c:null,err:null,busy:false,dia:null,mat:'T',par:{},tab:false,tend:false};
 try{PR.tend=localStorage.getItem('hb_tend')==='1'}catch(e){}
-/* Visão do total: 'liq' = ESTOQUE, o que foi produzido de fato sem contar duas vezes (britado = rachão do BM10 + BMM05
-   = rachão que foi para o estoque + finos; os finos saem do rachão do BM10)
+/* Visão do total: 'liq' = ESTOQUE, o atendimento do rachão: rachão disponível para aplicação = britado (rachão do BM10 + BMM05)
+   menos o que o secundário transformou em finos (os finos saem do rachão do BM10). Comparado com a meta de rachão cadastrada.
    ou 'mat' = PRODUTIVIDADE, o que passou em cada etapa da planta (soma rachão + finos, como a planilha antiga). */
 PR.vis='liq';try{if(localStorage.getItem('hb_prdvis')==='mat')PR.vis='mat'}catch(e){}
 const visLiq=()=>PR.vis!=='mat';
@@ -37,7 +37,7 @@ function rachParaFinos(mt,mix){
   let t=0,garg=null;ks.forEach(k=>{const v=(+mt[k]||0)/(+mix[k]);if(v>t){t=v;garg=k}});
   return {t,garg,soma};
 }
-const TXT_TOT=()=>visLiq()?{real:'Britado acumulado',prog:'Meta de britado do mês',dia:'Britado no dia',col:'Britado',leg:'Britado acumulado (rachão do BM10 + BMM05)',sub:'meta de rachão cadastrada'}
+const TXT_TOT=()=>visLiq()?{real:'Rachão p/ aplicação',prog:'Meta de atendimento do mês',dia:'Para aplicação no dia',col:'Aplicação',leg:'Rachão para aplicação acumulado (BMM05 + sobra do BM10 depois do secundário)',sub:'meta de rachão cadastrada'}
   :{real:'Realizado acumulado',prog:'Programado do mês',dia:'Total do dia',col:'Total',leg:'Realizado acumulado (produtividade: soma de todas as etapas)',sub:'soma das metas de todos os materiais'};
 
 /* Tendência: mantém o ritmo já feito no mês (toneladas por dia programado, sábado com o peso dele)
@@ -69,8 +69,8 @@ async function prdLoad(mes,force,silencioso){
 function prdCalc(x,mes){
   const m=x.mes||null,n=diasNoMes(mes),peso=m?+m.peso_sabado:0.7369,pctBM=m?+m.pct_bm10:0.5;
   const meta={RACHAO:m?(+m.meta_rachao_irati)+(+m.meta_rachao_palmeira):0,BRITA01:m?+m.meta_brita01:0,PO:m?+m.meta_po:0,BRITA02:m?+m.meta_brita02:0};
-  /* Visão Estoque: a meta de britado é só a meta de rachão cadastrada (decisão da gerência em 20/11/2026:
-     não somar o rachão necessário para os finos). Na visão Produtividade, cada material tem a sua meta. */
+  /* Visão Estoque: a meta de atendimento é a meta de rachão cadastrada (decisão da gerência em 20/11/2026:
+     não somar o rachão necessário para os finos). O realizado é o rachão para aplicação: BMM05 + sobra do BM10 depois do secundário (21/11/2026). Na visão Produtividade, cada material tem a sua meta. */
   const metaRachUso=meta.RACHAO,rpf=rachParaFinos(meta,x.mix),metaFinos=rpf.t;
   const metaT=visLiq()?meta.RACHAO:MATS.reduce((a,[k])=>a+meta[k],0);
   const tipo={};(x.dias||[]).forEach(d=>tipo[d.dia]=d.tipo);
@@ -81,6 +81,12 @@ function prdCalc(x,mes){
   (x.horas||[]).forEach(([d,mo,hh])=>{const o=byD[d];if(o&&o.h[mo]!=null)o.h[mo]=+hh||0});
   (x.lanc||[]).forEach(l=>{const o=byD[l.dia];if(!o)return;const t=+l.t||0;o.tem=true;o.real[l.material]+=t;o.totMat=(o.totMat||0)+t;if(!visLiq()||l.material==='RACHAO')o.tot+=t;
     o.tu[l.turno][l.material]=(o.tu[l.turno][l.material]||0)+t;if(l.material==='RACHAO'){o.eq[l.equipamento]+=t;o.eqTu[l.turno][l.equipamento]=t}});
+  /* Visão Estoque: rachão para aplicação = BMM05 (todo para o estoque de aplicação) + o que sobrou do BM10 depois do secundário.
+     Os finos só saem do rachão do BM10 (soma dos finos = rachão que entrou no secundário, porque o mix soma 100%).
+     No acumulado do mês a sobra do BM10 nunca fica negativa: se o secundário passou do BM10 britado, consumiu estoque antigo
+     do BM10, não o rachão do BMM05. O valor do dia é a variação do acumulado, para a soma dos dias bater com o acumulado. */
+  if(visLiq()){let bm=0,mm=0,fi=0,ant=0;days.forEach(o=>{bm+=o.eq.BM10;mm+=o.eq.BMM05;fi+=finosDia(o);
+    const ac=mm+Math.max(0,bm-fi);o.consEst=Math.max(0,fi-bm);o.tot=ac-ant;ant=ac})}
   let pa=0,ra=0;
   days.forEach(o=>{o.meta={};MATS.forEach(([k])=>o.meta[k]=W?meta[k]*o.w/W:0);o.metaT=W?metaT*o.w/W:0;pa+=o.metaT;ra+=o.tot;o.prevAc=pa;o.realAc=ra});
   const feitos=days.filter(o=>o.tem),ref=feitos.length?feitos[feitos.length-1].d:null;
@@ -98,7 +104,7 @@ function prdAte(c,dia){
   const ate=o=>!!dia&&o.d<=dia,real={},prev={};
   MATS.forEach(([k])=>{real[k]=c.days.filter(ate).reduce((a,o)=>a+o.real[k],0);prev[k]=c.days.filter(ate).reduce((a,o)=>a+o.meta[k],0)});
   const eqReal={},eqDias={};EQS.forEach(([e])=>{eqReal[e]=c.days.filter(ate).reduce((a,o)=>a+o.eq[e],0);eqDias[e]=c.days.filter(o=>ate(o)&&o.eq[e]>0).length});
-  return {real,prev,realT:visLiq()?real.RACHAO:MATS.reduce((a,[k])=>a+real[k],0),prevT:visLiq()?prev.RACHAO:MATS.reduce((a,[k])=>a+prev[k],0),
+  return {real,prev,realT:visLiq()?c.days.filter(ate).reduce((a,o)=>a+o.tot,0):MATS.reduce((a,[k])=>a+real[k],0),prevT:visLiq()?prev.RACHAO:MATS.reduce((a,[k])=>a+prev[k],0),
     diasFeitos:c.days.filter(o=>o.w>0&&ate(o)).length,eqReal,eqDias};
 }
 
@@ -134,7 +140,7 @@ function renderPrd(anima){
   /* por material */
   h+=`<div class="box rv"><div class="boxh" style="cursor:default">${icoBox('<path d="M3 20h18M6 16l3-8 4 5 3-3 2 6"/>')}<div><div class="tt">Produção por material</div><div class="kk">Realizado × meta do mês${ref&&c.m?` · o traço marca o previsto até ${ddmm(ref)}`:''}</div></div></div>
     <div class="boxb"><div class="pmat">${MATS.map(([k,n,col])=>{const r=c.real[k],mt=c.meta[k],pv=c.prev[k];
-      return `<div class="pm"><div class="pmh"><i style="background:${col}"></i>${n}</div><b>${f0(r)}<small>t</small></b>
+      return `<div class="pm"><div class="pmh"><i style="background:${col}"></i>${visLiq()&&k==='RACHAO'?'Rachão britado (bruto)':n}</div><b>${f0(r)}<small>t</small></b>
         <div class="pmsub">${mt?`de ${f0(mt)} t · ${pc1(r/mt)} do mês`:'sem meta'}</div>
         <div class="bul" role="img" aria-label="${esc(`${n}: ${f0(r)} t de ${f0(mt)} t`)}" data-tip="${esc(`<div class='m'>${n}</div><b>${f0(r)} t realizadas</b><div class='tl'><span>Meta do mês</span><b>${f0(mt)} t</b></div><div class='tl'><span>Previsto até ${ref?ddmm(ref):'—'}</span><b>${f0(pv)} t</b></div><div class='tl'><span>Falta para a meta</span><b>${f0(Math.max(0,mt-r))} t</b></div>`)}"><div class="bulf" style="width:${mt?Math.min(100,r/mt*100):0}%;background:${col}"></div>${mt&&pv?`<div class="bult" style="left:${Math.min(100,pv/mt*100)}%"></div>`:''}</div>
         <div class="pmrow"><span>Aderência ao previsto</span>${pv?stAd(r/pv):'<span>—</span>'}</div></div>`}).join('')}</div></div></div>`;
@@ -197,8 +203,8 @@ function prdTabelaDia(c,o){
     h+=`<tr><td class="m"><span class="sw" style="background:${col}"></span>${n}</td><td class="n">${cel(a)}</td><td class="n">${cel(b)}</td><td class="n" style="font-weight:700;color:var(--ink)">${a==null&&b==null?cel(null):f0(r)}</td><td class="n hm">${mt?f0(mt):'—'}</td><td class="n">${mt&&(a!=null||b!=null)?stAd(r/mt):'—'}</td></tr>`;
     if(k==='RACHAO')EQS.forEach(([e,en,es])=>{const x=o.eqTu[1][e],y=o.eqTu[2][e];if(x==null&&y==null)return;
       h+=`<tr class="sb"><td>${en} · ${es}</td><td class="n">${cel(x)}</td><td class="n">${cel(y)}</td><td class="n">${f0((x||0)+(y||0))}</td><td class="n hm">${mt?f0(mt*c.fracEq(e)):'—'}</td><td class="n"></td></tr>`})});
-  const somaT=t=>visLiq()?(o.tu[t].RACHAO||0):MATS.reduce((a,[k])=>a+(o.tu[t][k]||0),0),t1=somaT(1),t2=somaT(2);
-  h+=`<tr class="tot"><td>${visLiq()?'Britado (rachão)':'Total'}</td><td class="n">${f0(t1)}</td><td class="n">${f0(t2)}</td><td class="n">${f0(o.tot)}</td><td class="n hm">${o.metaT?f0(o.metaT):'—'}</td><td class="n">${o.metaT&&o.tem?stAd(o.tot/o.metaT):'—'}</td></tr></tbody></table>`;
+  const somaT=t=>visLiq()?(o.tu[t].RACHAO||0)-(o.tu[t].BRITA01||0)-(o.tu[t].PO||0)-(o.tu[t].BRITA02||0):MATS.reduce((a,[k])=>a+(o.tu[t][k]||0),0),t1=somaT(1),t2=somaT(2);
+  h+=`<tr class="tot"><td>${visLiq()?'Para aplicação (BMM05 + sobra do BM10)':'Total'}</td><td class="n">${f0(t1)}</td><td class="n">${f0(t2)}</td><td class="n">${f0(o.tot)}</td><td class="n hm">${o.metaT?f0(o.metaT):'—'}</td><td class="n">${o.metaT&&o.tem?stAd(o.tot/o.metaT):'—'}</td></tr></tbody></table>`;
   return h;
 }
 function renderPrdDia(){
@@ -294,7 +300,7 @@ function prdSerie(c,bm,be){
 function prdAtendResumo(c,bm,be){
   const ser=prdSerie(c,bm,be).filter(x=>x.o.tem&&x.m>0);if(!ser.length)return '';
   const v=ser.reduce((a,x)=>a+x.v,0),m=ser.reduce((a,x)=>a+x.m,0),ok=ser.filter(x=>x.v>=x.m).length;
-  const nome=bm==='T'?(visLiq()?'estoque: rachão para estoque + finos (= britado)':'produtividade: soma de todas as etapas'):bm==='RACHAO'&&be!=='AMB'?`rachão no ${be}`:MATN[bm].toLowerCase();
+  const nome=bm==='T'?(visLiq()?'estoque: rachão para aplicação (BMM05 + sobra do BM10)':'produtividade: soma de todas as etapas'):bm==='RACHAO'&&be!=='AMB'?`rachão no ${be}`:MATN[bm].toLowerCase();
   return `<p class="note">Atendimento da meta nos dias programados lançados (${esc(nome)}): ${stAd(v/m)} · ${f0(v)} t de ${f0(m)} t · <b>${ok}</b> de ${ser.length} ${ser.length===1?'dia':'dias'} na meta ou acima.</p>`;
 }
 /* Um material só (ou o rachão por equipamento): barras simples, meta do material, % por dia */
@@ -322,15 +328,14 @@ function prdBarrasMat(c,bm,be){
     s+='</g>';
     if(i%stp===0)s+=`<text class="ax" x="${x+cw/2}" y="${H-8}" text-anchor="middle" ${o.d===PR.dia?'fill="var(--ink)" style="font-weight:700"':''}>${ddmm(o.d)}</text>`});
   const leg=dois?`<span><i style="background:${corEq.BM10}"></i>BM10 · Primário</span><span><i style="background:${corEq.BMM05}"></i>BMM05 · Lokotrack</span>`:`<span><i style="background:${be!=='AMB'?corEq[be]:col}"></i>${MATN[bm]}${be!=='AMB'?' · '+be:''}</span>`;
-  return s+'</svg>'+`<div class="leg">${leg}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>Meta do dia${bm==='RACHAO'&&be!=='AMB'?` (${Math.round(c.fracEq(be)*100)}% da meta de ${visLiq()?'britado':'rachão'})`:''}</span><span>▲ % = atendimento da meta do dia</span></div>`;
+  return s+'</svg>'+`<div class="leg">${leg}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>Meta do dia${bm==='RACHAO'&&be!=='AMB'?` (${Math.round(c.fracEq(be)*100)}% da meta de rachão)`:''}</span><span>▲ % = atendimento da meta do dia</span></div>`;
 }
 /* Barras por dia. Produtividade: um bloco por material (rachão inteiro + finos).
-   Estoque: um bloco por destino, sem contar duas vezes: rachão que foi para o estoque (britado − finos) + Brita 01 + Pó + Brita 02;
-   a altura total é o britado do dia. */
-const SEG_EST=['EST','Rachão para estoque',MATC.RACHAO];
+   Estoque: só o rachão que ficou para aplicação (BMM05 + sobra do BM10), comparado com a meta do dia. O tooltip abre BMM05, BM10 e os finos. */
+const SEG_EST=['EST','Rachão para aplicação',MATC.RACHAO];
 const finosDia=o=>(o.real.BRITA01||0)+(o.real.PO||0)+(o.real.BRITA02||0);
 function prdBarras(c){
-  const liq=visLiq(),SEGS=liq?[SEG_EST,...MATS.filter(([k])=>k!=='RACHAO')]:MATS,vS=(o,k)=>k==='EST'?Math.max(0,o.tot-finosDia(o)):o.real[k],cS=k=>k==='EST'?SEG_EST[2]:MATC[k];
+  const liq=visLiq(),SEGS=liq?[SEG_EST]:MATS,vS=(o,k)=>k==='EST'?Math.max(0,o.tot):o.real[k],cS=k=>k==='EST'?SEG_EST[2]:MATC[k];
   const n=c.days.length,L=48,W=Math.max(L+n*18,largGraf(false)),H=230,T=12,Bo=28,cw=(W-L)/n,ih=H-T-Bo;
   const max=Math.max(1,...c.days.map(o=>Math.max(o.tot,o.metaT))),step=Math.pow(10,Math.floor(Math.log10(max)))/2,top=Math.ceil(max/step)*step;
   const Y=v=>ih*v/top;
@@ -338,7 +343,7 @@ function prdBarras(c){
   [0,.5,1].forEach(f=>{const y=T+ih-Y(top*f);s+=`<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text class="ax" x="${L-6}" y="${y+3}" text-anchor="end">${f0(top*f)}</text>`});
   const stp=Math.max(1,Math.ceil(46/cw));
   c.days.forEach((o,i)=>{const x=L+i*cw,bw=Math.min(30,cw*.66),bx=x+(cw-bw)/2;let y=T+ih;
-    const tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]}${o.t?' · '+o.t:''}</div><b>${o.tem?f0(o.tot)+' t'+(liq?' britado':''):'Sem lançamento'}</b>${SEGS.filter(([k])=>vS(o,k)>0).map(([k,nm])=>`<div class='tl'><span>${nm}</span><b>${f0(vS(o,k))} t</b></div>`).join('')}${liq&&o.tem&&o.tot-finosDia(o)<0?`<div class='tl'><span>Consumiu do estoque</span><b>${f0(finosDia(o)-o.tot)} t</b></div>`:''}${o.metaT?`<div class='tl'><span>Meta do dia</span><b>${f0(o.metaT)} t</b></div>`:''}`;
+    const tip=`<div class='m'>${ddmm(o.d)} · ${WDN[wd(o.d)]}${o.t?' · '+o.t:''}</div><b>${o.tem?f0(o.tot)+' t'+(liq?' para aplicação':''):'Sem lançamento'}</b>${liq?(o.tem?`<div class='tl'><span>Rachão BMM05</span><b>${f0(o.eq.BMM05)} t</b></div><div class='tl'><span>Rachão BM10</span><b>${f0(o.eq.BM10)} t</b></div><div class='tl'><span>Foi para o secundário (finos)</span><b>− ${f0(finosDia(o))} t</b></div>${o.consEst>0?`<div class='tl'><span>Secundário acima do BM10 no mês</span><b>${f0(o.consEst)} t do estoque antigo</b></div>`:''}`:''):SEGS.filter(([k])=>vS(o,k)>0).map(([k,nm])=>`<div class='tl'><span>${nm}</span><b>${f0(vS(o,k))} t</b></div>`).join('')}${o.metaT?`<div class='tl'><span>Meta do dia</span><b>${f0(o.metaT)} t</b></div>`:''}`;
     s+=`<g class="bd" data-dia="${o.d}" data-tip="${esc(tip)}"><rect class="bg" x="${x}" y="${T}" width="${cw}" height="${ih}" fill="transparent" rx="3"/>`;
     const segs=SEGS.filter(([k])=>vS(o,k)>0);
     segs.forEach(([k],j)=>{const hh=Y(vS(o,k));const g=j<segs.length-1?2:0,top1=j===segs.length-1;const hv=Math.max(1,hh-g);y-=hh;
@@ -346,7 +351,7 @@ function prdBarras(c){
     if(o.metaT){const ym=T+ih-Y(o.metaT);s+=`<line x1="${x+cw*.08}" x2="${x+cw*.92}" y1="${ym}" y2="${ym}" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>`}
     s+='</g>';
     if(i%stp===0)s+=`<text class="ax" x="${x+cw/2}" y="${H-8}" text-anchor="middle" ${o.d===PR.dia?'fill="var(--ink)" style="font-weight:700"':''}>${ddmm(o.d)}</text>`});
-  return s+'</svg>'+`<div class="leg">${SEGS.map(([k,n])=>`<span><i style="background:${cS(k)}"></i>${n}</span>`).join('')}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>${liq?'Meta de britado do dia':'Meta do dia'}</span><span style="color:var(--muted)">Clique num dia para ver o detalhe</span></div>`;
+  return s+'</svg>'+`<div class="leg">${SEGS.map(([k,n])=>`<span><i style="background:${cS(k)}"></i>${n}</span>`).join('')}<span><i style="background:var(--ink);height:2px;border-radius:1px;vertical-align:3px"></i>${liq?'Meta de atendimento do dia':'Meta do dia'}</span><span style="color:var(--muted)">Clique num dia para ver o detalhe</span></div>`;
 }
 function prdTabela(c){
   let h=`<table class="tb"><thead><tr><th>Dia</th>${MATS.map(([,n])=>`<th class="n">${n}</th>`).join('')}<th class="n">${TXT_TOT().col}</th><th class="n">Meta</th><th class="n">Desvio</th></tr></thead><tbody>`;
@@ -498,7 +503,7 @@ function prdHoraTabela(c){
 function prdMeses(){
   const ms=((PR.x&&PR.x.meses)||[]).slice().reverse();
   if(!ms.length)return '<div class="pempty"><b>Nenhum mês cadastrado</b></div>';
-  return `<table class="tb"><thead><tr><th>Mês</th><th class="n">Programado</th><th class="n">Realizado</th><th class="n">% da meta</th></tr></thead><tbody>${ms.map(m0=>{const m=visLiq()?{...m0,meta:+m0.meta_britado||0,real:+m0.real_britado||0}:m0;const p=m.meta?m.real/m.meta:null;
+  return `<table class="tb"><thead><tr><th>Mês</th><th class="n">Programado</th><th class="n">Realizado</th><th class="n">% da meta</th></tr></thead><tbody>${ms.map(m0=>{const m=visLiq()?{...m0,meta:+m0.meta_britado||0,real:2*(+m0.real_britado||0)-(+m0.real||0)}:m0;const p=m.meta?m.real/m.meta:null;
     return `<tr data-prdmes="${m.mes}" style="cursor:pointer" ${m.mes===PR.mes?'class="sel"':''}><td class="m" style="text-transform:capitalize">${esc(mesTxt(m.mes))}</td><td class="n">${f0(m.meta)} t</td><td class="n">${f0(m.real)} t</td><td class="n">${p!=null?pc1(p):'—'}<span class="mini"><i style="width:${p?Math.min(100,p*100):0}%;background:var(--m1)"></i></span></td></tr>`}).join('')}</tbody></table><p class="note">Clique num mês para abrir.</p>`;
 }
 
@@ -510,7 +515,7 @@ async function prdRelatorio(){
   const totP=rows.reduce((s,r)=>s+(r.min||0),0)/60;
   const mesMeta=c.metaT;
   let h=`<div class="rh"><img src="assets/logo-azul.png" alt="Tripoloni"><div class="t">Acompanhamento diário da produção · Britagem</div><div class="k">${WDN[wd(o.d)]}, ${dmy(o.d)}<br>${esc(mesTxt(PR.mes))}</div></div>
-    <div class="rk"><div><span>Produção do dia</span><b>${f0(o.tot)} t</b>${o.metaT?`meta ${f0(o.metaT)} t · ${pc1(o.tot/o.metaT)}`:''}</div>
+    <div class="rk"><div><span>${visLiq()?'Para aplicação no dia':'Produção do dia'}</span><b>${f0(o.tot)} t</b>${o.metaT?`meta ${f0(o.metaT)} t · ${pc1(o.tot/o.metaT)}`:''}</div>
     <div><span>Acumulado do mês</span><b>${f0(a.realT)} t</b>${mesMeta?`${pc1(a.realT/mesMeta)} da meta de ${f0(mesMeta)} t`:''}</div>
     <div><span>Aderência ao previsto</span><b>${a.prevT?pc1(a.realT/a.prevT):'—'}</b>previsto até o dia ${f0(a.prevT)} t</div>
     <div><span>Paradas no dia</span><b>${hm(totP)}</b>${rows.length} ${rows.length===1?'ocorrência':'ocorrências'}</div></div>
