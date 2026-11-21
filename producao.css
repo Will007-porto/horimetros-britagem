@@ -209,3 +209,29 @@ svg.sk .skf:hover{fill-opacity:.7}
 .hrk em{font-style:normal;font-size:11.5px;color:var(--grey);display:block;margin-top:3px;line-height:1.35}
 .hrc .ch{width:100%;height:auto}
 .note.warnt{color:var(--at)}
+/* ---------- Aba Eficiência ---------- */
+.efr{margin-top:6px}
+.efrl{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);margin-bottom:6px}
+.efrl b{font-size:13px;color:var(--ink);letter-spacing:0}
+.efrb{display:flex;height:26px;border-radius:8px;overflow:hidden;background:var(--line)}
+.efrb i{display:block;height:100%;min-width:2px;transition:opacity .15s ease-out}
+.efrb i:hover{opacity:.82}
+.efrs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 4px}
+.efrs div{background:var(--soft2);border-radius:10px;padding:10px 12px;min-width:0}
+.efrs span{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);display:block}
+.efrs b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;margin-top:5px;color:var(--ink);font-variant-numeric:tabular-nums}
+.efrs em{font-style:normal;font-size:11.5px;color:var(--grey);display:block;margin-top:2px}
+.eft{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:12px;margin-top:14px}
+.eft>div{border:1px solid var(--grid);border-radius:12px;padding:14px}
+.eft>div.off{opacity:.45}
+.eft>div>b{display:block;font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:8px;color:var(--ink);font-variant-numeric:tabular-nums}
+.eft>div>span{font-size:12px;color:var(--grey);display:block;margin-bottom:8px}
+.eft .tl{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:5px 0;border-top:1px solid var(--line)}
+.eft .tl span{color:var(--grey)}.eft .tl b{font-variant-numeric:tabular-nums}
+.efp{display:inline-block;min-width:44px;text-align:center;border-radius:999px;padding:2px 8px;font-weight:700;font-size:12px}
+.efp.ok{background:var(--okbg);color:var(--ok)}.efp.at{background:var(--atbg);color:var(--at)}.efp.cr{background:var(--crbg);color:var(--cr)}
+.efw{color:var(--at)}
+#p-efi a.lnk{color:var(--ink);font-weight:600;cursor:pointer;text-decoration:underline;text-decoration-color:var(--grid);text-underline-offset:3px}
+#p-efi td{white-space:nowrap}
+#p-efi td small{color:var(--grey);font-weight:400}
+@media(max-width:760px){.efrs{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -100,6 +100,15 @@ Quando até um horário foi um motivo e depois foi outro: botão **Dividir** na 
 - **Rodou na pausa:** o pedaço de cada barra que caiu no almoço ou na janta aparece em laranja listrado (passe o mouse para ver o horário e a duração). O indicador "Rodou na pausa" soma o tempo e lista os ativos.
 - **Pausas do dia (supervisor):** botão no Gantt para ajustar o almoço/janta do dia escolhido. "Só neste dia" grava em `pausas_dia` (ex.: almoço adiantado); "Mudar o padrão a partir deste dia" troca `pausas_config` e guarda o padrão antigo em `pausas_hist` com `valido_ate` = véspera, para os dias anteriores não mudarem. `janelas_produtivas` escolhe: ajuste do dia > padrão histórico > padrão atual, então aproveitamento, Gantt e turno das paradas acompanham. O aplicativo Android lê só `pausas_config` (padrão atual) para sugerir "refeição"; ajustes de um dia não chegam à sugestão do app.
 
+## Eficiência do turno
+Aba que compara a produção com o relógio do turno, por área (Primário = rachão do BM10 ÷ horas do AV10; Secundário = finos ÷ horas do CV07). Segue o filtro de período e de turno.
+- **t/h rodando:** toneladas ÷ horas que o alimentador ficou ligado no turno (o ritmo da máquina).
+- **t/h no turno inteiro:** toneladas ÷ horas do início ao fim do turno, pausas incluídas. **t/h no tempo disponível:** o mesmo sem as pausas (almoço, janta, conforme as pausas do dia).
+- **Eficiência** = t/h do turno inteiro ÷ t/h rodando (também mostrada sem as pausas).
+- **Toneladas que ficaram na mesa** = horas paradas dentro do tempo disponível × t/h rodando.
+- Turnos sem produção lançada na área não entram; turnos com produção mas sem sinal do sensor ficam fora e são listados.
+- Dados: função `efi_dados(p_desde, p_ate)` no Supabase (migração `20261121_efi_dados.sql`).
+
 ## Aplicativo (PWA)
 
 O painel pode ser instalado no celular ou no computador como aplicativo (ícone "Britagem").
