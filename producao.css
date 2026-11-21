@@ -235,3 +235,17 @@ svg.sk .skf:hover{fill-opacity:.7}
 #p-efi td{white-space:nowrap}
 #p-efi td small{color:var(--grey);font-weight:400}
 @media(max-width:760px){.efrs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Relatório de saldo · página de premissas */
+#prdRel .rprem{display:flex;flex-direction:column;gap:3mm;flex:1;min-height:0}
+#prdRel .rpc{background:#F3F5F9;padding:2.5mm 3mm}
+#prdRel .rpq{display:grid;grid-template-columns:1fr 6mm 1fr 6mm 1fr;align-items:center;margin-top:1.4mm}
+#prdRel .rpq.rpm{grid-template-columns:1fr 6mm 1fr 6mm 1fr}
+#prdRel .rpq span{background:#fff;border:1px solid #D6DCE6;padding:1.2mm 2mm;font-size:6.6pt;font-weight:700;color:#6B7487;text-transform:uppercase;letter-spacing:.02em}
+#prdRel .rpq span b{display:block;font-size:12pt;color:#1B2B4B;letter-spacing:0;margin-top:.4mm;font-variant-numeric:tabular-nums}
+#prdRel .rpq span.r{background:#0B2559;border-color:#0B2559;color:#8FB4FF}#prdRel .rpq span.r b{color:#fff}
+#prdRel .rpq i{font-style:normal;text-align:center;font-size:13pt;font-weight:800;color:#0B2559}
+#prdRel .rpg{display:grid;grid-template-columns:repeat(3,1fr);gap:4.5mm 6mm;margin-top:1mm}
+#prdRel .rpb b{display:flex;gap:1.6mm;align-items:center;font-size:8.8pt;font-weight:800;color:#0B2559}
+#prdRel .rpb b em{font-style:normal;display:inline-grid;place-items:center;width:4.2mm;height:4.2mm;border-radius:50%;background:#F4A21B;color:#fff;font-size:6.4pt;flex:none}
+#prdRel .rpb p{margin:1.2mm 0 0;font-size:8pt;line-height:1.5;color:#33415C}

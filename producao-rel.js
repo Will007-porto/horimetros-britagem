@@ -128,11 +128,11 @@ function prdTendAte(c,mat,dia){
    sobra vai para o estoque. BMM05 só faz rachão (estoque). Britado = rachão BM10 + BMM05. */
 const RS={rBM:'#0B2A5B',rMM:'#5B7FC4',finos:'#8A6BB8',b1:RM.mat.BRITA01,po:RM.mat.PO,b2:RM.mat.BRITA02,ant:'#98A2B3'};
 function rmCardsSaldo(s){
-  return `<div class="rmg5">`+rmCard('Britado total',f0(s.total),'rachão BM10 + BMM05 (t)')
-    +rmCard('Rachão do BM10',f0(s.rBM),`${fmtPc(pcS(s.rBM,s.total))} do britado`)
-    +rmCard('Virou finos',f0(s.finos),s.consumo?'passou do rachão britado':`${fmtPc(pcS(s.finos,s.rBM))} do rachão do BM10`)
-    +rmCard('Sobrou do BM10 (estoque)',fSin(s.saldoBM),s.consumo?'consumiu estoque anterior':`${fmtPc(pcS(s.sobra,s.rBM))} do rachão do BM10`,{cor:s.saldoBM<0?RM.red:RM.txt})
-    +rmCard('Estoque de rachão',fSin(s.saldoEst),`sobra BM10 + BMM05 (${f0(s.rMM)} t)`,{cor:s.saldoEst<0?RM.red:RM.txt})+`</div>`;
+  return `<div class="rmg5">`+rmCard('Britado total',f0(s.total),'rachão do primário + Lokotrack (t)')
+    +rmCard('Rachão do primário',f0(s.rBM),`${fmtPc(pcS(s.rBM,s.total))} do britado`)
+    +rmCard('Aplicado no secundário',f0(s.finos),s.consumo?'passou do rachão do primário':`${fmtPc(pcS(s.finos,s.rBM))} do rachão do primário`)
+    +rmCard('Sobrou do primário (estoque)',fSin(s.saldoBM),s.consumo?'consumiu estoque anterior':`${fmtPc(pcS(s.sobra,s.rBM))} do rachão do primário`,{cor:s.saldoBM<0?RM.red:RM.txt})
+    +rmCard('Estoque de rachão',fSin(s.saldoEst),`estoque primário + Lokotrack (${f0(s.rMM)} t)`,{cor:s.saldoEst<0?RM.red:RM.txt})+`</div>`;
 }
 /* colunas empilhadas por dia */
 function rmEmpilhado({W=1060,H=230,dias,series,titulo}){
@@ -147,7 +147,7 @@ function rmEmpilhado({W=1060,H=230,dias,series,titulo}){
 }
 function rmSaldoMontar(dia){
   const c=PR.c,o=c.byD[dia],sm=prdSaldo(c,dia);
-  const H=rmHead('BALANÇO DE MATERIAL · SALDO','Finos saem do rachão do BM10 · a sobra vai para o estoque · BMM05 (Lokotrack)',c,dia);
+  const H=rmHead('BALANÇO DE MATERIAL · SALDO','Primário (BM10): parte é aplicada no secundário, a sobra vai para o estoque · Lokotrack (BMM05): todo para o estoque',c,dia);
   const sk=s=>sankeySaldo(s,{W:1040,min:1040,H:250,lm:180,rm:220,cores:{bm10:'#0B2559',bmm05:RS.rMM,ant:RS.ant,rach:RS.rBM,sec:RS.finos,b1:RS.b1,po:RS.po,b2:RS.b2,txt:'#1B2B4B',sub:'#6B7487',faixa:.45}});
   /* dia por turno */
   const tu=t=>{const r=(o.eqTu[t]||{}).BM10||0,m=(o.eqTu[t]||{}).BMM05||0,b1=(o.tu[t]||{}).BRITA01||0,po=(o.tu[t]||{}).PO||0,b2=(o.tu[t]||{}).BRITA02||0,fi=b1+po+b2;return {rBM:r,rMM:m,b1,po,b2,finos:fi,saldoBM:r-fi,saldoEst:r-fi+m,total:r+m}};
@@ -155,15 +155,43 @@ function rmSaldoMontar(dia){
   const neg=v=>v<0?` style="color:${RM.red}"`:'';
   const lt=(n,x,cl='')=>`<tr class="${cl}"><td>${n}</td><td>${f0(x.rBM)}</td><td>${f0(x.b1)}</td><td>${f0(x.po)}</td><td>${f0(x.b2)}</td><td>${f0(x.finos)}</td><td>${x.rBM?fmtPc(pcS(x.finos,x.rBM)):'—'}</td><td${neg(x.saldoBM)}>${fSin(x.saldoBM)}</td><td>${f0(x.rMM)}</td><td${neg(x.saldoEst)}><b>${fSin(x.saldoEst)}</b></td><td><b>${f0(x.total)}</b></td></tr>`;
   const t1=tu(1),t2=tu(2);
-  const cab=`<thead><tr><th></th><th>Rachão BM10</th><th>Brita 01</th><th>Pó</th><th>Brita 02</th><th>Finos</th><th>% finos</th><th>Sobra BM10</th><th>BMM05</th><th>Estoque rachão</th><th>Britado</th></tr></thead>`;
+  const cab=`<thead><tr><th></th><th>Rachão primário</th><th>Brita 01</th><th>Pó</th><th>Brita 02</th><th>Aplicado no secundário</th><th>% aplicado</th><th>Sobra primário</th><th>Lokotrack</th><th>Estoque rachão</th><th>Britado</th></tr></thead>`;
   let p1=H+rmSec(`Mês até ${dmy(dia)}`)+rmCardsSaldo(sm)+`<div class="rmpan rsbox rssk">${sk(sm)}</div>`
     +rmSec(`Dia ${dmy(dia)} · por turno`)+`<table class="rmt rst2">${cab}<tbody>${lt('1º turno',t1)}${lt('2º turno',t2)}${lt('Total do dia',sm2(t1,t2),'tt')}</tbody></table>`;
   const dias=c.days.filter(x=>x.d<=dia),ser=dias.map(x=>prdSaldo(c,x.d,true));
-  const graf=rmEmpilhado({W:1060,H:220,dias:dias.map(x=>x.d),titulo:'Saldo por dia (t)',series:[{t:'Virou finos',c:RS.finos,v:ser.map(s=>s.daBM10)},{t:'Sobrou do BM10 (estoque)',c:RS.rBM,v:ser.map(s=>s.sobra)},{t:'BMM05 (estoque)',c:RS.rMM,v:ser.map(s=>s.rMM)}]});
+  const graf=rmEmpilhado({W:1060,H:220,dias:dias.map(x=>x.d),titulo:'Saldo por dia (t)',series:[{t:'Aplicado no secundário',c:RS.finos,v:ser.map(s=>s.daBM10)},{t:'Sobrou do primário (estoque)',c:RS.rBM,v:ser.map(s=>s.sobra)},{t:'Lokotrack (estoque)',c:RS.rMM,v:ser.map(s=>s.rMM)}]});
   const linhas=dias.filter(x=>x.tem).map(x=>lt(`${ddmm(x.d)} ${WDN[wd(x.d)]}`,prdSaldo(c,x.d,true))).join('');
-  let p2=H+rmSec('Saldo dia a dia')+`<div class="rmpan" style="flex:0 0 auto">${graf}</div><table class="rmt rst2">${cab}<tbody>${linhas}${lt('Total do mês',sm,'tt')}</tbody></table><div class="rsnota">Sobra negativa (em vermelho) = o secundário fez mais finos do que o BM10 britou naquele dia: consumiu rachão do estoque.</div>`;
-  const pe=n=>`<div class="rmf"><span>Construtora Tripoloni Ltda. · Britagem Irati</span><span>Painel Horímetros Britagem · gerado em ${dtFmt.format(Date.now())}</span><span>página ${n} de 2</span></div>`;
-  return [p1,p2].map((p,i)=>`<section class="rmp">${p}${pe(i+1)}</section>`).join('');
+  let p2=H+rmSec('Saldo dia a dia')+`<div class="rmpan" style="flex:0 0 auto">${graf}</div><table class="rmt rst2">${cab}<tbody>${linhas}${lt('Total do mês',sm,'tt')}</tbody></table><div class="rsnota">Sobra negativa (em vermelho) = o secundário recebeu mais rachão do que o primário britou naquele dia: consumiu rachão do estoque do primário.</div>`;
+  const p3=H+rmPremissas(c,dia,sm);
+  const pe=n=>`<div class="rmf"><span>Construtora Tripoloni Ltda. · Britagem Irati</span><span>Painel Horímetros Britagem · gerado em ${dtFmt.format(Date.now())}</span><span>página ${n} de 3</span></div>`;
+  return [p1,p2,p3].map((p,i)=>`<section class="rmp">${p}${pe(i+1)}</section>`).join('');
+}
+/* Página de premissas do relatório de saldo: explica de onde vem cada número e a conta do mês */
+function rmPremissas(c,dia,s){
+  const m=c.m||{},mix=c.mix,pm=k=>mix&&+mix[k]>0?fmtPc(Math.round(+mix[k]*1000)/10):'—';
+  let bm=0,mm=0,fi=0;c.days.forEach(o=>{if(o.d<=dia){bm+=o.eq.BM10;mm+=o.eq.BMM05;fi+=(o.real.BRITA01||0)+(o.real.PO||0)+(o.real.BRITA02||0)}});
+  const ap=mm+Math.max(0,bm-fi);
+  const metaR=c.meta.RACHAO,pl=+m.meta_rachao_palmeira||0,ir=+m.meta_rachao_irati||0;
+  const eq=(a,op,b,r)=>`<div class="rpq"><span>${a}</span><i>${op}</i><span>${b}</span><i>=</i><span class="r">${r}</span></div>`;
+  const bl=(n,t,x)=>`<div class="rpb"><b><em>${n}</em>${t}</b><p>${x}</p></div>`;
+  return rmSec('Premissas adotadas')+`<div class="rprem">
+  <div class="rpc"><div class="rms" style="margin:0 0 1.5mm">A conta do mês até ${dmy(dia)} (t)</div>
+    ${eq(`Rachão do primário<b>${f0(s.rBM)}</b>`,'−',`Aplicado no secundário<b>${f0(s.finos)}</b>`,`Sobrou do primário<b>${fSin(s.saldoBM)}</b>`)}
+    ${eq(`Sobrou do primário<b>${fSin(s.saldoBM)}</b>`,'+',`Lokotrack<b>${f0(s.rMM)}</b>`,`Estoque de rachão<b>${fSin(s.saldoEst)}</b>`)}
+    ${eq(`Lokotrack<b>${f0(mm)}</b>`,'+',`Sobra do primário no mês (nunca negativa)<b>${f0(Math.max(0,bm-fi))}</b>`,`Rachão para aplicação<b>${f0(ap)}</b>`)}
+    <div class="rpq rpm"><span>Rachão para aplicação<b>${f0(ap)}</b></span><i>÷</i><span>Meta de atendimento do mês<b>${f0(metaR)}</b></span><i>=</i><span class="r">Atendimento<b>${metaR?fmtPc(pcS(ap,metaR)):'—'}</b></span></div>
+  </div>
+  <div class="rpg">
+    ${bl(1,'Origem dos números','Toneladas lançadas por turno a partir das balanças: rachão por equipamento (primário BM10 e Lokotrack BMM05) e os finos do secundário (Brita 01, Pó e Brita 02). Dia de produção das 07:30 às 07:30 do dia seguinte; o relatório vai do dia 1º do mês até a data do cabeçalho.')}
+    ${bl(2,'Rachão do primário (BM10)','É tudo o que o primário britou. Esse rachão vai para o estoque que alimenta o secundário e também é carregado para aplicação.')}
+    ${bl(3,'Lokotrack (BMM05)','Todo o rachão da Lokotrack vai para o estoque de aplicação. Ela nunca alimenta o secundário.')}
+    ${bl(4,'Aplicado no secundário',`O secundário só recebe rachão do primário. O rachão aplicado no secundário é a soma dos finos produzidos (Brita 01 + Pó + Brita 02). O mix das balanças (Brita 01 ${pm('BRITA01')}, Pó ${pm('PO')}, Brita 02 ${pm('BRITA02')}) soma 100%: 1 t de rachão vira 1 t de finos. Não há desconto de perdas.`)}
+    ${bl(5,'Sobrou do primário (estoque)','Rachão do primário − aplicado no secundário. Num dia pode ficar negativa (em vermelho): o secundário recebeu mais do que o primário britou e consumiu rachão já estocado do primário.')}
+    ${bl(6,'Estoque de rachão','Estoque primário + Lokotrack. É o balanço físico do período e pode ficar negativo se o secundário consumir estoque formado antes do período.')}
+    ${bl(7,'Rachão para aplicação (atendimento)','Lokotrack + sobra do primário acumulada no mês. A sobra do primário nunca entra negativa: se o secundário passou do que o primário britou, consumiu estoque antigo do primário, não o rachão da Lokotrack. Por isso pode diferir do estoque de rachão.')}
+    ${bl(8,'Meta de atendimento',`Meta de rachão cadastrada no mês: ${f0(metaR)} t${pl?` (Irati ${f0(ir)} t + Palmeira ${f0(pl)} t)`:''}. Não soma o rachão necessário para os finos (decisão da gerência em 20/11/2026). A meta do dia é distribuída nos dias programados: dia X peso 1, sábado XX peso ${String(Math.round((c.peso||0)*10000)/10000).replace('.',',')}. Meta por equipamento: primário ${fmtPc(Math.round(c.pctBM*1000)/10)} e Lokotrack ${fmtPc(Math.round((1-c.pctBM)*1000)/10)} da meta de rachão.`)}
+    ${bl(9,'O que não está na conta','Estoque inicial do mês (não há medição de pilha), saídas e carregamentos do estoque (o relatório mostra o que ficou disponível, não o que foi expedido), perdas e umidade no secundário. Correções nos lançamentos mudam o relatório na próxima emissão.')}
+  </div></div>`;
 }
 /* abre a impressão do relatório (Salvar como PDF) com o nome sugerido */
 function rmImprimir(html,titulo){

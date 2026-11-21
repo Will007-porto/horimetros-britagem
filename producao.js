@@ -400,19 +400,19 @@ function sankeySaldo(s,o={}){
   const faixa=(xa,ya,xb,yb,h,cor,tip)=>{if(h<=0)return '';const m=(xa+xb)/2;
     return `<path d="M${xa} ${ya}C${m} ${ya} ${m} ${yb} ${xb} ${yb}L${xb} ${yb+h}C${m} ${yb+h} ${m} ${ya+h} ${xa} ${ya+h}Z" fill="${cor}" fill-opacity="${C.faixa}" class="skf" data-tip="${esc(tip)}"/>`};
   let g='';
-  g+=faixa(x1+nw,n.bmm05.y,x3,n.est.y,hh(s.rMM),C.rach,`<div class='m'>BMM05 → estoque de rachão</div><b>${f0(s.rMM)} t</b>${tl('Parte do estoque',pct(s.rMM,s.estoque))}`);
-  g+=faixa(x1+nw,n.bm10.y,x3,n.est.y+hh(s.rMM),hh(s.sobra),C.rach,`<div class='m'>BM10 → sobrou rachão (estoque)</div><b>${f0(s.sobra)} t</b>${tl('Parte do rachão do BM10',pct(s.sobra,s.rBM))}`);
-  g+=faixa(x1+nw,ySaiFinos,x2,n.sec.y,hh(s.daBM10),C.sec,`<div class='m'>BM10 → secundário (virou finos)</div><b>${f0(s.daBM10)} t</b>${tl('Parte do rachão do BM10',pct(s.daBM10,s.rBM))}`);
+  g+=faixa(x1+nw,n.bmm05.y,x3,n.est.y,hh(s.rMM),C.rach,`<div class='m'>Lokotrack → estoque de rachão</div><b>${f0(s.rMM)} t</b>${tl('Parte do estoque',pct(s.rMM,s.estoque))}`);
+  g+=faixa(x1+nw,n.bm10.y,x3,n.est.y+hh(s.rMM),hh(s.sobra),C.rach,`<div class='m'>Primário → sobrou rachão (estoque)</div><b>${f0(s.sobra)} t</b>${tl('Parte do rachão do primário',pct(s.sobra,s.rBM))}`);
+  g+=faixa(x1+nw,ySaiFinos,x2,n.sec.y,hh(s.daBM10),C.sec,`<div class='m'>Primário → aplicado no secundário</div><b>${f0(s.daBM10)} t</b>${tl('Parte do rachão do primário',pct(s.daBM10,s.rBM))}`);
   g+=faixa(x1+nw,n.ant.y,x2,n.sec.y+hh(s.daBM10),hh(s.consumo),C.ant,`<div class='m'>Estoque anterior → secundário</div><b>${f0(s.consumo)} t</b>${tl('Finos acima do rachão britado','consumiu estoque')}`);
   let sy=n.sec.y;[['b1','Brita 01',s.b1],['po','Pó de pedra',s.po],['b2','Brita 02',s.b2]].forEach(([id,nm,v])=>{g+=faixa(x2+nw,sy,x3,n[id].y,hh(v),C[id],`<div class='m'>Secundário → ${nm}</div><b>${f0(v)} t</b>${tl('Parte dos finos',pct(v,s.finos))}`);sy+=hh(v)});
   const no=(id,cor,nome,v,lado,sub)=>{const q=n[id];if(!q.h)return '';const cy=q.y+q.h/2;
     const tx=lado==='e'?q.x-10:lado==='d'?q.x+nw+10:q.x+nw/2,an=lado==='e'?'end':lado==='d'?'start':'middle',ty=lado==='c'?q.y+q.h+16:cy-3;
     return `<rect x="${q.x}" y="${q.y}" width="${nw}" height="${q.h}" rx="2" fill="${cor}" class="skn"/><text x="${tx}" y="${ty}" text-anchor="${an}" class="skl" fill="${C.txt}">${nome}</text><text x="${tx}" y="${ty+14}" text-anchor="${an}" class="sks" fill="${C.sub}">${f0(v)} t${sub?' · '+sub:''}</text>`};
-  g+=no('bmm05',C.bmm05,'BMM05 · Lokotrack',s.rMM,'e',pct(s.rMM,s.total)+' do britado');
-  g+=no('bm10',C.bm10,'BM10 · rachão britado',s.rBM,'e',pct(s.rBM,s.total)+' do britado');
+  g+=no('bmm05',C.bmm05,'Lokotrack · BMM05',s.rMM,'e',pct(s.rMM,s.total)+' do britado');
+  g+=no('bm10',C.bm10,'Primário · BM10',s.rBM,'e',pct(s.rBM,s.total)+' do britado');
   g+=no('ant',C.ant,'Estoque anterior',s.consumo,'e','consumido');
-  g+=no('sec',C.sec,'Secundário (finos)',s.finos,'c',pct(s.daBM10,s.rBM)+' do rachão do BM10');
-  g+=no('est',C.rach,'Estoque de rachão',s.estoque,'d','sobra BM10 + BMM05');
+  g+=no('sec',C.sec,'Aplicado no secundário',s.finos,'c',pct(s.daBM10,s.rBM)+' do rachão do primário');
+  g+=no('est',C.rach,'Estoque de rachão',s.estoque,'d','estoque primário + Lokotrack');
   g+=no('b1',C.b1,'Brita 01',s.b1,'d',pct(s.b1,s.finos)+' dos finos');
   g+=no('po',C.po,'Pó de pedra',s.po,'d',pct(s.po,s.finos)+' dos finos');
   g+=no('b2',C.b2,'Brita 02',s.b2,'d',pct(s.b2,s.finos)+' dos finos');
@@ -424,12 +424,12 @@ function prdSaldoBloco(c){
   const seg=segHtml('prdSaldoSeg',[['M',`Mês até ${dia?ddmm(dia):'—'}`],['D',`Só o dia ${PR.dia?ddmm(PR.dia):'—'}`]],modo);
   if(!s.total&&!s.finos)return `<div class="prdbarf">${seg}</div><div class="pempty"><b>Sem produção lançada ${modo==='D'?'neste dia':'neste mês'}</b></div>`;
   let h=`<div class="prdbarf">${seg}</div><div class="sldk">
-    <div><span>Britado total</span><b>${f0(s.total)}<small>t</small></b><em>rachão do BM10 + BMM05</em></div>
-    <div><span>Rachão do BM10</span><b>${f0(s.rBM)}<small>t</small></b><em>${fmtPc(pcS(s.rBM,s.total))} do britado</em></div>
-    <div><span>Virou finos</span><b>${f0(s.finos)}<small>t</small></b><em>${s.consumo?'passou do rachão britado':fmtPc(pcS(s.finos,s.rBM))+' do rachão do BM10'}</em></div>
-    <div><span>Sobrou do BM10</span><b>${fSin(s.saldoBM)}<small>t</small></b><em>${s.consumo?'consumiu estoque anterior':fmtPc(pcS(s.sobra,s.rBM))+' foi para o estoque'}</em></div>
-    <div><span>Estoque de rachão</span><b>${fSin(s.saldoEst)}<small>t</small></b><em>sobra do BM10 + BMM05 (${f0(s.rMM)} t)</em></div></div>`;
-  if(s.consumo)h+=`<div class="warnb" style="margin-top:12px">Os finos (${f0(s.finos)} t) passaram do rachão britado no BM10 (${f0(s.rBM)} t) em <b>${f0(s.consumo)} t</b>: o secundário consumiu rachão do estoque anterior.</div>`;
+    <div><span>Britado total</span><b>${f0(s.total)}<small>t</small></b><em>rachão do primário + Lokotrack</em></div>
+    <div><span>Rachão do primário</span><b>${f0(s.rBM)}<small>t</small></b><em>${fmtPc(pcS(s.rBM,s.total))} do britado</em></div>
+    <div><span>Aplicado no secundário</span><b>${f0(s.finos)}<small>t</small></b><em>${s.consumo?'passou do rachão do primário':fmtPc(pcS(s.finos,s.rBM))+' do rachão do primário'}</em></div>
+    <div><span>Sobrou do primário (estoque)</span><b>${fSin(s.saldoBM)}<small>t</small></b><em>${s.consumo?'consumiu estoque anterior':fmtPc(pcS(s.sobra,s.rBM))+' foi para o estoque'}</em></div>
+    <div><span>Estoque de rachão</span><b>${fSin(s.saldoEst)}<small>t</small></b><em>estoque primário + Lokotrack (${f0(s.rMM)} t)</em></div></div>`;
+  if(s.consumo)h+=`<div class="warnb" style="margin-top:12px">O aplicado no secundário (${f0(s.finos)} t) passou do rachão do primário (${f0(s.rBM)} t) em <b>${f0(s.consumo)} t</b>: o secundário consumiu rachão do estoque anterior do primário.</div>`;
   h+=`<div class="scrollx sldsk">${sankeySaldo(s,{W:largGraf(false)})}</div>
     <p class="note">Largura de cada faixa = toneladas. Passe o mouse sobre uma faixa para ver os números.</p>`;
   h+=`<div class="prdtab"><button type="button" class="fclear" data-sldtab>${PR.stab?'Esconder o saldo dia a dia':'Ver o saldo dia a dia'}</button></div><div class="scrollx" id="sldTab">${PR.stab?prdSaldoTabela(c):''}</div>`;
@@ -437,7 +437,7 @@ function prdSaldoBloco(c){
 }
 function prdSaldoTabela(c){
   const cor=v=>v<0?' style="color:var(--cr)"':'';
-  let h=`<table class="tb"><thead><tr><th>Dia</th><th class="n">Rachão BM10</th><th class="n">Brita 01</th><th class="n">Pó</th><th class="n">Brita 02</th><th class="n">Finos</th><th class="n hm">% finos</th><th class="n">Sobra BM10</th><th class="n">BMM05</th><th class="n">Estoque rachão</th><th class="n">Britado</th></tr></thead><tbody>`;
+  let h=`<table class="tb"><thead><tr><th>Dia</th><th class="n">Rachão primário</th><th class="n">Brita 01</th><th class="n">Pó</th><th class="n">Brita 02</th><th class="n">Aplicado no secundário</th><th class="n hm">% aplicado</th><th class="n">Sobra primário</th><th class="n">Lokotrack</th><th class="n">Estoque rachão</th><th class="n">Britado</th></tr></thead><tbody>`;
   const lin=(nome,s,cl='')=>`<tr${cl}><td class="m">${nome}</td><td class="n">${f0(s.rBM)}</td><td class="n">${f0(s.b1)}</td><td class="n">${f0(s.po)}</td><td class="n">${f0(s.b2)}</td><td class="n">${f0(s.finos)}</td><td class="n hm">${s.rBM?fmtPc(pcS(s.finos,s.rBM)):'—'}</td><td class="n"${cor(s.saldoBM)}>${fSin(s.saldoBM)}</td><td class="n">${f0(s.rMM)}</td><td class="n"${cor(s.saldoEst)} style="font-weight:700">${fSin(s.saldoEst)}</td><td class="n" style="font-weight:700;color:var(--ink)">${f0(s.total)}</td></tr>`;
   c.days.filter(o=>o.tem).forEach(o=>{h+=lin(`${ddmm(o.d)}<span class="sub">${WDN[wd(o.d)]}</span>`,prdSaldo(c,o.d,true))});
   h+=lin('Total',prdSaldo(c,c.ref),' class="tot"')+'</tbody></table><p class="note">Sobra negativa (em vermelho) = naquele dia o secundário fez mais finos do que o BM10 britou: consumiu rachão do estoque.</p>';
