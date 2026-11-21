@@ -45,16 +45,16 @@ function rmColunas({W=520,H=230,grupos,series,titulo,rot,valores}){
 function rmMontar(dia){
   const c=PR.c,o=c.byD[dia],a=prdAte(c,dia),dias=c.days.map(x=>x.d),ate=x=>x.d<=dia;
   const saldo=a.realT-c.metaT,ad=a.prevT?a.realT/a.prevT:null;
-  const H1=rmHead('ACOMPANHAMENTO DIÁRIO DA PRODUÇÃO',visLiq()?'Pedreira Tripoloni - Britagem · visão estoque (atendimento do rachão: BMM05 + sobra do BM10 depois do secundário)':'Pedreira Tripoloni - Britagem · visão produtividade (soma de todas as etapas)',c,dia);
+  const H1=rmHead('ACOMPANHAMENTO DIÁRIO DA PRODUÇÃO',visLiq()?'Pedreira Tripoloni - Britagem · visão estoque (atendimento do rachão: Lokotrack + sobra do primário depois do secundário)':'Pedreira Tripoloni - Britagem · visão produtividade (soma de todas as etapas)',c,dia);
   const tn=PR.tend?prdTendAte(c,'T',dia):null;
 
   /* página 1: visão geral */
-  let p1=H1+rmSec('Visão geral do mês')+`<div class="rmg5">`
+  let p1=H1+rmSec('Visão geral do mês')+`<div class="${visLiq()?'rmg4':'rmg5'}">`
     +rmCard(visLiq()?'Meta de atendimento':'Programado do mês',f0(c.metaT),visLiq()?'meta de rachão cadastrada (t)':'meta total de produção (t)')
-    +rmCard(visLiq()?'Rachão p/ aplicação':'Realizado acumulado',f0(a.realT),visLiq()?'BMM05 + sobra do BM10 (t)':'produzido até o momento (t)')
+    +rmCard(visLiq()?'Rachão p/ aplicação':'Realizado acumulado',f0(a.realT),visLiq()?'Lokotrack + sobra do primário (t)':'produzido até o momento (t)')
     +rmCard('% atingimento do mês',rmPc(c.metaT?a.realT/c.metaT:null),`Previsto até ${ddmm(dia)}: ${rmPc(c.metaT?a.prevT/c.metaT:null)}`)
     +rmCard('Saldo vs meta',f0(saldo),'positivo = acima · negativo = abaixo (t)',{cor:rmSaldoCor(saldo)})
-    +rmCard('Aderência à meta',rmPc(ad),`vs programado até ${ddmm(dia)} · faltam ${f0(Math.max(0,a.prevT-a.realT))} t`,{cor:rmAdCor(ad)})+`</div>`;
+    +(visLiq()?'':rmCard('Aderência à meta',rmPc(ad),`vs programado até ${ddmm(dia)} · faltam ${f0(Math.max(0,a.prevT-a.realT))} t`,{cor:rmAdCor(ad)}))+`</div>`;
   p1+=rmSec('Produção realizada por material')+`<div class="rmg4">${MATS.map(([k])=>rmCard(RMN[k],f0(a.real[k]),`de ${f0(c.meta[k])} t programado · ${rmPc(c.meta[k]?a.real[k]/c.meta[k]:null)} do mês`,{top:RM.mat[k]})).join('')}</div>`;
   p1+=rmSec(`Produção do dia · ${dmy(dia)}`)+`<div class="rmg5">`+rmCard(visLiq()?'PARA APLICAÇÃO NO DIA':'TOTAL DO DIA',f0(o.tot),`meta do dia ${f0(o.metaT)} t · ${rmPc(o.metaT?o.tot/o.metaT:null)} da meta`,{top:RM.navy})
     +MATS.map(([k])=>rmCard(RMN[k],f0(o.real[k]),`meta ${f0(o.meta[k])} t · ${rmPc(o.meta[k]?o.real[k]/o.meta[k]:null)}`,{top:RM.mat[k]})).join('')+`</div>`;
