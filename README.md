@@ -22,7 +22,7 @@ Site (Vercel, exige login) ── leitura: painel_* ─────────�
 - **Login obrigatório**, o mesmo do aplicativo: **nome + PIN de 6 dígitos** (por baixo, `nome@operador.paradas-britagem.app`). Sem login, ou sem liberação do supervisor (`usuarios_painel`), o site não mostra nenhum dado.
 - **Paradas:** justifica qualquer data (supervisor), em lote, com os **mesmos motivos do app** (`motivos_parada`, filtrados por setor e equipamento). Corrigir uma parada já justificada exige observação e fica no histórico.
 - **Validar** (manutenção e supervisor): paradas de manutenção (classe A) esperando confirmação; a manutenção confirma ou contesta, o supervisor mantém ou corrige.
-- **Equipe** (supervisor): cadastrar usuário, trocar PIN, liberar, mudar papel/área, desativar ou apagar (o histórico de paradas é mantido; não dá para apagar a si mesmo nem o último supervisor). Cadastro e PIN passam pela Edge Function `admin-usuarios`, que confere no servidor se quem pede é supervisor (a chave de serviço nunca vai para o navegador).
+- **Equipe** (supervisor): cadastrar usuário (nome, **cargo**, PIN provisório, papel, área, turno), definir **onde entra** (só app, só site ou os dois) e, no site, **Visualizador** (só vê) ou **Editor** (faz o que o papel permite: justificar, validar, separar paradas; supervisor é sempre editor), marcar **PIN novo no próximo acesso** (a pessoa cria um PIN só dela no app ou no site antes de seguir: `trocar_pin` em `usuarios_painel`, limpo por `app_pin_trocado()`), trocar PIN, liberar, desativar ou apagar (o histórico de paradas é mantido; não dá para apagar a si mesmo nem o último supervisor). Cadastro e PIN passam pela Edge Function `admin-usuarios`, que confere no servidor se quem pede é supervisor (a chave de serviço nunca vai para o navegador).
 - **Histórico:** toda mudança de justificativa (app, site ou sistema) fica em `eventos_parada_historico`, que não pode ser apagado nem editado.
 - A placa só fala com o banco pela `bright-api` (v7): aceita dados só da placa e dos motores cadastrados; as rotas antigas do app de teste estão desativadas. Nenhuma tabela aceita escrita pela chave pública.
 
@@ -92,6 +92,8 @@ Quando até um horário foi um motivo e depois foi outro: botão **Dividir** na 
 - Mesma regra do app (`app_fracionar_parada`): supervisor divide qualquer uma; operador só no seu turno e setor; manutenção não divide. Mínimo de 2 min depois do início e 1 min antes do fim. Fica registrado no histórico ("Dividiu a parada").
 
 ## Gantt diário
+
+- **Dia por calendário:** em "Operação por ativo" o dia é escolhido num calendário (ponto verde = dia com operação; setas ‹ › andam um dia). O filtro de período "Datas" usa o mesmo calendário: toque no dia inicial e depois no final.
 
 - Mostra o dia de produção inteiro (07:30 → 07:30), com as faixas dos turnos e pausas.
 - **Filtro de turno**: o eixo mostra só a janela do turno escolhido (1º 07:30 → 18:30, 2º 18:30 → 04:00; sábado 07:30 → 16:00 e 16:00 → 23:00) e horas, aproveitamento e paradas contam só dentro dela.

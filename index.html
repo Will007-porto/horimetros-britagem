@@ -374,6 +374,35 @@ svg.ch rect.gp{cursor:pointer}svg.ch rect.gp:hover{stroke:var(--ink);stroke-widt
 .fdates label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--grey)}
 .fdates input{height:40px;border:1px solid var(--grid);border-radius:8px;padding:0 8px;font:600 13px var(--sans);color:var(--ink);background:var(--card);color-scheme:light dark}
 .fquick{display:flex;gap:6px;flex-wrap:wrap}.fquick .act{margin:0}
+/* Calendário (Gantt e filtro de datas) */
+.dcal{width:100%;user-select:none}
+.calh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.calh b{font-size:13.5px;font-weight:700;text-transform:capitalize;color:var(--ink)}
+.dcal .calnv{width:36px;height:36px;border:1px solid var(--grid);background:var(--card);border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--ink);padding:0}
+.dcal .calnv:hover:not(:disabled){background:var(--line)}.dcal .calnv:disabled{opacity:.3;cursor:default}
+.dcal .calnv svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 0}
+.calg>span{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--muted);text-align:center;padding:4px 0}
+.dcal .cald{position:relative;height:38px;width:100%;border:0;background:none;border-radius:0;font:600 13px var(--sans);color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums;display:grid;place-items:center;padding:0;transition:background-color .12s ease-out}
+.dcal .cald:hover:not(:disabled):not(.sel){background:var(--line);border-radius:8px}
+.dcal .cald:disabled{color:var(--muted);opacity:.45;cursor:default}
+.dcal .cald.hj{box-shadow:inset 0 0 0 1.5px var(--orange);border-radius:8px}
+.dcal .cald.mid{background:var(--soft);border-radius:0}
+.dcal .cald.ini,.dcal .cald.fim{background:var(--navy);color:#fff;border-radius:8px}
+.dcal .cald.ini:not(.fim){border-radius:8px 0 0 8px}.dcal .cald.fim:not(.ini){border-radius:0 8px 8px 0}
+.dcal .cald.mk::after{content:'';position:absolute;bottom:5px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--green)}
+.dcal .cald.sel.mk::after{background:#fff}
+:root[data-theme="dark"] .dcal .cald.ini,:root[data-theme="dark"] .dcal .cald.fim{background:var(--P);color:#0B1220}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .dcal .cald.ini,:root:not([data-theme="light"]) .dcal .cald.fim{background:var(--P);color:#0B1220}}
+.calnote{margin:6px 0 0;font-size:11.5px;color:var(--grey);display:flex;align-items:center;gap:6px}
+.calnote i{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block}
+.dayctl .gdb{width:auto;height:38px;gap:8px;padding:0 10px;font:600 13px var(--sans);display:flex;border-radius:8px}
+.dayctl .gdb>svg{width:16px;height:16px}
+.dayctl .gdb .cv2{width:12px;height:12px}
+#gDayLbl{white-space:nowrap}#gDayLbl em{font-style:normal;color:var(--grey);font-weight:500;margin-left:6px}
+.gcalp{width:300px;flex-direction:column;padding:12px 12px 10px}
+.box:has(.dd.open),.box:has(.dd.open) .cinner,.box:has(.dd.open) .boxb{overflow:visible}
+@media(max-width:560px){.gcalp{width:min(300px,calc(100vw - 40px))}}
 #fbar #popAt{width:380px;flex-direction:column;padding:12px;gap:10px}
 #popAt .seg{display:flex}#popAt .seg button{flex:1;padding:7px 4px;font-size:11.5px;white-space:nowrap}
 #popAt .plinks{align-items:center;padding:0 2px}
@@ -484,6 +513,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
         <div class="pop" id="popPer" role="dialog" aria-label="Escolher datas">
           <div class="ct">Escolher datas (dias de produção)</div>
           <div class="fdates"><label>De<input type="date" id="fFrom"></label><label>Até<input type="date" id="fTo"></label></div>
+          <div class="dcal" id="fCal"></div><p class="calnote" id="fCalTip">Toque no dia inicial e depois no dia final.</p>
           <div class="fquick"><button type="button" class="act" data-k="mespass">Mês passado</button><button type="button" class="act" data-k="90d">Últimos 90 dias</button></div>
           <div class="perr" id="perr"></div>
           <p class="hint">Cada dia vai das 07:30 até as 04:00 do dia seguinte (sábado até 23:00). Histórico: últimos 90 dias.</p>
@@ -573,7 +603,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
       <div class="cwrap"><div class="cinner"><div class="boxb">
         <div class="dayctl" style="margin-top:12px">
           <button id="gPrev" title="Dia anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
-          <select id="gDay"></select>
+          <div class="dd" id="ddGDay"><button type="button" class="ddb gdb" id="gDayBtn" aria-haspopup="dialog" aria-expanded="false" title="Escolher o dia no calendário"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span id="gDayLbl">—</span><svg class="cv2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><div class="pop gcalp" id="popGDay" role="dialog" aria-label="Escolher o dia"><div class="dcal" id="gCal"></div><p class="calnote"><i></i>dia com operação</p></div></div>
           <button id="gNext" title="Próximo dia"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
           <button class="tog" id="gToday">Hoje</button>
           <button class="tog" id="gMerge" title="Junta períodos separados por menos de 2 minutos">Unir pausas &lt; 2 min</button>
@@ -623,7 +653,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
       <div class="cwrap"><div class="cinner"><div class="boxb">
         <div class="eqtools"><span class="note" id="eCount"></span><button class="btn1" type="button" id="eNovo">Novo usuário</button></div>
         <div class="scrollx"><table class="tb" id="tE"></table></div>
-        <p class="note" id="nE">Papéis: <b>Operador</b> justifica as paradas do seu setor no turno · <b>Manutenção</b> confirma ou contesta paradas de manutenção · <b>Supervisor</b> justifica qualquer data, corrige, valida e cadastra usuários. Desativar tira o acesso na hora e dá para reativar depois; <b>Apagar</b> remove o login de vez (o histórico de paradas é mantido).</p>
+        <p class="note" id="nE">Papéis: <b>Operador</b> justifica as paradas do seu setor no turno · <b>Manutenção</b> confirma ou contesta paradas de manutenção · <b>Supervisor</b> justifica qualquer data, corrige, valida e cadastra usuários. <b>Acesso</b>: “Só app”, “Só site” ou os dois; no site, <b>Visualizador</b> só vê e <b>Editor</b> faz o que o papel permite. Marque “PIN novo no próximo acesso” para a pessoa trocar o PIN provisório por um só dela. Desativar tira o acesso na hora e dá para reativar depois; <b>Apagar</b> remove o login de vez (o histórico de paradas é mantido).</p>
       </div></div></div></div>
   </section>
 
@@ -1153,6 +1183,7 @@ const rowsByIds=ids=>(PQ.rows||[]).filter(r=>ids.includes(r.id));
 async function openJus(rs){
   if(!rs||!rs.length)return;
   if(!EU.autorizado){openLogin(EU.logado?'Seu usuário ainda não foi liberado. Fale com o supervisor.':'Entre com seu usuário para justificar paradas.');return}
+  if(!podeEditar()){toast('Seu acesso ao site é só de visualização. Para justificar, fale com o supervisor.');return}
   try{await ensureCat()}catch(e){toast('Não foi possível carregar os motivos: '+errApp(e));return}
   const areas=[...new Set(rs.map(areaOf))];
   JS={rows:rs,area:areas.length===1?areas[0]:null,g:null,cod:null,eq:null,busy:false};
@@ -1232,20 +1263,37 @@ let GDAY=null,GDATA={},GMERGE=true,gBusy=false;
 /* Paradas aparecem só nos motores que o scanner monitora */
 const GPAR=['AV10','CV07'];
 document.addEventListener('click',e=>{const g=e.target.closest('[data-gpar]');if(!g)return;const d=GDATA[GDAY]||{};const r=(d.parN||[]).find(p=>p.id===g.dataset.gpar);if(r)openJus([r])});
+/* ---------- Calendário: escolher um dia (Gantt) ou um intervalo (filtro de datas) ---------- */
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const mes1=d=>d.slice(0,8)+'01';
+function calHtml(st){
+  const m=st.mes,[y,mm]=m.split('-').map(Number),n=new Date(Date.UTC(y,mm,0)).getUTCDate(),off=wd(m);
+  const ant=!st.min||mesMais(m,-1)>=mes1(st.min),prox=!st.max||mesMais(m,1)<=st.max;
+  let h=`<div class="calh"><button type="button" class="calnv" data-calm="-1" ${ant?'':'disabled'} aria-label="Mês anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><b>${MESES[mm-1]} ${y}</b><button type="button" class="calnv" data-calm="1" ${prox?'':'disabled'} aria-label="Próximo mês"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div><div class="calg"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>`;
+  for(let i=0;i<off;i++)h+='<i></i>';
+  const a=st.a,b=st.b||st.a;
+  for(let k=1;k<=n;k++){const d=m.slice(0,8)+String(k).padStart(2,'0'),fora=(st.min&&d<st.min)||(st.max&&d>st.max),sel=!!a&&d>=a&&d<=b;
+    const cl=['cald',sel?'sel':'',sel&&d===a?'ini':'',sel&&d===b?'fim':'',sel&&d!==a&&d!==b?'mid':'',d===st.hoje?'hj':'',!fora&&st.marca&&st.marca(d)?'mk':''].filter(Boolean).join(' ');
+    h+=`<button type="button" class="${cl}" data-cald="${d}" ${fora?'disabled':''} aria-label="${ddmm(d)} · ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][wd(d)]}"${sel?' aria-pressed="true"':''}>${k}</button>`}
+  return h+'</div>';
+}
+/* horas de operação de todos os ativos no dia (os dois turnos) */
+const horasDia=d=>M.reduce((a,m)=>a+((HD[m.id]&&HD[m.id][d])||0),0);
+const CALG={mes:null};
+function ganCal(){if(!GDAY||!D)return;if(!$('#ddGDay').classList.contains('open')||!CALG.mes)CALG.mes=mes1(GDAY);
+  $('#gCal').innerHTML=calHtml({mes:CALG.mes,min:minDay(),max:D.hoje,hoje:D.hoje,a:GDAY,marca:d=>horasDia(d)>0.05});
+  const h=horasDia(GDAY);$('#gDayLbl').innerHTML=`${['dom','seg','ter','qua','qui','sex','sáb'][wd(GDAY)]}, ${dmy(GDAY)}<em>${h>0.05?f0(h)+'h':'sem operação'}</em>`}
 function ganInit(){
-  const sel=$('#gDay');const all=[...DAYS].reverse();
-  const keep=GDAY&&all.includes(GDAY)?GDAY:F.to;
-  sel.innerHTML=all.map(d=>{const h=M.reduce((a,m)=>a+(Hd(m.id,d)||0),0);return `<option value="${d}">${ddmm(d)} · ${['dom','seg','ter','qua','qui','sex','sáb'][wd(d)]}${h>0.05?` · ${f0(h)}h`:' · sem operação'}</option>`}).join('');
-  sel.value=keep;GDAY=keep;
+  const keep=GDAY&&GDAY>=minDay()&&GDAY<=D.hoje?GDAY:F.to;
+  GDAY=keep;ganCal();
   if(D.hoje&&GDATA[D.hoje]&&GDATA._gerado!==D.gerado){delete GDATA[D.hoje]}GDATA._gerado=D.gerado;
   if(PANE==='gan')ganEnsure();
 }
-function ganSet(d){GDAY=d;$('#gDay').value=d;ganEnsure()}
+function ganSet(d){if(!d||d<minDay()||d>D.hoje)return;GDAY=d;ganEnsure()}
 async function ganEnsure(force,silencioso){
   if(!GDAY||!/^\d{4}-\d{2}-\d{2}$/.test(GDAY))return;
-  if($('#gDay').value!==GDAY)$('#gDay').value=GDAY;
-  const opts=[...$('#gDay').options].map(o=>o.value),i=opts.indexOf(GDAY);
-  $('#gPrev').disabled=i>=opts.length-1;$('#gNext').disabled=i<=0;$('#gToday').classList.toggle('on',GDAY===D.hoje);$('#gMerge').classList.toggle('on',GMERGE);
+  ganCal();
+  $('#gPrev').disabled=GDAY<=minDay();$('#gNext').disabled=GDAY>=D.hoje;$('#gToday').classList.toggle('on',GDAY===D.hoje);$('#gMerge').classList.toggle('on',GMERGE);
   if(GDATA[GDAY]&&!force){renderGan();return}
   const want=GDAY;if(!(silencioso&&GDATA[want]))$('#cGan').innerHTML='<span class="sr">Carregando</span><div class="skel" style="width:80%"></div><div class="skel" style="width:60%"></div>';
   try{
@@ -1332,9 +1380,11 @@ function renderGan(){
   $('#ganPk').innerHTML=`Dia ${ddmm(GDAY)}`;
   $$('#kG [data-count]').forEach(countUp);$$('#kG .rv').forEach(e=>e.classList.add('in'));
 }
-$('#gDay').onchange=e=>ganSet(e.target.value);
-$('#gPrev').onclick=()=>{const o=[...$('#gDay').options].map(x=>x.value),i=o.indexOf(GDAY);if(i<o.length-1)ganSet(o[i+1])};
-$('#gNext').onclick=()=>{const o=[...$('#gDay').options].map(x=>x.value),i=o.indexOf(GDAY);if(i>0)ganSet(o[i-1])};
+$('#gDayBtn').addEventListener('click',()=>{CALG.mes=mes1(GDAY||D.hoje);ganCal()});
+$('#gCal').addEventListener('click',e=>{const nv=e.target.closest('[data-calm]');if(nv){CALG.mes=mesMais(CALG.mes,+nv.dataset.calm);ganCal();return}
+  const b=e.target.closest('[data-cald]');if(b&&!b.disabled){closeDD();ganSet(b.dataset.cald)}});
+$('#gPrev').onclick=()=>ganSet(addDays(GDAY,-1));
+$('#gNext').onclick=()=>ganSet(addDays(GDAY,1));
 $('#gToday').onclick=()=>{if(D.hoje>F.to||D.hoje<F.from){setRange('30d')}ganSet(D.hoje)};
 $('#gMerge').onclick=()=>{GMERGE=!GMERGE;ganEnsure()};
 
@@ -1408,11 +1458,20 @@ $$('.pop').forEach(p=>p.addEventListener('click',e=>{e.stopPropagation();if(e.ta
 document.addEventListener('click',()=>closeDD());
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDD()});
 $('#perSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;e.stopPropagation();
-  if(b.dataset.k==='custom'){const d=$('#ddPer'),o=!d.classList.contains('open');closeDD(d);d.classList.toggle('open',o);if(o){$('#fFrom').value=F.from;$('#fTo').value=F.to;$('#perr').textContent='';setTimeout(()=>$('#fFrom').focus(),30)}return}
+  if(b.dataset.k==='custom'){const d=$('#ddPer'),o=!d.classList.contains('open');closeDD(d);d.classList.toggle('open',o);if(o){$('#fFrom').value=F.from;$('#fTo').value=F.to;$('#perr').textContent='';CALF.a=F.from;CALF.b=F.to;CALF.pend=false;CALF.mes=mes1(F.to);calFRender()}return}
   closeDD();setRange(b.dataset.k);renderAll()};
 $('#fPrev').onclick=e=>{e.stopPropagation();andarPeriodo(-1)};
 $('#fNext').onclick=e=>{e.stopPropagation();andarPeriodo(1)};
 $('#popPer').addEventListener('click',e=>{const q=e.target.closest('.fquick [data-k]');if(!q||!D)return;setRange(q.dataset.k);closeDD();renderAll()});
+const CALF={mes:null,a:null,b:null,pend:false};
+function calFRender(){if(!D||!CALF.mes)return;$('#fCal').innerHTML=calHtml({mes:CALF.mes,min:minDay(),max:D.hoje,hoje:D.hoje,a:CALF.a,b:CALF.pend?CALF.a:CALF.b});
+  $('#fCalTip').textContent=CALF.pend?'Agora toque no dia final.':'Toque no dia inicial e depois no dia final.'}
+$('#fCal').addEventListener('click',e=>{const nv=e.target.closest('[data-calm]');if(nv){CALF.mes=mesMais(CALF.mes,+nv.dataset.calm);calFRender();return}
+  const b=e.target.closest('[data-cald]');if(!b||b.disabled)return;const d=b.dataset.cald;
+  if(!CALF.pend||d<CALF.a){CALF.a=d;CALF.b=d;CALF.pend=true}else{CALF.b=d;CALF.pend=false}
+  $('#fFrom').value=CALF.a;$('#fTo').value=CALF.b;$('#perr').textContent='';calFRender()});
+['fFrom','fTo'].forEach(id=>$('#'+id).addEventListener('change',()=>{const a=$('#fFrom').value,b=$('#fTo').value;if(!isDay(a)||!isDay(b))return;
+  CALF.a=a;CALF.b=b>=a?b:a;CALF.pend=false;CALF.mes=mes1(id==='fFrom'?a:b);calFRender()}));
 $('#fApply').onclick=()=>{const a=$('#fFrom').value,b=$('#fTo').value,mn=minDay();
   if(!a||!b){$('#perr').textContent='Preencha as duas datas.';return}
   if(a>b){$('#perr').textContent='A data inicial é depois da final.';return}
@@ -1428,7 +1487,9 @@ $('#tuSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;F.tu
 $('#stSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!D)return;F.st=b.dataset.s;saveF();renderAll()};
 
 /* ---------- LOGIN (mesmo do aplicativo: nome + PIN) ---------- */
-let EU={logado:false,nome:null,autorizado:false,papel:null,area:null};
+let EU={logado:false,nome:null,autorizado:false,papel:null,area:null,editor:false};
+/* Editor no site: supervisor sempre; os demais conforme o cadastro (visualizador só vê) */
+const podeEditar=()=>!!(EU.autorizado&&(EU.papel==='supervisor'||EU.editor));
 const DOMINIO_LOGIN='operador.paradas-britagem.app';
 const normLogin=n=>String(n||'').trim().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,'.').replace(/[^a-z0-9.-]/g,'').replace(/\.{2,}/g,'.').replace(/^\.+|\.+$/g,'');
 const PAPEL_N={operador:'Operador',manutencao:'Manutenção',supervisor:'Supervisor'};
@@ -1437,18 +1498,41 @@ async function refreshEU(){try{EU=await rpc('painel_eu')||EU}catch(e){
     if(!EU.logado||/JWT|auth|permission/i.test((e&&e.message)||''))EU={logado:false,nome:null,autorizado:false,papel:null,area:null}}
   $('#userLbl').textContent=EU.logado?(EU.nome||'Conectado'):'Entrar';$('#btnUser').classList.toggle('on',EU.logado);navVis()}
 function navVis(){
-  const sup=EU.autorizado&&EU.papel==='supervisor',val=EU.autorizado&&(sup||EU.papel==='manutencao');
+  const sup=EU.autorizado&&EU.papel==='supervisor',val=podeEditar()&&(sup||EU.papel==='manutencao');
   $('#nav [data-p="val"]').classList.toggle('hidn',!val);$('#nav [data-p="equ"]').classList.toggle('hidn',!sup);$('#nav [data-p="app"]').classList.toggle('hidn',!sup);
   if((PANE==='val'&&!val)||((PANE==='equ'||PANE==='app')&&!sup))go('geral');
 }
 /* Sem login (ou sem liberação) o painel não mostra nada: os dados só saem para usuários liberados. */
 async function gate(){
   await refreshEU();
-  if(EU.logado&&EU.autorizado){if(EU.papel==='supervisor'||EU.papel==='manutencao')valLoad();return true}
+  if(EU.logado&&EU.autorizado&&!EU.trocar_pin){if(podeEditar()&&(EU.papel==='supervisor'||EU.papel==='manutencao'))valLoad();return true}
   D=null;cacheApagar();$$('.pane').forEach(s=>s.classList.remove('on'));
-  if(!EU.logado){showState('err','Entre para ver o painel','Use o mesmo <b>nome e PIN</b> do aplicativo Paradas Britagem.','Entrar');$('#stBtn').onclick=()=>openLogin();openLogin()}
+  if(EU.logado&&EU.trocar_pin){showState('err','Crie o seu PIN','Antes de continuar, troque o PIN que o supervisor passou por um <b>PIN só seu</b>. Ele vale no site e no aplicativo.','Criar PIN');$('#stBtn').onclick=()=>novoPinProprio();novoPinProprio()}
+  else if(EU.logado&&EU.so_app){showState('err','Seu acesso é só ao aplicativo','Você entrou como <b>'+esc(EU.nome||'usuário')+'</b>. O seu cadastro libera só o aplicativo Paradas Britagem. Para usar o painel, fale com o supervisor.','Sair');$('#stBtn').onclick=()=>sb.auth.signOut()}
+  else if(!EU.logado){showState('err','Entre para ver o painel','Use o mesmo <b>nome e PIN</b> do aplicativo Paradas Britagem.','Entrar');$('#stBtn').onclick=()=>openLogin();openLogin()}
   else{showState('err','Acesso ainda não liberado','Você entrou como <b>'+esc(EU.nome||'usuário sem cadastro')+'</b>, mas seu acesso ainda não foi liberado pelo supervisor.','Sair');$('#stBtn').onclick=()=>sb.auth.signOut()}
   return false;
+}
+/* PIN fraco: tudo igual ou sequência */
+const pinFraco=p=>/^(\d)\1{5}$/.test(p)||'0123456789012'.includes(p)||'9876543210987'.includes(p);
+function novoPinProprio(){
+  gOpen({k:'Primeiro acesso',t:'Crie o seu PIN',ok:'Salvar PIN',
+    body:`<p class="fhint" style="margin:0">O supervisor pediu que você troque o PIN. Escolha <b>6 números</b> que só você saiba. Ele passa a valer no site e no aplicativo.</p>
+      <div class="fs"><h4>PIN novo</h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+      <div class="fs"><h4>Repita o PIN novo</h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+      <p class="fhint" style="margin:0">Evite 000000, 123456 ou a sua data de nascimento.</p>`,
+    onOk:async()=>{const p=$('#gPin').value,p2=$('#gPin2').value;
+      if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');
+      if(pinFraco(p))throw falha('PIN fácil demais. Escolha outro (sem números repetidos ou em sequência).');
+      const {error}=await sb.auth.updateUser({password:p});
+      if(error){const m=(error.code||'')+' '+(error.message||'');
+        if(/same_password|different from the old/i.test(m))throw falha('O PIN novo precisa ser diferente do que o supervisor passou.');
+        if(/weak|pwned|leaked/i.test(m))throw falha('Esse PIN é muito comum. Escolha outro.');
+        if(/reauth/i.test(m))throw falha('Por segurança, saia e entre de novo para trocar o PIN.');
+        throw falha('Não foi possível trocar o PIN: '+(error.message||m))}
+      await rpc('app_pin_trocado').catch(()=>{});
+      toast('PIN salvo. Use o novo PIN daqui para frente.');
+      if(await gate()){await load(true);rtLigar()}}});
 }
 function openLogin(info){const L=$('#login');$('#lgErr').textContent='';
   $('#lgForm').hidden=EU.logado;$('#lgOut').hidden=!EU.logado;
@@ -1594,7 +1678,7 @@ document.addEventListener('click',e=>{if(e.target.closest('#appReload'))appLoad(
    seu turno e setor; manutenção não divide. Cada parte precisa de 2 min no começo e 1 min no fim. */
 const DIV_MIN_INI=120e3,DIV_MIN_FIM=60e3;
 const fimDiv=r=>r.fimMs?r.fimMs-DIV_MIN_FIM:Date.now();
-const podeDividir=r=>!!(r&&EU.autorizado&&EU.papel!=='manutencao'&&fimDiv(r)-(r.iniMs+DIV_MIN_INI)>=60e3);
+const podeDividir=r=>!!(r&&podeEditar()&&EU.papel!=='manutencao'&&fimDiv(r)-(r.iniMs+DIV_MIN_INI)>=60e3);
 const diaProd=ms=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(ms-27e6);
 const hm2=ms=>new Intl.DateTimeFormat('pt-BR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}).format(ms);
 function acharParada(id){return (PQ.rows||[]).find(x=>x.id===id)||((GDATA[GDAY]||{}).parN||[]).find(x=>x.id===id)||(JS.rows||[]).find(x=>x.id===id)||null}
@@ -1657,7 +1741,22 @@ const TURNO_N={1:'1º turno',2:'2º turno'};
 /* Turno só vale para operador: é ele que trava quem justifica cada parada */
 const turnoHtml=(papel,v)=>papel!=='operador'?'':`<div class="fs"><h4>Turno</h4>${segHtml('gTurno',TURNO_LISTA,String(v??'0'))}<div class="fhint">O operador só justifica as paradas do próprio turno. “Livre” é para quem cobre os dois (folguista).</div></div>`;
 const turnoVal=()=>segVal('gPapel')==='operador'?Number(segVal('gTurno')||0):0;
-const ERR_EQ={nao_autorizado:'Só o supervisor pode alterar a equipe.',nome_invalido:'Nome precisa ter de 2 a 80 letras.',area_obrigatoria:'Escolha a área do operador.',operador_uma_area:'Operador fica em uma área só (Primário, Secundário ou Lokotrack).',nao_pode_rebaixar_a_si_mesmo:'Você não pode tirar o seu próprio acesso de supervisor.',papel_invalido:'Papel inválido.',area_invalida:'Área inválida.',turno_invalido:'Turno inválido.',login_existe:'Já existe um usuário com esse nome. Use outro (por exemplo, com sobrenome).',pin_invalido:'O PIN precisa ter 6 números.',pin_recusado:'O servidor recusou esse PIN. Tente outro.',usuario_nao_encontrado:'Usuário não encontrado.',usuario_invalido:'Usuário inválido.',nao_pode_apagar_a_si_mesmo:'Você não pode apagar o seu próprio usuário.',ultimo_supervisor:'Esse é o único supervisor ativo: cadastre ou ative outro supervisor antes de apagar.',falha_apagar:'Não foi possível apagar. Tente novamente.',sessao_invalida:'Sua sessão expirou. Entre de novo.',sem_login:'Sua sessão expirou. Entre de novo.'};
+const ACESSO_LISTA=[['tudo','Site e app'],['app','Só app'],['site','Só site']];
+const ACESSO_N={tudo:'Site e app',app:'Só app',site:'Só site'};
+const SITE_LISTA=[['0','Visualizador'],['1','Editor']];
+const CARGOS=['Operador de britagem','Operador de pá carregadeira','Mecânico','Eletricista','Lubrificador','Encarregado de britagem','Supervisor de britagem','Técnico de segurança','Engenheiro','Administrativo'];
+/* Bloco "acesso": onde entra, visualizador/editor no site e troca de PIN. Supervisor tem tudo, sempre. */
+function acessoHtml(papel,u){
+  if(papel==='supervisor')return`<div class="fs"><h4>Acesso</h4><div class="fhint" style="margin:0">Supervisor entra no <b>site e no app</b> como <b>editor</b> e cadastra a equipe.</div></div>`;
+  const ac=(u&&u.acesso)||'tudo',ed=u&&u.editor?'1':'0';
+  return`<div class="fs"><h4>Onde entra</h4>${segHtml('gAcesso',ACESSO_LISTA,ac)}</div>
+    <div class="fs" id="gSiteW" ${ac==='app'?'hidden':''}><h4>No site</h4>${segHtml('gSite',SITE_LISTA,ed)}<div class="fhint"><b>Visualizador</b> só vê os painéis e relatórios. <b>Editor</b> também faz o que o papel permite no site (justificar, validar, separar paradas).</div></div>`;
+}
+const acessoVal=()=>{const a=segVal('gAcesso');return a?{p_acesso:a,p_editor:segVal('gSite')==='1'}:{}};
+const cargoHtml=v=>`<div class="fs"><h4>Cargo</h4><input class="tin" id="gCargo" type="text" maxlength="60" list="gCargos" placeholder="Ex.: Operador de britagem" value="${esc(v||'')}"><datalist id="gCargos">${CARGOS.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>`;
+const cargoVal=()=>{const c=($('#gCargo').value||'').trim().replace(/\s+/g,' ');if(c&&c.length<2)throw falha('O cargo precisa ter pelo menos 2 letras.');return c};
+const pinNovoHtml=(on,txt)=>`<label class="fchk"><input type="checkbox" id="gTroca" ${on?'checked':''}> ${txt||'Pedir um PIN novo no próximo acesso'}</label>`;
+const ERR_EQ={acesso_invalido:'Escolha onde a pessoa entra.',cargo_invalido:'Cargo inválido (de 2 a 60 letras).',nao_autorizado:'Só o supervisor pode alterar a equipe.',nome_invalido:'Nome precisa ter de 2 a 80 letras.',area_obrigatoria:'Escolha a área do operador.',operador_uma_area:'Operador fica em uma área só (Primário, Secundário ou Lokotrack).',nao_pode_rebaixar_a_si_mesmo:'Você não pode tirar o seu próprio acesso de supervisor.',papel_invalido:'Papel inválido.',area_invalida:'Área inválida.',turno_invalido:'Turno inválido.',login_existe:'Já existe um usuário com esse nome. Use outro (por exemplo, com sobrenome).',pin_invalido:'O PIN precisa ter 6 números.',pin_recusado:'O servidor recusou esse PIN. Tente outro.',usuario_nao_encontrado:'Usuário não encontrado.',usuario_invalido:'Usuário inválido.',nao_pode_apagar_a_si_mesmo:'Você não pode apagar o seu próprio usuário.',ultimo_supervisor:'Esse é o único supervisor ativo: cadastre ou ative outro supervisor antes de apagar.',falha_apagar:'Não foi possível apagar. Tente novamente.',sessao_invalida:'Sua sessão expirou. Entre de novo.',sem_login:'Sua sessão expirou. Entre de novo.'};
 const errEq=m=>{const k=Object.keys(ERR_EQ).find(k=>String(m).includes(k));return k?ERR_EQ[k]:null};
 async function adminUsuarios(body){
   const {data,error}=await sb.functions.invoke('admin-usuarios',{body});
@@ -1673,15 +1772,16 @@ function renderEqu(){
   if(!EQ.rows){$('#tE').innerHTML=`<tbody><tr><td>${EQ.err?`<div class="pempty"><b>Não foi possível carregar</b>${esc(errEq(EQ.err.message)||errApp(EQ.err))}<br><button class="btn1" type="button" onclick="equLoad()">Tentar de novo</button></div>`:'<div class="gmsg">Buscando usuários…</div><div class="skel" style="width:70%"></div><div class="skel" style="width:45%"></div>'}</td></tr></tbody>`;return}
   const novos=EQ.rows.filter(u=>!u.liberado).length,at=EQ.rows.filter(u=>u.liberado&&u.ativo).length;
   $('#eCount').innerHTML=`<b>${at}</b> ${at===1?'usuário ativo':'usuários ativos'}${novos?` · <b style="color:var(--orange)">${novos} aguardando liberação</b>`:''}`;
-  let h=`<thead><tr><th>Nome</th><th>Papel</th><th class="hm">Área</th><th>Situação</th><th class="hm">Último acesso</th><th class="hm"></th></tr></thead><tbody>`;
+  let h=`<thead><tr><th>Nome</th><th>Papel</th><th class="hm">Área</th><th class="hm">Acesso</th><th>Situação</th><th class="hm">Último acesso</th><th class="hm"></th></tr></thead><tbody>`;
   EQ.rows.forEach(u=>{const [sc,st]=situacao(u);
-    h+=`<tr data-uid="${esc(u.user_id)}"><td class="m">${esc(u.nome||u.login)}<span class="sub">${esc(u.login)}${u.eu?' · você':''}</span></td>
+    h+=`<tr data-uid="${esc(u.user_id)}"><td class="m">${esc(u.nome||u.login)}<span class="sub">${u.cargo?esc(u.cargo)+' · ':''}${esc(u.login)}${u.eu?' · você':''}</span></td>
       <td>${u.papel?`<span class="pill role">${esc(PAPEL_N[u.papel]||u.papel)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
       <td class="hm">${u.area?esc(u.area==='AMBOS'?'Todas':AREA_N[u.area]||u.area):'<span style="color:var(--muted)">—</span>'}${u.papel==='operador'?`<span class="sub">${u.turno?TURNO_N[u.turno]:'Turno livre'}</span>`:''}</td>
-      <td><span class="pill ${sc}">${st}</span></td>
+      <td class="hm">${u.liberado?`${esc(ACESSO_N[u.acesso]||'Site e app')}${u.acesso!=='app'?`<span class="sub">${u.editor?'Editor no site':'Visualizador no site'}</span>`:''}`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="pill ${sc}">${st}</span>${u.liberado&&u.trocar_pin?'<span class="sub" style="color:var(--orange)">vai criar PIN novo</span>':''}</td>
       <td class="hm" style="white-space:nowrap">${u.ultimo_acesso?dtFmt.format(Date.parse(u.ultimo_acesso)):'<span style="color:var(--muted)">nunca entrou</span>'}</td>
       <td class="n hm"><button type="button" class="act ${u.liberado?'':'pri'}" data-eedit>${u.liberado?'Editar':'Liberar'}</button></td></tr>`});
-  if(!EQ.rows.length)h+=`<tr><td colspan="6"><div class="pempty"><b>Nenhum usuário</b>Use “Novo usuário” para cadastrar o primeiro.</div></td></tr>`;
+  if(!EQ.rows.length)h+=`<tr><td colspan="7"><div class="pempty"><b>Nenhum usuário</b>Use “Novo usuário” para cadastrar o primeiro.</div></td></tr>`;
   $('#tE').innerHTML=h+'</tbody>';
 }
 /* Botões segmentados no painel (mesmo componente dos filtros do topo) */
@@ -1691,20 +1791,27 @@ function areaSeg(papel,v){const ops=areasDoPapel(papel);if(!ops.some(([k])=>k===
 $('#gB').addEventListener('click',e=>{const b=e.target.closest('.seg button');if(!b||b.disabled)return;const seg=b.parentElement;
   seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
   if(seg.id==='gPapel'){const w=$('#gAreaW');if(w)w.innerHTML=areaSeg(b.dataset.v,segVal('gArea'));
-    const t=$('#gTurnoW');if(t){if(segVal('gTurno'))t.dataset.ant=segVal('gTurno');t.innerHTML=turnoHtml(b.dataset.v,t.dataset.ant)}}});
+    const t=$('#gTurnoW');if(t){if(segVal('gTurno'))t.dataset.ant=segVal('gTurno');t.innerHTML=turnoHtml(b.dataset.v,t.dataset.ant)}
+    const a=$('#gAcessoW');if(a){const ant={acesso:segVal('gAcesso')||a.dataset.ac||'tudo',editor:(segVal('gSite')||a.dataset.ed)==='1'};
+      if(segVal('gAcesso')){a.dataset.ac=ant.acesso;a.dataset.ed=ant.editor?'1':'0'}a.innerHTML=acessoHtml(b.dataset.v,ant)}}
+  if(seg.id==='gAcesso'){const w=$('#gSiteW');if(w)w.hidden=b.dataset.v==='app'}});
 
 function editarUsuario(u){
   const papel=u.papel||'operador',area=u.area||(papel==='operador'?'PRIMARIO':'AMBOS');
   gOpen({k:'Equipe',t:u.liberado?(u.nome||u.login):`Liberar ${u.nome||u.login}`,ok:u.liberado?'Salvar':'Liberar acesso',
     body:`<div class="fs"><h4>Nome</h4><input class="tin" id="gNome" type="text" maxlength="80" value="${esc(u.nome||'')}"><div class="fhint">Login no app e no site: <b>${esc(u.login)}</b></div></div>
+      ${cargoHtml(u.cargo)}
       <div class="fs"><h4>Papel</h4>${segHtml('gPapel',Object.entries(PAPEL_N),papel,u.eu)}${u.eu?'<div class="fhint">Você não pode mudar o seu próprio papel.</div>':''}</div>
       <div class="fs"><h4>Área</h4><div id="gAreaW">${areaSeg(papel,area)}</div></div>
       <div id="gTurnoW">${turnoHtml(papel,u.turno)}</div>
+      <div id="gAcessoW">${acessoHtml(papel,u.liberado?u:{acesso:'tudo',editor:false})}</div>
       ${u.eu?'':`<label class="fchk"><input type="checkbox" id="gAtivo" ${u.liberado?(u.ativo?'checked':''):'checked'}> Acesso ativo</label>`}
+      ${u.eu?'':pinNovoHtml(!!u.trocar_pin)}
       ${u.liberado?`<div class="dz"><div class="fs" style="margin:0"><h4>Acesso</h4></div><div class="acts"><button type="button" class="act" data-gpin>Trocar PIN</button>${u.eu?'':'<button type="button" class="act danger" data-gdel>Apagar usuário</button>'}</div>
         <div class="fhint" style="margin:0">Para cortar o acesso temporariamente, desmarque “Acesso ativo”. Apagar é definitivo.</div></div>`:''}`,
     onOk:async()=>{const nome=$('#gNome').value.trim().replace(/\s+/g,' ');if(nome.length<2)throw falha('Digite o nome.');
-      await rpc('app_supervisor_salvar',{p_user_id:u.user_id,p_nome:nome,p_papel:segVal('gPapel'),p_area:segVal('gArea'),p_ativo:u.eu?true:$('#gAtivo').checked,p_turno:turnoVal()})
+      await rpc('app_supervisor_salvar',{p_user_id:u.user_id,p_nome:nome,p_papel:segVal('gPapel'),p_area:segVal('gArea'),p_ativo:u.eu?true:$('#gAtivo').checked,p_turno:turnoVal(),
+          p_cargo:cargoVal(),...acessoVal(),...(u.eu?{}:{p_trocar_pin:$('#gTroca').checked})})
         .catch(er=>{throw falha(errEq(er.message)||errApp(er))});
       toast(u.liberado?'Usuário salvo.':`${nome} liberado.`);equLoad()}});
   GO.user=u;
@@ -1713,9 +1820,13 @@ function trocarPin(u){
   gOpen({k:'Equipe',t:`Trocar PIN · ${u.nome||u.login}`,ok:'Trocar PIN',
     body:`<div class="fs"><h4>Novo PIN (6 números)</h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
       <div class="fs"><h4>Repita o PIN</h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
-      <p class="fhint" style="margin:0">Passe o PIN novo para a pessoa pessoalmente. Vale no próximo login, no app e no site.</p>`,
+      ${u.eu?'':pinNovoHtml(true,'Pedir para a pessoa criar um PIN próprio no próximo acesso')}
+      <p class="fhint" style="margin:0">Passe o PIN para a pessoa pessoalmente. Vale no próximo login, no app e no site.</p>`,
     onOk:async()=>{const p=$('#gPin').value,p2=$('#gPin2').value;if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');
-      await adminUsuarios({acao:'pin',user_id:u.user_id,pin:p});toast('PIN trocado.')}});
+      const troca=!u.eu&&$('#gTroca').checked;
+      await adminUsuarios({acao:'pin',user_id:u.user_id,pin:p});
+      if(!u.eu&&u.liberado&&troca!==!!u.trocar_pin)await rpc('app_supervisor_salvar',{p_user_id:u.user_id,p_nome:u.nome,p_papel:u.papel,p_area:u.area,p_ativo:u.ativo,p_trocar_pin:troca}).catch(()=>toast('PIN trocado, mas não deu para marcar a troca no próximo acesso.'));
+      toast(troca?'PIN trocado. A pessoa vai criar um PIN próprio no próximo acesso.':'PIN trocado.');equLoad()}});
 }
 function apagarUsuario(u){
   gOpen({k:'Equipe',t:`Apagar ${u.nome||u.login}?`,ok:'Apagar de vez',
@@ -1734,16 +1845,20 @@ $('#tE').addEventListener('click',e=>{const tr=e.target.closest('tr[data-uid]');
   const u=(EQ.rows||[]).find(x=>x.user_id===tr.dataset.uid);if(u)editarUsuario(u)});
 $('#eNovo').onclick=()=>gOpen({k:'Equipe',t:'Novo usuário',ok:'Cadastrar',
   body:`<div class="fs"><h4>Nome</h4><input class="tin" id="gNome" type="text" maxlength="80" placeholder="Ex.: João Silva"><div class="fhint" id="gLogin">É o nome que a pessoa digita para entrar.</div></div>
-    <div class="fs"><h4>PIN (6 números)</h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
+    ${cargoHtml('')}
+    <div class="fs"><h4>PIN provisório (6 números)</h4><input class="tin" id="gPin" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
     <div class="fs"><h4>Repita o PIN</h4><input class="tin" id="gPin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div>
     <div class="fs"><h4>Papel</h4>${segHtml('gPapel',Object.entries(PAPEL_N),'operador')}</div>
     <div class="fs"><h4>Área</h4><div id="gAreaW">${areaSeg('operador','PRIMARIO')}</div></div>
-    <div id="gTurnoW">${turnoHtml('operador',1)}</div>`,
+    <div id="gTurnoW">${turnoHtml('operador',1)}</div>
+    <div id="gAcessoW">${acessoHtml('operador',{acesso:'app',editor:false})}</div>
+    ${pinNovoHtml(true,'Pedir para a pessoa criar um PIN próprio no primeiro acesso')}`,
   onOk:async()=>{const nome=$('#gNome').value.trim().replace(/\s+/g,' '),p=$('#gPin').value,p2=$('#gPin2').value;
     if(nome.length<2)throw falha('Digite o nome.');if(!/^\d{6}$/.test(p))throw falha('O PIN precisa ter 6 números.');if(p!==p2)throw falha('Os dois PINs não são iguais.');
-    const papel=segVal('gPapel'),area=segVal('gArea'),turno=turnoVal();
+    const papel=segVal('gPapel'),area=segVal('gArea'),turno=turnoVal(),cargo=cargoVal(),ac=acessoVal(),troca=$('#gTroca').checked;
     const r=await adminUsuarios({acao:'criar',nome,pin:p,papel,area});
-    if(turno)await rpc('app_supervisor_salvar',{p_user_id:r.user_id,p_nome:r.nome,p_papel:papel,p_area:area,p_ativo:true,p_turno:turno}).catch(()=>toast('Usuário criado, mas o turno não foi salvo: abra e salve de novo.'));
+    await rpc('app_supervisor_salvar',{p_user_id:r.user_id,p_nome:r.nome,p_papel:papel,p_area:area,p_ativo:true,p_turno:turno,p_cargo:cargo,...ac,p_trocar_pin:troca})
+      .catch(()=>toast('Usuário criado, mas cargo/acesso/turno não foram salvos: abra e salve de novo.'));
     toast(`${r.nome} cadastrado · login ${r.login}`);equLoad()}});
 document.addEventListener('input',e=>{if(e.target.id==='gNome'&&$('#gLogin')){const l=normLogin(e.target.value);$('#gLogin').innerHTML=l?`Login no app e no site: <b>${esc(l)}</b>`:'É o nome que a pessoa digita para entrar.'}});
 
