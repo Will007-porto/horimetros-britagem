@@ -861,7 +861,7 @@ function rtLigar(){
 function rtDesligar(){if(RT){sb.removeChannel(RT);RT=null;RT_OK=false;stampTick()}}
 function rtEvento(t,p){
   const r=p.new&&Object.keys(p.new).length?p.new:(p.old||{});
-  if(/^producao_/.test(t)&&Date.now()-ULT_SALVO>6000&&Date.now()-ULT_MEXEU<QUIETO_MS){NOVO=true;stampTick()}
+  if(/^(producao_|eventos_parada)/.test(t)&&Date.now()-ULT_SALVO>6000&&Date.now()-ULT_MEXEU<QUIETO_MS){NOVO=true;stampTick()}
   if(Date.now()-ULT_SALVO>4000)rtAvisoEdicao(t,r);
   /* Salvamento do próprio usuário: aplica rápido. Mudança vinda da placa ou de outro usuário: no máximo uma leitura a cada 30 s. */
   const espera=Date.now()-ULT_SALVO<6000?1500:Math.max(1500,RT_MIN_MS-(Date.now()-ULT_OK));
@@ -1262,6 +1262,8 @@ let tT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('sh
 
 /* ---------- GANTT ---------- */
 let GDAY=null,GDATA={},GMERGE=true,gBusy=false;
+/* hora em que cada dia do Gantt foi buscado: o dia de hoje vence em 1 min (paradas novas não mudam os horímetros) */
+const GT={},GAN_TTL=60000;
 /* Paradas aparecem só nos motores que o scanner monitora */
 const GPAR=['AV10','CV07'];
 document.addEventListener('click',e=>{const g=e.target.closest('[data-gpar]');if(!g)return;const d=GDATA[GDAY]||{};const r=(d.parN||[]).find(p=>p.id===g.dataset.gpar);if(r)openJus([r])});
@@ -1296,10 +1298,10 @@ async function ganEnsure(force,silencioso){
   if(!GDAY||!/^\d{4}-\d{2}-\d{2}$/.test(GDAY))return;
   ganCal();
   $('#gPrev').disabled=GDAY<=minDay();$('#gNext').disabled=GDAY>=D.hoje;$('#gToday').classList.toggle('on',GDAY===D.hoje);$('#gMerge').classList.toggle('on',GMERGE);
-  if(GDATA[GDAY]&&!force){renderGan();return}
+  if(GDATA[GDAY]&&!force){renderGan();if(GDAY!==D.hoje||Date.now()-(GT[GDAY]||0)<GAN_TTL)return;force=silencioso=true}
   const want=GDAY;if(!(silencioso&&GDATA[want]))$('#cGan').innerHTML='<span class="sr">Carregando</span><div class="skel" style="width:80%"></div><div class="skel" style="width:60%"></div>';
   try{
-    const g=await rpc('painel_gantt',{p_dia:want});if(silencioso&&GDATA[want]&&mesmoDado(g,GDATA[want]))return;
+    const g=await rpc('painel_gantt',{p_dia:want});GT[want]=Date.now();if(silencioso&&GDATA[want]&&mesmoDado(g,GDATA[want]))return;
     GDATA[want]=g;if(GDAY===want)renderGan();
   }catch(e){if(GDAY===want)$('#cGan').innerHTML=`<div class="gmsg">Não foi possível buscar este dia (${esc(e&&(e.message||e.code)||'erro')}). <button class="pbtn" style="display:inline-flex;margin-left:8px" onclick="ganEnsure(true)">Tentar de novo</button></div>`}
 }
