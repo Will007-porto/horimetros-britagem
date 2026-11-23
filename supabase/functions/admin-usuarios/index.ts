@@ -12,7 +12,8 @@ const admin = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 const DOMINIO_LOGIN = 'operador.paradas-britagem.app';
-const PAPEIS = new Set(['operador', 'supervisor', 'manutencao']);
+// visualizador: só vê o site, nunca edita nem entra no app
+const PAPEIS = new Set(['operador', 'supervisor', 'manutencao', 'visualizador']);
 const AREAS = new Set(['PRIMARIO', 'SECUNDARIO', 'LOKOTRACK', 'AMBOS']);
 
 const cors = {
@@ -29,7 +30,7 @@ function normalizarNomeLogin(nome: string): string {
   return nome
     .trim()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/\s+/g, '.')
     .replace(/[^a-z0-9.-]/g, '')
@@ -84,7 +85,9 @@ async function criarUsuario(body: Record<string, unknown>, quem: { id: string; n
   }
 
   const { error: e2 } = await admin.from('usuarios_painel')
-    .insert({ user_id: criado.user.id, nome, papel, area, ativo: true });
+    .insert(papel === 'visualizador'
+      ? { user_id: criado.user.id, nome, papel, area: 'AMBOS', ativo: true, acesso: 'site', editor: false }
+      : { user_id: criado.user.id, nome, papel, area, ativo: true });
   if (e2) {
     console.error('usuarios_painel:', e2);
     await admin.auth.admin.deleteUser(criado.user.id); // desfaz para não deixar conta solta

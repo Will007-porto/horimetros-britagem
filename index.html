@@ -453,6 +453,8 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
 #tE tr[data-uid]{cursor:pointer}#tE tr[data-uid]:hover td{background:var(--soft2)}
 /* Painel lateral de edição de usuário */
 .fs .seg button{white-space:nowrap}
+/* 4 papéis não cabem numa linha no celular: vira 2×2 */
+@media (max-width:520px){#gPapel{display:grid;grid-template-columns:1fr 1fr}}
 .fchk{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
 .fchk input{width:16px;height:16px;accent-color:var(--navy2);margin:0}
 .dz{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:10px}
@@ -1495,7 +1497,7 @@ let EU={logado:false,nome:null,autorizado:false,papel:null,area:null,editor:fals
 const podeEditar=()=>!!(EU.autorizado&&(EU.papel==='supervisor'||EU.editor));
 const DOMINIO_LOGIN='operador.paradas-britagem.app';
 const normLogin=n=>String(n||'').trim().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,'.').replace(/[^a-z0-9.-]/g,'').replace(/\.{2,}/g,'.').replace(/^\.+|\.+$/g,'');
-const PAPEL_N={operador:'Operador',manutencao:'Manutenção',supervisor:'Supervisor'};
+const PAPEL_N={operador:'Operador',manutencao:'Manutenção',supervisor:'Supervisor',visualizador:'Visualizador'};
 async function refreshEU(){try{EU=await rpc('painel_eu')||EU}catch(e){
     /* Falha de rede não é logout: mantém quem já estava liberado (o logout real chega como SIGNED_OUT) */
     if(!EU.logado||/JWT|auth|permission/i.test((e&&e.message)||''))EU={logado:false,nome:null,autorizado:false,papel:null,area:null}}
@@ -1738,7 +1740,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-dividir]')
 /* ---------- EQUIPE ---------- */
 let EQ={rows:null,err:null};
 const AREA_LISTA=[['PRIMARIO','Primário'],['SECUNDARIO','Secundário'],['LOKOTRACK','Lokotrack'],['AMBOS','Todas']];
-const areasDoPapel=p=>AREA_LISTA.filter(([k])=>p!=='operador'||k!=='AMBOS');
+const areasDoPapel=p=>p==='visualizador'?AREA_LISTA.filter(([k])=>k==='AMBOS'):AREA_LISTA.filter(([k])=>p!=='operador'||k!=='AMBOS');
 const TURNO_LISTA=[['1','1º turno'],['2','2º turno'],['0','Livre']];
 const TURNO_N={1:'1º turno',2:'2º turno'};
 /* Turno só vale para operador: é ele que trava quem justifica cada parada */
@@ -1751,6 +1753,7 @@ const CARGOS=['Operador de britagem','Operador de pá carregadeira','Mecânico',
 /* Bloco "acesso": onde entra, visualizador/editor no site e troca de PIN. Supervisor tem tudo, sempre. */
 function acessoHtml(papel,u){
   if(papel==='supervisor')return`<div class="fs"><h4>Acesso</h4><div class="fhint" style="margin:0">Supervisor entra no <b>site e no app</b> como <b>editor</b> e cadastra a equipe.</div></div>`;
+  if(papel==='visualizador')return`<div class="fs"><h4>Acesso</h4><div class="fhint" style="margin:0">Visualizador entra <b>só no site</b>, só para ver: painéis e relatórios de todas as áreas. Não justifica, não valida, não separa paradas e não entra no app de apontamentos.</div></div>`;
   const ac=(u&&u.acesso)||'tudo',ed=u&&u.editor?'1':'0';
   return`<div class="fs"><h4>Onde entra</h4>${segHtml('gAcesso',ACESSO_LISTA,ac)}</div>
     <div class="fs" id="gSiteW" ${ac==='app'?'hidden':''}><h4>No site</h4>${segHtml('gSite',SITE_LISTA,ed)}<div class="fhint"><b>Visualizador</b> só vê os painéis e relatórios. <b>Editor</b> também faz o que o papel permite no site (justificar, validar, separar paradas).</div></div>`;
@@ -1790,7 +1793,7 @@ function renderEqu(){
 /* Botões segmentados no painel (mesmo componente dos filtros do topo) */
 const segHtml=(id,ops,v,dis)=>`<div class="seg" id="${id}">${ops.map(([k,n])=>`<button type="button" data-v="${k}" class="${v===k?'on':''}" ${dis?'disabled':''}>${n}</button>`).join('')}</div>`;
 const segVal=id=>{const b=$(`#${id} button.on`);return b?b.dataset.v:null};
-function areaSeg(papel,v){const ops=areasDoPapel(papel);if(!ops.some(([k])=>k===v))v=papel==='operador'?'PRIMARIO':'AMBOS';return segHtml('gArea',ops,v)}
+function areaSeg(papel,v){if(papel==='visualizador')return`<div class="fhint" style="margin:0">Vê todas as áreas.</div><div hidden>${segHtml('gArea',[['AMBOS','Todas']],'AMBOS')}</div>`;const ops=areasDoPapel(papel);if(!ops.some(([k])=>k===v))v=papel==='operador'?'PRIMARIO':'AMBOS';return segHtml('gArea',ops,v)}
 $('#gB').addEventListener('click',e=>{const b=e.target.closest('.seg button');if(!b||b.disabled)return;const seg=b.parentElement;
   seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
   if(seg.id==='gPapel'){const w=$('#gAreaW');if(w)w.innerHTML=areaSeg(b.dataset.v,segVal('gArea'));
