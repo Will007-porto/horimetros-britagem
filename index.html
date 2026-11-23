@@ -1308,6 +1308,9 @@ function ganRows(){
   return {t0:+g.t0,by};
 }
 const hhmm=s=>new Intl.DateTimeFormat('pt-BR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}).format(s*1000);
+/* Programação do dia (calendário das metas): X normal, XX sábado, A ADM; vazio = sem programação (vira ADM se rodou) */
+function progTxt(g){const p=(g&&g.prog)||{},t=p.tipo,n=(g&&g.jan||[]).length;
+  return t==='X'?'programação normal (X)':t==='XX'?'regra de sábado (XX)':t==='A'?'ADM, um turno (A)':n?'sem programação · rodou, conta como ADM':'sem programação'}
 function renderGan(){
   const {t0,by}=ganRows();const day=86400;
   const lw=118,rw=92,W=Math.max(760,largGraf(false)),top=54,rh=26,gap=10,vw=W-lw-rw,H=top+M.length*(rh+gap)+6;
@@ -1315,7 +1318,7 @@ function renderGan(){
   /* Filtro de turno: o eixo passa a mostrar só a janela daquele turno, e tudo é contado dentro dela */
   const g0=GDATA[GDAY]||{};const winsAll=(g0.jan?g0.jan.map(([tu,a,b])=>({tu:+tu,a:+a,b:+b})):JW.filter(w=>w.d===GDAY)).sort((a,b)=>a.a-b.a);
   const fT=F.tu!=='all',winsF=fT?winsAll.filter(w=>String(w.tu)===F.tu):winsAll;
-  if(fT&&!winsF.length){$('#kG').innerHTML='';$('#ganK').textContent=`${ddmm(GDAY)} · ${F.tu}º turno`;
+  if(fT&&!winsF.length){$('#kG').innerHTML='';$('#ganK').textContent=`${ddmm(GDAY)} · ${F.tu}º turno · ${progTxt(g0)}`;
     $('#cGan').innerHTML=`<div class="pempty"><b>Não houve ${F.tu}º turno em ${ddmm(GDAY)}</b>Escolha "Os dois" no filtro de turno ou outro dia.</div>`;return}
   const A=fT?winsF[0].a:t0,B=fT?winsF[winsF.length-1].b:t0+day,span=B-A;
   const X=s=>lw+vw*Math.max(0,Math.min(span,s-A))/span;
@@ -1375,7 +1378,7 @@ function renderGan(){
     +(()=>{const ids=Object.keys(pzMot),tot=ids.reduce((t,k)=>t+pzMot[k],0);return `<div class="k rv in"><div class="bar" style="background:${tot?'var(--orange)':'var(--green)'}"></div><b style="font-size:30px">${tot?hm(tot/3600):'—'}</b><span>Rodou na pausa</span><em>${tot?`${ids.length} ${ids.length===1?'ativo':'ativos'}: ${ids.sort((x,y)=>pzMot[y]-pzMot[x]).slice(0,4).map(k=>`${k} ${hm(pzMot[k]/3600)}`).join(' · ')}`:PZ.length?'ninguém rodou no almoço/janta':'dia sem pausa'}</em></div>`})()
     +`<div class="k rv in"><div class="bar" style="background:var(--orange)"></div><b style="font-size:30px">${apD!=null?apD+'%':'—'}</b><span>Aproveitamento do dia</span><em>${wins.length?`rodando ÷ ${hm(avD/3600)} disponíveis${GDAY===D.hoje?' até agora':''}`:'dia sem turno'}</em></div>`;
   const paj=(g0.paj||[]).map(Number);
-  $('#ganK').textContent=`${ddmm(GDAY)} · ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][wd(GDAY)]}${fT?` · ${F.tu}º turno, ${hhmm(A)} → ${hhmm(B)}`:''}${paj.length?` · pausa ajustada no ${paj.map(t=>t+'º').join(' e ')} turno`:''}`;
+  $('#ganK').textContent=`${ddmm(GDAY)} · ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][wd(GDAY)]} · ${progTxt(g)}${fT?` · ${F.tu}º turno, ${hhmm(A)} → ${hhmm(B)}`:''}${paj.length?` · pausa ajustada no ${paj.map(t=>t+'º').join(' e ')} turno`:''}`;
   $('#gPausa').hidden=!(typeof ehSup==='function'&&ehSup());
   $('#ganPk').innerHTML=`Dia ${ddmm(GDAY)}`;
   $$('#kG [data-count]').forEach(countUp);$$('#kG .rv').forEach(e=>e.classList.add('in'));

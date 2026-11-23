@@ -1,7 +1,7 @@
 /* ---------- PRODUÇÃO: acompanhamento diário (substitui a planilha ACOMPANHAMENTO_DIÁRIO_DA_PRODUÇÃO) ----------
    Dados: producao_mes (metas), producao_dia (calendário X/XX), producao_lanc (toneladas por dia/turno/material).
    Leitura: rpc prod_dados(p_mes). Gravação (só supervisor): prod_salvar_dia e prod_salvar_mes.
-   Regra da meta diária igual à planilha: dia X pesa 1, sábado XX pesa peso_sabado (73,69%); meta do dia = meta do mês × peso ÷ soma dos pesos. */
+   Regra da meta diária igual à planilha: dia X pesa 1, sábado XX pesa peso_sabado (73,69%), dia ADM (A) pesa peso_adm (40,54%); meta do dia = meta do mês × peso ÷ soma dos pesos. */
 const MATS=[['RACHAO','Rachão','var(--m1)'],['BRITA01','Brita 01','var(--m2)'],['PO','Pó de pedra','var(--m3)'],['BRITA02','Brita 02','var(--m4)']];
 const MATN=Object.fromEntries(MATS.map(m=>[m[0],m[1]])),MATC=Object.fromEntries(MATS.map(m=>[m[0],m[2]]));
 const EQS=[['BM10','BM10','Britador primário'],['BMM05','BMM05','Lokotrack']];
@@ -70,7 +70,7 @@ async function prdLoad(mes,force,silencioso){
 function nomesVis(){const n=visLiq()?'Rachão p/ aplicação':'Rachão';MATS[0][1]=n;MATN.RACHAO=n;if(typeof RMN!=='undefined')RMN.RACHAO=visLiq()?'RACHÃO P/ APLICAÇÃO':'RACHÃO'}
 function prdCalc(x,mes){
   nomesVis();
-  const m=x.mes||null,n=diasNoMes(mes),peso=m?+m.peso_sabado:0.7369,pctBM=m?+m.pct_bm10:0.5;
+  const m=x.mes||null,n=diasNoMes(mes),peso=m?+m.peso_sabado:0.7369,pesoA=m&&m.peso_adm!=null?+m.peso_adm:0.4054,pctBM=m?+m.pct_bm10:0.5;
   const meta={RACHAO:m?(+m.meta_rachao_irati)+(+m.meta_rachao_palmeira):0,BRITA01:m?+m.meta_brita01:0,PO:m?+m.meta_po:0,BRITA02:m?+m.meta_brita02:0};
   /* Visão Estoque: a meta de atendimento é a meta de rachão cadastrada (decisão da gerência em 20/11/2026:
      não somar o rachão necessário para os finos). O realizado é o rachão para aplicação: BMM05 + sobra do BM10 depois do secundário (21/11/2026). Na visão Produtividade, cada material tem a sua meta. */
@@ -79,7 +79,7 @@ function prdCalc(x,mes){
   const tipo={};(x.dias||[]).forEach(d=>tipo[d.dia]=d.tipo);
   const days=[];
   for(let i=0;i<n;i++){const d=addDays(mes,i),t=tipo[d]||null;
-    days.push({d,t,w:t==='X'?1:t==='XX'?peso:0,real:{RACHAO:0,BRITA01:0,PO:0,BRITA02:0},tu:{1:{},2:{}},eq:{BM10:0,BMM05:0},eqTu:{1:{},2:{}},h:{AV10:0,CV07:0},tem:false,tot:0})}
+    days.push({d,t,w:t==='X'?1:t==='XX'?peso:t==='A'?pesoA:0,real:{RACHAO:0,BRITA01:0,PO:0,BRITA02:0},tu:{1:{},2:{}},eq:{BM10:0,BMM05:0},eqTu:{1:{},2:{}},h:{AV10:0,CV07:0},tem:false,tot:0})}
   const W=days.reduce((a,o)=>a+o.w,0),byD=Object.fromEntries(days.map(o=>[o.d,o]));
   (x.horas||[]).forEach(([d,mo,hh])=>{const o=byD[d];if(o&&o.h[mo]!=null)o.h[mo]=+hh||0});
   (x.lanc||[]).forEach(l=>{const o=byD[l.dia];if(!o)return;const t=+l.t||0;o.tem=true;o.real[l.material]+=t;o.totMat=(o.totMat||0)+t;if(!visLiq()||l.material==='RACHAO')o.tot+=t;
@@ -217,7 +217,7 @@ function prdTabelaDia(c,o){
 function renderPrdDia(){
   const c=PR.c,box=$('#prdDiaIn');if(!c||!box)return;
   const o=c.byD[PR.dia]||c.days[0];PR.dia=o.d;const sup=ehSup(),fut=D&&o.d>D.hoje;
-  const tp=o.t==='X'?'dia programado (X)':o.t==='XX'?'sábado programado (XX)':'dia sem produção programada';
+  const tp=o.t==='X'?'dia programado (X)':o.t==='XX'?'sábado programado (XX)':o.t==='A'?'dia ADM, um turno (A)':'dia sem produção programada';
   $('#prdDiaK').textContent=`${WDN[wd(o.d)]}, ${dmy(o.d)} · ${tp}`;
   const ix=c.days.indexOf(o);
   let h=`<div class="dayctl" style="margin-top:12px">
@@ -613,32 +613,33 @@ function prdMetas(){
         ${campo('mB1','Brita 01','meta_brita01','var(--m2)')}${campo('mPO','Pó de pedra','meta_po','var(--m3)')}${campo('mB2','Brita 02','meta_brita02','var(--m4)')}</div>
         <div class="fhint" id="mTot"></div></div>
       <div class="fs"><h4>Dias programados</h4><div class="cal" id="mCal"></div>
-        <div class="fhint">Toque no dia para trocar: <b>X</b> dia cheio → <b>XX</b> sábado (rende menos) → sem produção. <button type="button" class="fclear" data-mpad>Preencher o padrão (seg a sex X, sáb XX)</button></div></div>
+        <div class="fhint">Toque no dia para trocar: <b>X</b> programação normal → <b>XX</b> regra de sábado → <b>A</b> ADM, um turno só (07:30–16:00, domingo/feriado) → sem programação. Os turnos do Gantt e o aproveitamento seguem este calendário; se a planta rodar num dia sem programação, ele vira ADM sozinho. <button type="button" class="fclear" data-mpad>Preencher o padrão (seg a sex X, sáb XX)</button></div></div>
       <div class="fs"><h4>Ajustes</h4><div class="mgrid">
         <label>Peso do sábado (XX), em %<input class="tin" id="mPeso" inputmode="decimal" value="${String(Math.round((m?+m.peso_sabado:0.7369)*10000)/100).replace('.',',')}"></label>
+        <label>Peso do dia ADM (A), em %<input class="tin" id="mPesoA" inputmode="decimal" value="${String(Math.round((m&&m.peso_adm!=null?+m.peso_adm:0.4054)*10000)/100).replace('.',',')}"></label>
         <label>Parte do BM10 na meta de rachão, em %<input class="tin" id="mBM" inputmode="decimal" value="${String(Math.round((m?+m.pct_bm10:0.5)*10000)/100).replace('.',',')}"></label></div>
-        <div class="fhint">O resto da meta de rachão fica com o BMM05 (Lokotrack). Peso 73,69% é o que a planilha usava.</div></div>`,
+        <div class="fhint">O resto da meta de rachão fica com o BMM05 (Lokotrack). Peso 73,69% é o que a planilha usava; o ADM começa em 40,54% (7,5 h ÷ 18,5 h do dia normal).</div></div>`,
     onOk:async()=>{
       const g=id=>{const v=prdConta($('#'+id).value);if(Number.isNaN(v)||(v!=null&&v<0))throw falha('Confira as metas: use só números.');return v||0};
-      const peso=g('mPeso')/100,bm=g('mBM')/100;
-      if(!(peso>0&&peso<=1))throw falha('O peso do sábado precisa ficar entre 1% e 100%.');if(bm<0||bm>1)throw falha('A parte do BM10 precisa ficar entre 0% e 100%.');
+      const peso=g('mPeso')/100,pesoA=g('mPesoA')/100,bm=g('mBM')/100;
+      if(!(peso>0&&peso<=1))throw falha('O peso do sábado precisa ficar entre 1% e 100%.');if(!(pesoA>0&&pesoA<=1))throw falha('O peso do dia ADM precisa ficar entre 1% e 100%.');if(bm<0||bm>1)throw falha('A parte do BM10 precisa ficar entre 0% e 100%.');
       const dias=Object.entries(MT.cal).filter(([,t])=>t).map(([d,t])=>({dia:addDays(MT.mes,+d-1),tipo:t}));
       if(!dias.length)throw falha('Marque pelo menos um dia programado.');
-      ULT_SALVO=Date.now();await rpc('prod_salvar_mes',{p_mes:MT.mes,p_meta_rachao_irati:g('mRI'),p_meta_rachao_palmeira:g('mRP'),p_meta_brita01:g('mB1'),p_meta_po:g('mPO'),p_meta_brita02:g('mB2'),p_peso_sabado:peso,p_pct_bm10:bm,p_dias:dias});
+      ULT_SALVO=Date.now();await rpc('prod_salvar_mes',{p_mes:MT.mes,p_meta_rachao_irati:g('mRI'),p_meta_rachao_palmeira:g('mRP'),p_meta_brita01:g('mB1'),p_meta_po:g('mPO'),p_meta_brita02:g('mB2'),p_peso_sabado:peso,p_peso_adm:pesoA,p_pct_bm10:bm,p_dias:dias});
       ULT_SALVO=Date.now();toast(`Metas de ${mesTxt(MT.mes)} salvas.`);await prdLoad(MT.mes,true);
     }});
   mtCal();mtTot();
 }
 function mtCal(){
   const off=wd(MT.mes);let h=['D','S','T','Q','Q','S','S'].map(x=>`<div class="ch2">${x}</div>`).join('')+'<div></div>'.repeat(off);
-  for(let i=1;i<=MT.n;i++){const t=MT.cal[i]||'';h+=`<button type="button" data-cd="${i}" class="${t.toLowerCase()}" aria-label="Dia ${i}: ${t==='X'?'dia cheio':t==='XX'?'sábado':'sem produção'}"><span>${i}</span><small>${t||'·'}</small></button>`}
+  for(let i=1;i<=MT.n;i++){const t=MT.cal[i]||'';h+=`<button type="button" data-cd="${i}" class="${t.toLowerCase()}" aria-label="Dia ${i}: ${t==='X'?'programação normal':t==='XX'?'regra de sábado':t==='A'?'ADM, um turno':'sem programação'}"><span>${i}</span><small>${t||'·'}</small></button>`}
   $('#mCal').innerHTML=h;
 }
 function mtTot(){
   const g=id=>{const v=prdConta(($('#'+id)||{}).value);return Number.isNaN(v)?0:v||0};
-  const tot=['mRI','mRP','mB1','mPO','mB2'].reduce((a,id)=>a+g(id),0),peso=g('mPeso')/100||0.7369;
-  const x=Object.values(MT.cal).filter(t=>t==='X').length,xx=Object.values(MT.cal).filter(t=>t==='XX').length,W=x+xx*peso;
-  const e=$('#mTot');if(e)e.innerHTML=`Total do mês: <b>${f0(tot)} t</b> · rachão ${f0(g('mRI')+g('mRP'))} t · ${x+xx} dias programados (${xx} ${xx===1?'sábado':'sábados'}) · meta por dia cheio ≈ <b>${W?f0(tot/W):'—'} t</b>`;
+  const tot=['mRI','mRP','mB1','mPO','mB2'].reduce((a,id)=>a+g(id),0),peso=g('mPeso')/100||0.7369,pesoA=g('mPesoA')/100||0.4054;
+  const cnt=k=>Object.values(MT.cal).filter(t=>t===k).length,x=cnt('X'),xx=cnt('XX'),a=cnt('A'),W=x+xx*peso+a*pesoA;
+  const e=$('#mTot');if(e)e.innerHTML=`Total do mês: <b>${f0(tot)} t</b> · rachão ${f0(g('mRI')+g('mRP'))} t · ${x+xx+a} dias programados (${xx} ${xx===1?'sábado':'sábados'}${a?`, ${a} ADM`:''}) · meta por dia cheio ≈ <b>${W?f0(tot/W):'—'} t</b>`;
 }
 
 /* ---------- eventos ---------- */
@@ -676,7 +677,7 @@ $('#prdBody').addEventListener('change',e=>{if(e.target.id==='prdDia'){PR.dia=e.
 $('#gB').addEventListener('input',e=>{if(e.target.classList.contains('pin'))plTotais();else if(MT&&e.target.closest('.mgrid'))mtTot()});
 $('#gB').addEventListener('change',e=>{if(e.target.id==='plDia'&&PL&&isDay(e.target.value))plFill(e.target.value>D.hoje?D.hoje:e.target.value)});
 $('#gB').addEventListener('click',e=>{
-  const cd=e.target.closest('[data-cd]');if(cd&&MT){const i=+cd.dataset.cd,t=MT.cal[i]||'';MT.cal[i]=t===''?'X':t==='X'?'XX':'';if(!MT.cal[i])delete MT.cal[i];mtCal();mtTot();return}
+  const cd=e.target.closest('[data-cd]');if(cd&&MT){const i=+cd.dataset.cd,t=MT.cal[i]||'';MT.cal[i]=t===''?'X':t==='X'?'XX':t==='XX'?'A':'';if(!MT.cal[i])delete MT.cal[i];mtCal();mtTot();return}
   if(e.target.closest('[data-mpad]')&&MT){MT.cal={};for(let i=1;i<=MT.n;i++){const w=wd(addDays(MT.mes,i-1));if(w>=1&&w<=5)MT.cal[i]='X';else if(w===6)MT.cal[i]='XX'}mtCal();mtTot()}
 });
 /* Enter no lançamento pula para o próximo campo (mais rápido que mouse) */

@@ -93,6 +93,8 @@ Quando até um horário foi um motivo e depois foi outro: botão **Dividir** na 
 
 ## Gantt diário
 
+- **Programação do dia = calendário das metas** (Produção → Metas do mês): **X** programação normal (turnos de seg–sex), **XX** regra de sábado, **A** ADM (um turno, 07:30–16:00 com almoço; domingo/feriado), vazio = sem programação — se a planta ligar nesse dia, ele vira ADM sozinho. Mês sem calendário cadastrado usa o padrão da semana (seg–sex X, sáb XX, dom vazio). Função `programacao_dia(dia)` alimenta `janelas_produtivas`, então Gantt, aproveitamento, eficiência e turno das paradas seguem o calendário. Peso do dia A na meta: `peso_adm` do mês (padrão 40,54%).
+
 - **Dia por calendário:** em "Operação por ativo" o dia é escolhido num calendário (ponto verde = dia com operação; setas ‹ › andam um dia). O filtro de período "Datas" usa o mesmo calendário: toque no dia inicial e depois no final.
 
 - Mostra o dia de produção inteiro (07:30 → 07:30), com as faixas dos turnos e pausas.

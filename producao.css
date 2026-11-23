@@ -89,6 +89,7 @@ svg.ch g.bd:hover .bg{fill:var(--line)}
 .cal button small{font:600 9.5px var(--mono);letter-spacing:.04em;color:var(--muted)}
 .cal button.x{background:var(--navy);border-color:var(--navy);color:#fff}.cal button.x small{color:#C9D6F2}
 .cal button.xx{background:var(--soft);border-color:var(--navy2);color:var(--ink)}.cal button.xx small{color:var(--P)}
+.cal button.a{background:rgba(242,169,59,.16);border-color:var(--orange);color:var(--ink)}.cal button.a small{color:#8a5a00}
 .cal button:hover{border-color:var(--P)}
 
 /* Relatório do dia (só na impressão) */
