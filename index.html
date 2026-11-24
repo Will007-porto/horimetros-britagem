@@ -470,6 +470,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
 @media(max-width:560px){.cgrid{grid-template-columns:1fr}.bulk{flex-wrap:wrap}.bulk #bulkTxt{flex-basis:100%}.hcard .big{font-size:44px}.tb .hm{display:none}.k b{font-size:28px}.kpis{gap:8px}}
 </style>
 <link rel="stylesheet" href="producao.css">
+<link rel="stylesheet" href="detonacao.css">
 </head>
 <body>
 <div id="prog"></div>
@@ -485,6 +486,7 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
     <a data-p="par"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>Paradas<span class="badge" id="navBadge" hidden></span><span class="dot"></span></a>
     <a data-p="efi"><svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3"/></svg>Eficiência<span class="dot"></span></a>
     <a data-p="prd"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20l4-9 3 4 3-7 4 12"/></svg>Produção<span class="dot"></span></a>
+    <a data-p="det"><svg viewBox="0 0 24 24"><path d="M12 3c.5 2.5 3 4 3 7a3 3 0 0 1-6 0c0-1.2.5-2 1-2.6"/><path d="M5 21h14"/><path d="M7 21l1.5-6h7L17 21"/></svg>Detonação<span class="dot"></span></a>
     <a data-p="val" class="hidn"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Validar<span class="badge" id="navVal" hidden></span><span class="dot"></span></a>
     <a data-p="equ" class="hidn"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.5 5.2"/></svg>Equipe<span class="dot"></span></a>
     <a data-p="app" class="hidn"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>App (teste)<span class="dot"></span></a>
@@ -686,6 +688,15 @@ body.semfiltro #fbar,body.semfiltro #fempty{display:none}
       <div class="prdacts"><button type="button" class="btn2" id="prdExport" title="Relatório de produção no modelo da planilha (PDF), até o dia escolhido em Produção do dia">Exportar produção</button><button type="button" class="btn2" id="prdExportSaldo" title="Relatório de saldo: BM10 (rachão + finos do secundário) e BMM05, até o dia escolhido">Exportar saldo</button><button type="button" class="btn2" id="prdMetas" hidden>Metas do mês</button><button type="button" class="btn1" id="prdLancar" hidden>Lançar produção</button></div>
     </div>
     <div id="prdBody"></div>
+  </section>
+
+  <section class="pane" id="p-det">
+    <div class="phead"><img src="assets/logo-azul.png" alt="Tripoloni"><div class="pt">Britagem · detonações programadas e planos de fogo</div><div class="pk"></div></div>
+    <div class="prdtools">
+      <div class="stamp" id="detStamp"></div>
+      <div class="prdacts"><button type="button" class="btn1" id="detNova" hidden>Programar detonação</button></div>
+    </div>
+    <div id="detBody"></div>
   </section>
 
   <!-- APP (TESTE): versão nova do app de apontamentos antes de virar APK -->
@@ -1896,8 +1907,8 @@ function reveal(){
 }
 
 /* ---------- interactions ---------- */
-const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',prd:'Produção',efi:'Eficiência',val:'Validar',equ:'Equipe',app:'App (teste)'};
-function go(p){const mudou=PANE!==p;PANE=p;document.body.classList.toggle('semfiltro',p==='val'||p==='equ'||p==='app'||p==='prd');if(p==='app')appLoad();if(p==='prd'&&D)prdLoad();
+const TITLES={geral:'Visão geral',hor:'Horímetros',gan:'Gantt diário',par:'Paradas',prd:'Produção',det:'Detonação',efi:'Eficiência',val:'Validar',equ:'Equipe',app:'App (teste)'};
+function go(p){const mudou=PANE!==p;PANE=p;document.body.classList.toggle('semfiltro',p==='val'||p==='equ'||p==='app'||p==='prd'||p==='det');if(p==='app')appLoad();if(p==='prd'&&D)prdLoad();if(p==='det'&&D)detLoad();
   if(D&&p==='val'&&(mudou||!VQ.rows))valLoad();if(D&&p==='equ'&&(mudou||!EQ.rows))equLoad();$$('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.p===p));$$('.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p&&!!D));$('#pgt').textContent=TITLES[p];if(p==='gan'&&D)ganEnsure();if(p==='par'&&D)parLoad();if(p==='efi'&&D)efiLoad();try{localStorage.setItem('hb_pane',p)}catch(e){}if(D&&mudou)reveal();if(mudou)window.scrollTo({top:0})}
 $('#nav').onclick=e=>{const a=e.target.closest('a');if(a)go(a.dataset.p)};
 document.addEventListener('click',e=>{
@@ -1908,7 +1919,7 @@ document.addEventListener('click',e=>{
   const bh=e.target.closest('button.boxh');if(bh){bh.closest('.box').classList.toggle('closed');return}
   const tr=e.target.closest('tr.g');if(tr){const k=tr.dataset.g;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);tr.classList.toggle('cl');$$(`tr.it[data-p="${CSS.escape(k)}"]`).forEach(r=>r.classList.toggle('hid',!OPEN.has(k)))}
 });
-$('#btnRef').onclick=async()=>{await load(true,true);if(PANE==='gan')ganEnsure(true);if(PANE==='par')parLoad(true);if(PANE==='prd')prdLoad(null,true,true);if(PANE==='efi')efiLoad(true,true);if(PANE==='val')valLoad(true)};
+$('#btnRef').onclick=async()=>{await load(true,true);if(PANE==='gan')ganEnsure(true);if(PANE==='par')parLoad(true);if(PANE==='prd')prdLoad(null,true,true);if(PANE==='efi')efiLoad(true,true);if(PANE==='det')detLoad(true,true);if(PANE==='val')valLoad(true)};
 $('#btnPrint').onclick=()=>window.print();
 /* Tema claro/escuro: segue o sistema até o usuário escolher; a escolha fica salva neste navegador */
 const temaAtual=()=>document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
@@ -1972,5 +1983,6 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
 <script src="producao.js"></script>
 <script src="efi.js"></script>
 <script src="producao-rel.js"></script>
+<script src="detonacao.js"></script>
 </body>
 </html>
