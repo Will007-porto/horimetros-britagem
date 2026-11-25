@@ -209,3 +209,49 @@ function prdExportar(){const dia=diaDoRelatorio();if(!dia)return;const [,mm,dd]=
 function prdExportarSaldo(){const dia=diaDoRelatorio();if(!dia)return;const [,mm,dd]=dia.split('-');rmImprimir(rmSaldoMontar(dia),`SALDO ${dd}.${mm}`)}
 $('#prdExport').onclick=()=>prdExportar();
 $('#prdExportSaldo').onclick=()=>prdExportarSaldo();
+
+/* ---------- Relatório de turnos em Excel (.xlsx) ----------
+   Do dia 1 do mês até o dia escolhido em Produção do dia. Uma aba por área:
+   Primário (rodando = AV10, produzido = rachão do BM10) e Secundário (rodando = CV07, produzido = finos).
+   Turno h = início → fim do turno; Disp. h = turno sem as pausas. Mesmos números da aba Eficiência (rpc efi_dados).
+   A biblioteca do Excel (SheetJS) só é baixada quando alguém exporta. */
+let XLSX_P=null;
+function xlsxLib(){
+  if(window.XLSX)return Promise.resolve(window.XLSX);
+  if(!XLSX_P)XLSX_P=new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload=()=>window.XLSX?ok(window.XLSX):ko(new Error('xlsx'));s.onerror=()=>{XLSX_P=null;ko(new Error('Sem resposta do servidor (fetch)'))};document.head.appendChild(s)});
+  return XLSX_P;
+}
+async function prdExportarTurnos(){
+  const dia=diaDoRelatorio();if(!dia)return;
+  const b=$('#prdExportTurnos'),txt=b.textContent;b.disabled=true;b.textContent='Gerando…';
+  try{
+    const ini=dia.slice(0,8)+'01';
+    const [X,rows]=await Promise.all([xlsxLib(),rpc('efi_dados',{p_desde:ini,p_ate:dia})]);
+    const wb=X.utils.book_new(),[y,mm,dd]=dia.split('-'),per=`${dmy(ini)} a ${dmy(dia)}`;
+    const AREAS=[['Primário','AV10','av','tp','Rachão BM10 (t)'],['Secundário','CV07','cv','tf','Finos: brita 1, pó, brita 2 (t)']];
+    AREAS.forEach(([nome,mot,kh,kt,lt])=>{
+      const ls=(rows||[]).filter(r=>(+r[kt]>0)||(+r.ht>0));
+      const aoa=[[`Produção da britagem · turnos · ${nome}`],[`Período: ${per} · rodando = ${mot} ligado · Construtora Tripoloni Ltda.`],[],
+        ['Dia','Semana','Turno','Turno (h)','Disp. (h)',`Rodando ${mot} (h)`,lt]];
+      ls.forEach(r=>{const [a,m,d]=r.dia.split('-').map(Number);
+        aoa.push([new Date(Date.UTC(a,m-1,d,12)),DSEM[wd(r.dia)],`${r.turno}º`,+r.ht||0,+r.hd||0,+r[kh]||0,+r[kt]||0])});
+      const L0=5,L1=4+ls.length; /* linhas de dados no Excel (1-based) */
+      aoa.push(['Total','',`${ls.length} turnos`,...['D','E','F','G'].map(c=>ls.length?{f:`SUM(${c}${L0}:${c}${L1})`}:0)]);
+      const ws=X.utils.aoa_to_sheet(aoa,{cellDates:true});
+      for(let i=L0;i<=L1+1;i++){
+        const c=ws['A'+i];if(c&&i<=L1){c.t='d';c.z='dd/mm/yyyy'}
+        ['D','E','F'].forEach(k=>{if(ws[k+i])ws[k+i].z='0.00'});if(ws['G'+i])ws['G'+i].z='#,##0.0'}
+      /* total já calculado, para quem abre no celular sem recalcular fórmula */
+      if(ls.length)['D','E','F','G'].forEach((k,j)=>{const key=['ht','hd',kh,kt][j];const c=ws[k+(L1+1)];c.t='n';c.v=Math.round(ls.reduce((s,r)=>s+(+r[key]||0),0)*100)/100;c.z=k==='G'?'#,##0.0':'0.00'});
+      ws['!cols']=[{wch:12},{wch:15},{wch:12},{wch:11},{wch:11},{wch:17},{wch:30}];
+      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}}];
+      ws['!autofilter']={ref:`A4:G${Math.max(L1,4)}`};
+      X.utils.book_append_sheet(wb,ws,nome);
+    });
+    X.writeFile(wb,`TURNOS ${dd}.${mm}.${y}.xlsx`,{compression:true});
+    toast(`Excel de turnos gerado (${per}).`);
+  }catch(e){toast('Não foi possível gerar o Excel. '+errApp(e))}
+  b.disabled=false;b.textContent=txt;
+}
+$('#prdExportTurnos').onclick=()=>prdExportarTurnos();
