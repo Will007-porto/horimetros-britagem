@@ -1079,14 +1079,15 @@ function normRow(a){const [id,mo,est,ini,fim,st,tp,cat,txt,por,em,cod,eqc,cls,co
 const GRUPOS=[['TRAVOU','Travou / Entupiu'],['QUEBROU','Quebrou (mecânica)'],['CORREIA','Correia'],['ELETRICA','Elétrica / Gerador'],['MATERIAL','Falta de material'],['CHUVA','Chuva / Detonação / Segurança'],['MANUT','Manutenção programada'],['TURNO','Início / fim de turno'],['REFEICAO','Refeição / DDS'],['OPERACAO','Operação']];
 const GN=Object.fromEntries(GRUPOS);
 const CLS_TXT={A:'Classe A · falha de equipamento: conta na disponibilidade física e vai para a manutenção confirmar',B:'Classe B · manutenção programada: conta na disponibilidade física',C:'Classe C · operação/processo: conta na utilização',D:'Classe D · logística/material: conta na utilização',E:'Classe E · externa (chuva, detonação, segurança): conta na utilização',F:'Classe F · parada programada: não conta como perda'};
-let CAT={mot:[],eqp:[],ok:false};
+let CAT={mot:[],eqp:[],ok:false,t:0};
+/* Motivos e equipamentos: renova a cada 5 min, para motivo novo aparecer sem recarregar a página */
 async function ensureCat(force){
-  if(CAT.ok&&!force)return;
+  if(CAT.ok&&!force&&Date.now()-CAT.t<300000)return;
   const [m,e]=await Promise.all([
     sb.from('motivos_parada').select('codigo,nome_operador,grupo,classe,aplica_a,confirma,areas,ordem').eq('ativo',true).order('ordem'),
     sb.from('equipamentos_britagem').select('tag,nome,visao,ordem').eq('ativo',true).order('ordem')]);
   if(m.error)throw m.error;if(e.error)throw e.error;
-  CAT={ok:true,mot:(m.data||[]).map(x=>({c:x.codigo,n:x.nome_operador,g:x.grupo,k:x.classe,a:x.aplica_a,cf:x.confirma,ar:x.areas})),eqp:(e.data||[]).map(x=>({t:x.tag,n:x.nome,v:x.visao}))};
+  CAT={ok:true,t:Date.now(),mot:(m.data||[]).map(x=>({c:x.codigo,n:x.nome_operador,g:x.grupo,k:x.classe,a:x.aplica_a,cf:x.confirma,ar:x.areas})),eqp:(e.data||[]).map(x=>({t:x.tag,n:x.nome,v:x.visao}))};
 }
 const motOf=c=>CAT.mot.find(x=>x.c===c)||null;
 const motNome=c=>{const m=motOf(c);return m?m.n:c};
